@@ -1,0 +1,84 @@
+Created-By: 11.0.2 (Eclipse OpenJ9)
+IBM-API-Package: javax.servlet.annotation; type=spec,
+ javax.servlet.descriptor; type=spec,
+ javax.servlet.resources; type=spec,
+ javax.servlet.http; type=spec,
+ javax.servlet; type=spec,
+ com.ibm.websphere.servlet.session; type=ibm-api,
+ com.ibm.wsspi.servlet.session; type=ibm-api,
+ com.ibm.websphere.servlet.error; type=ibm-api,
+ com.ibm.websphere.servlet.container; type=ibm-api,
+ com.ibm.websphere.servlet.context; type=ibm-api,
+ com.ibm.websphere.servlet.event; type=ibm-api,
+ com.ibm.websphere.webcontainer; type=ibm-api,
+ com.ibm.wsspi.webcontainer; type=internal,
+ com.ibm.wsspi.webcontainer.annotation; type=internal
+IBM-App-ForceRestart: install,
+ uninstall
+IBM-AppliesTo: io.openliberty;productVersion="20.0.0.1"
+IBM-Feature-Version: 2
+IBM-InstallTo: core
+IBM-License-Agreement: wlp/lafiles/LA
+IBM-ProductID: io.openliberty
+IBM-SPI-Package: com.ibm.wsspi.webcontainer,
+ com.ibm.wsspi.webcontainer.collaborator,
+ com.ibm.wsspi.webcontainer.extension,
+ com.ibm.wsspi.webcontainer.filter,
+ com.ibm.wsspi.webcontainer.metadata,
+ com.ibm.wsspi.webcontainer.osgi.extension,
+ com.ibm.wsspi.webcontainer.servlet,
+ com.ibm.wsspi.webcontainer.webapp,
+ com.ibm.websphere.servlet.filter,
+ com.ibm.websphere.servlet.response,
+ com.ibm.ws.webcontainer.extension,
+ com.ibm.websphere.servlet.request,
+ com.ibm.ws.webcontainer.spiadapter.collaborator,
+ com.ibm.websphere.webcontainer.async
+IBM-ShortName: servlet-4.0
+Subsystem-Category: JavaEE8Application
+Subsystem-Content: ws-webserverPluginutil.jar; type=file; location:="bin/tools/ws-webserverPluginutil.jar"; version="[1.0.0,1.0.200)",
+ pluginUtility; ibm.executable:=true; ibm.file.encoding:=ebcdic; type=file; location:="bin/pluginUtility",
+ pluginUtility.bat; type=file; location:="bin/pluginUtility.bat",
+ com.ibm.websphere.appserver.api.servlet_1.1-javadoc.zip; type=file; location:="dev/api/ibm/javadoc/com.ibm.websphere.appserver.api.servlet_1.1-javadoc.zip",
+ com.ibm.websphere.appserver.injection-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.artifact-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.containerServices-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javaeedd-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.classloading-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.appmanager-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javaeePlatform-8.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.anno-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javax.annotation-1.3; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.httptransport-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javax.servlet-4.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.requestProbes-1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javaeeCompatible-8.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.servlet-servletSpi1.0; type="osgi.subsystem.feature",
+ com.ibm.websphere.appserver.javaeeddSchema-1.0; type="osgi.subsystem.feature",
+ com.ibm.ws.webserver.plugin.utility; type=jar; version="[1.0.0,1.0.200)",
+ com.ibm.websphere.appserver.api.servlet; location:="dev/api/ibm/,lib/"; type=jar; version="[1.1.0,1.1.200)",
+ com.ibm.ws.app.manager.war; version="[1.0.0,1.0.200)",
+ com.ibm.ws.managedobject; version="[1.0.0,1.0.200)",
+ com.ibm.ws.org.apache.commons.io; version="[1.0.0,1.0.200)",
+ com.ibm.websphere.security; version="[1.1.0,1.1.200)",
+ com.ibm.ws.org.apache.commons.fileupload; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webcontainer.servlet.4.0; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webcontainer.servlet.4.0.factories; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webcontainer.servlet.3.1; version="[1.0.0,1.0.200)",
+ com.ibm.ws.session; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webcontainer; version="[1.1.0,1.1.200)",
+ com.ibm.ws.webcontainer.cors; version="[1.0.0,1.0.200)",
+ com.ibm.ws.http.plugin.merge; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webserver.plugin.runtime; version="[1.0.0,1.0.200)",
+ com.ibm.ws.webserver.plugin.runtime.interfaces; version="[1.0.0,1.0.200)"
+Subsystem-Description: %description
+Subsystem-License: https://www.eclipse.org/legal/epl-v10.html
+Subsystem-Localization: OSGI-INF/l10n/com.ibm.websphere.appserver.servlet-4.0
+Subsystem-ManifestVersion: 1
+Subsystem-Name: Java Servlets 4.0
+Subsystem-SymbolicName: com.ibm.websphere.appserver.servlet-4.0; visibility:=public; singleton:=true
+Subsystem-Type: osgi.subsystem.feature
+Subsystem-Vendor: IBM Corp.
+Subsystem-Version: 1.0.0
+Tool: Bnd-4.1.0.201810181252
+WLP-Activation-Type: parallel
