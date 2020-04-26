@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -129,5 +130,20 @@ public class TestUtils {
 		}
 
 		return outputManifestLines;
+	}
+
+	public static void transfer(
+		String streamName,
+		InputStream inputStream, OutputStream outputStream,
+		byte[] buffer) throws IOException {
+
+		int bytesRead;
+		long totalBytes = 0L;
+		while ( (bytesRead = inputStream.read(buffer)) != -1 ) {
+			outputStream.write(buffer, 0, bytesRead);
+			totalBytes += bytesRead;
+		}
+
+		System.out.println("Transferred [ " + totalBytes + " ] from [ " + streamName + " ]");
 	}
 }

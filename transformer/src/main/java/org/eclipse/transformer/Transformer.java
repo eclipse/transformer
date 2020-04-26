@@ -21,6 +21,7 @@ package org.eclipse.transformer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -29,6 +30,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -69,8 +71,6 @@ import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
 public class Transformer {
-    //
-
 	// TODO: Make this an enum?
 
     public static final int SUCCESS_RC = 0;
@@ -236,6 +236,12 @@ public class Transformer {
     public static final String INPUT_GROUP = "input";
     public static final String LOGGING_GROUP = "logging";
 
+    public static final String HELP_SHORT_TAG = "-h";
+    public static final String HELP_LONG_TAG = "--help";
+
+    public static final String USAGE_SHORT_TAG = "-u";
+    public static final String USAGE_LONG_TAG = "--usage";
+
     public static enum AppOption {
         USAGE  ("u", "usage", "Display usage",
         	!OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
@@ -243,6 +249,11 @@ public class Transformer {
         HELP   ("h", "help", "Display help",
             !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
             !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+
+        // TODO: Refine versioning
+        // FULL_VERSION("f", "fullVersion", "Display full version information",
+        //     !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
+        // 	   !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
         LOG_TERSE("q", "quiet", "Display quiet output",
         	!OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
@@ -361,11 +372,69 @@ public class Transformer {
 
     //
 
+	public static InputStream getResourceStream(String resourceRef) {
+		return Transformer.class.getClassLoader().getResourceAsStream(resourceRef);
+	}
+
+	public static Properties loadProperties(String resourceRef) throws IOException {
+		Properties properties = new Properties();
+		try ( InputStream inputStream = Transformer.getResourceStream(resourceRef) ) {
+			properties.load(inputStream);
+		}
+		return properties;
+	}
+
     public Transformer(PrintStream sysOut, PrintStream sysErr) {
     	this.sysOut = sysOut;
     	this.sysErr = sysErr;
 
+    	Properties useProperties;
+    	try {
+    		useProperties = Transformer.loadProperties(TRANSFORMER_BUILD_PROPERTIES);
+    	} catch ( IOException e ) {
+    		useProperties = new Properties();
+    		this.error("Failed to load build properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]", e);
+    	}
+    	this.buildProperties = useProperties;
+
         this.appOptions = AppOption.build();
+    }
+
+    //
+
+	public static final String COPYRIGHT_PROPERTY_NAME = "COPYRIGHT";
+	public static final String SHORT_VERSION_PROPERTY_NAME = "SHORT_VERSION";
+	public static final String LONG_VERSION_PROPERTY_NAME = "LONG_VERSION";
+	public static final String BUILD_DATE_PROPERTY_NAME = "BUILD_DATE";
+
+	public static final String TRANSFORMER_BUILD_PROPERTIES = "org/eclipse/transformer/build.properties";
+
+	private final Properties buildProperties;
+
+	private final Properties getBuildProperties() {
+		return buildProperties;
+	}
+
+	// TODO: Usual command line usage puts SysOut and SysErr together, which results
+	//       in the build properties writing out twice.
+
+	private void preInitDisplay(String message) {
+		PrintStream useSysOut = getSystemOut();
+		// PrintStream useSysErr = getSystemErr();
+
+		useSysOut.println(message);
+		// if ( useSysErr != useSysOut ) {
+		// 	useSysErr.println(message);
+		// }
+	}
+
+	private void displayBuildProperties() {
+		Properties useBuildProperties = getBuildProperties();
+
+		preInitDisplay( getClass().getName() ); 
+		preInitDisplay( "(C) [ " + useBuildProperties.getProperty(COPYRIGHT_PROPERTY_NAME) + " ]" );
+		preInitDisplay( "Version [ " + useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME) + " ]" );
+		preInitDisplay( "Build [ " + useBuildProperties.getProperty(BUILD_DATE_PROPERTY_NAME) + " ]" );
     }
 
     //
@@ -500,13 +569,18 @@ public class Transformer {
 
     //
 
+    private void usage(PrintStream helpStream) {
+    	helpStream.println("Usage: " + Transformer.class.getName() + " input [ output ] [ options ]");
+    	helpStream.println("Use option [ " + HELP_SHORT_TAG + " ] or [ " + HELP_LONG_TAG + " ] to display help information.");
+    	helpStream.flush();
+    }
+
     private void help(PrintStream helpStream) {
         try ( PrintWriter helpWriter = new PrintWriter(helpStream) ) {
             helpWriter.println();
 
             HelpFormatter helpFormatter = new HelpFormatter();
             boolean AUTO_USAGE = true;
-
             helpFormatter.printHelp(
                 helpWriter,
                 HelpFormatter.DEFAULT_WIDTH + 5,
@@ -517,19 +591,20 @@ public class Transformer {
                 "", // Footer
                 !AUTO_USAGE);
 
+            helpWriter.println();
             helpWriter.println("Actions:");
             for ( ActionType actionType : ActionType.values() ) {
             	helpWriter.println("  [ " + actionType.name() + " ]");
             }
 
+            helpWriter.println();
             helpWriter.println("Logging Properties:");
             for ( TransformerLoggerFactory.LoggerProperty loggerProperty :
             	      TransformerLoggerFactory.LoggerProperty.values() ) {
             	helpWriter.println("  [ " + loggerProperty.getPropertyName() + " ]");
             }
-            
-            helpWriter.flush();
 
+            helpWriter.flush();
         }
     }
 
@@ -1031,9 +1106,9 @@ public class Transformer {
         public boolean setOutput() {
         	String useOutputName = getOutputFileNameFromCommandLine();
 
-        	boolean isExplicit;
+        	boolean isExplicit = (useOutputName != null);
 
-        	if ( isExplicit = (useOutputName != null) ) {
+        	if ( isExplicit ) {
         		useOutputName = FileUtils.normalize(useOutputName);
 
         	} else {
@@ -1050,9 +1125,9 @@ public class Transformer {
         	File useOutputFile = new File(useOutputName);
         	String useOutputPath = useOutputFile.getAbsolutePath();
 
-        	boolean putIntoDirectory;
+        	boolean putIntoDirectory = ( inputFile.isFile() && useOutputFile.isDirectory() );
 
-            if ( putIntoDirectory = (inputFile.isFile() && useOutputFile.isDirectory()) ) {
+            if ( putIntoDirectory ) { 
             	useOutputName = useOutputName + '/' + inputName;
             	if ( isVerbose ) {
             		dual_info("Output generated using input name and output directory [ %s ]", useOutputName);
@@ -1262,6 +1337,8 @@ public class Transformer {
     }
 
     public int run() {
+    	displayBuildProperties();
+
         try {
             setParsedArgs();
         } catch ( ParseException e ) {
@@ -1270,9 +1347,11 @@ public class Transformer {
             return PARSE_ERROR_RC;
         }
 
-        if ( hasOption(AppOption.HELP) || hasOption(AppOption.USAGE) ) {
+        if ( (getArgs().length == 0) || hasOption(AppOption.USAGE) ) {
+            usage( getSystemOut() );
+            return SUCCESS_RC; // TODO: Is this the correct return value?
+        } else if ( hasOption(AppOption.HELP) ) {
             help( getSystemOut() );
-            // TODO: Split help and usage
             return SUCCESS_RC; // TODO: Is this the correct return value?
         }
 
