@@ -167,12 +167,12 @@ public class TransformerLoggerFactory {
 			this.isVerbose = transformer.hasOption(Transformer.AppOption.LOG_VERBOSE);
 
 			this.properties = transformer.getOptionValues(Transformer.AppOption.LOG_PROPERTY);
-			this.propertyFileName = transformer.getOptionValue(Transformer.AppOption.LOG_PROPERTY_FILE);
+			this.propertyFileName = transformer.getOptionValue(Transformer.AppOption.LOG_PROPERTY_FILE, Transformer.DO_NORMALIZE);
 
 			this.logName = transformer.getOptionValue(Transformer.AppOption.LOG_NAME);
 
 			this.logLevel = transformer.getOptionValue(Transformer.AppOption.LOG_LEVEL);
-			this.logFileName = transformer.getOptionValue(Transformer.AppOption.LOG_FILE);
+			this.logFileName = transformer.getOptionValue(Transformer.AppOption.LOG_FILE, Transformer.DO_NORMALIZE);
 		}
 	}
 

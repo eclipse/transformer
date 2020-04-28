@@ -547,21 +547,41 @@ public class Transformer {
         return getParsedArgs().hasOption( option.getShortTag() );
     }
 
+    protected static boolean DO_NORMALIZE = true;
+
     protected String getOptionValue(AppOption option) {
+    	return getOptionValue(option, !DO_NORMALIZE);
+    }
+
+    protected String getOptionValue(AppOption option, boolean normalize) {
         CommandLine useParsedArgs = getParsedArgs();
         String useShortTag = option.getShortTag();
         if ( useParsedArgs.hasOption(useShortTag) ) {
-            return useParsedArgs.getOptionValue(useShortTag);
+            String optionValue = useParsedArgs.getOptionValue(useShortTag);
+            if ( normalize ) {
+            	optionValue = FileUtils.normalize(optionValue);
+            }
+            return optionValue;
         } else {
             return null;
         }
     }
 
     protected String[] getOptionValues(AppOption option) {
+    	return getOptionValues(option, !DO_NORMALIZE);
+    }
+
+    protected String[] getOptionValues(AppOption option, boolean normalize) {
         CommandLine useParsedArgs = getParsedArgs();
         String useShortTag = option.getShortTag();
         if ( useParsedArgs.hasOption(useShortTag) ) {
-            return useParsedArgs.getOptionValues(useShortTag);
+        	String[] optionValues = useParsedArgs.getOptionValues(useShortTag);
+        	if ( normalize ) {
+        		for ( int optionNo = 0; optionNo < optionValues.length; optionNo++ ) {
+        			optionValues[optionNo] = FileUtils.normalize( optionValues[optionNo] );
+        		}
+        	}
+        	return optionValues;
         } else {
             return null;
         }
@@ -628,7 +648,7 @@ public class Transformer {
      *     URI was specified.
      */
     protected UTF8Properties loadProperties(AppOption ruleOption) throws IOException, URISyntaxException {
-        String rulesReference = getOptionValue(ruleOption);
+        String rulesReference = getOptionValue(ruleOption, DO_NORMALIZE);
 
         if ( rulesReference == null ) {
         	rulesReference = getDefaultReference(ruleOption);
@@ -643,11 +663,20 @@ public class Transformer {
         }
     }
 
+	private String relativize(String relativeRef, String baseRef) {
+		int lastSlash = baseRef.lastIndexOf('/');
+		if ( lastSlash == -1 ) {
+			return relativeRef;
+		} else {
+			return baseRef.substring(0, lastSlash + 1) + relativeRef;
+		}
+	}
+
     protected UTF8Properties loadInternalProperties(AppOption ruleOption, String resourceRef)
             throws IOException {
     	return loadInternalProperties( ruleOption.toString(), resourceRef );
     }
-    	
+
     protected UTF8Properties loadInternalProperties(String ruleOption, String resourceRef)
         throws IOException {
 
@@ -882,7 +911,7 @@ public class Transformer {
         	}
 
         	if ( !xmlMasterProperties.isEmpty() ) {
-        		boolean useInternalXml = (getOptionValue(AppOption.RULES_MASTER_XML) == null); 
+        		String masterXmlRef = getOptionValue(AppOption.RULES_MASTER_XML, DO_NORMALIZE);
 
         	    Map<String, String> xmlFileMap =
         	    	TransformProperties.convertPropertiesToMap(xmlMasterProperties); // throws IllegalArgumentException
@@ -890,12 +919,18 @@ public class Transformer {
         	    Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
         	    for ( Map.Entry<String, String> masterEntry : xmlFileMap.entrySet() ) {
         	    	String select = masterEntry.getKey();
-        	    	String substitutionsRef = masterEntry.getValue();
+        	    	String substitutionsRef = FileUtils.normalize( masterEntry.getValue() );
 
         	        UTF8Properties substitutions;
-        	    	if ( useInternalXml ) {
+        	    	if ( masterXmlRef == null ) {
         	    		substitutions = loadInternalProperties("Substitions matching [ " + select + " ]", substitutionsRef);
         	    	} else {
+        	    		String relativeSubstitutionsRef = relativize(substitutionsRef, masterXmlRef);
+        	    		if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
+        	    			dual_info(
+        	    				"Adjusted substition reference from [ %s ] to [ %s ]",
+        	    				substitutionsRef, relativeSubstitutionsRef);
+        	    		}
         	    		substitutions = loadExternalProperties("Substitions matching [ " + select + " ]", substitutionsRef);
         	    	}
         	        Map<String, String> substitutionsMap =
@@ -922,7 +957,7 @@ public class Transformer {
         	return validateRules(packageRenames, packageVersions);
     	}
 
-    	protected boolean validateRules(Map<String, String> renamesMap, 
+		protected boolean validateRules(Map<String, String> renamesMap, 
     	                                Map<String, String> versionsMap) {
 
     	    if ( (versionsMap == null) || versionsMap.isEmpty() ) {
@@ -959,7 +994,7 @@ public class Transformer {
     	}
     	      
         protected String getRuleFileName(AppOption ruleOption) {
-            String rulesFileName = getOptionValue(ruleOption);
+            String rulesFileName = getOptionValue(ruleOption, DO_NORMALIZE);
             if ( rulesFileName != null ) {
                 return rulesFileName;
             } else {

@@ -72,8 +72,8 @@ public class XmlActionImpl extends ActionImpl {
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-	    if (resourceName.toLowerCase().endsWith(getAcceptExtension())) {
-	        if (signatureRule.getXmlRuleMap(resourceName) != null) {
+	    if ( resourceName.toLowerCase().endsWith( getAcceptExtension() ) ) {
+	        if ( signatureRule.getXmlSubstitutions(resourceName) != null ) {
 	            return true;
 	        }
 	    }

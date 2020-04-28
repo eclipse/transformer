@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="TransactionManager" immediate="true">
+  <service>
+    <provide interface="javax.transaction.TransactionManager"/>
+    <provide interface="com.ibm.ws.tx.embeddable.EmbeddableWebSphereTransactionManager"/>
+    <provide interface="com.ibm.ws.Transaction.UOWCurrent"/>
+  </service>
+  <reference name="tmService" cardinality="1..1" interface="com.ibm.tx.util.TMService" bind="setTmService" unbind="unsetTmService"/>
+  <reference name="uOWEventListener" cardinality="0..1" policy="dynamic" interface="com.ibm.wsspi.tx.UOWEventListener" bind="setUOWEventListener" unbind="unsetUOWEventListener"/>
+  <implementation class="com.ibm.ws.transaction.services.TransactionManagerService"/>
+</scr:component>
