@@ -913,17 +913,17 @@ public class Transformer {
         	if ( !xmlMasterProperties.isEmpty() ) {
         		String masterXmlRef = getOptionValue(AppOption.RULES_MASTER_XML, DO_NORMALIZE);
 
-        	    Map<String, String> xmlFileMap =
+        	    Map<String, String> substitutionRefs =
         	    	TransformProperties.convertPropertiesToMap(xmlMasterProperties); // throws IllegalArgumentException
 
         	    Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
-        	    for ( Map.Entry<String, String> masterEntry : xmlFileMap.entrySet() ) {
-        	    	String select = masterEntry.getKey();
-        	    	String substitutionsRef = FileUtils.normalize( masterEntry.getValue() );
+        	    for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
+        	    	String simpleNameSelector = substitutionRefEntry.getKey();
+        	    	String substitutionsRef = FileUtils.normalize( substitutionRefEntry.getValue() );
 
         	        UTF8Properties substitutions;
         	    	if ( masterXmlRef == null ) {
-        	    		substitutions = loadInternalProperties("Substitions matching [ " + select + " ]", substitutionsRef);
+        	    		substitutions = loadInternalProperties("Substitions matching [ " + simpleNameSelector + " ]", substitutionsRef);
         	    	} else {
         	    		String relativeSubstitutionsRef = relativize(substitutionsRef, masterXmlRef);
         	    		if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
@@ -931,11 +931,11 @@ public class Transformer {
         	    				"Adjusted substition reference from [ %s ] to [ %s ]",
         	    				substitutionsRef, relativeSubstitutionsRef);
         	    		}
-        	    		substitutions = loadExternalProperties("Substitions matching [ " + select + " ]", substitutionsRef);
+        	    		substitutions = loadExternalProperties("Substitions matching [ " + simpleNameSelector + " ]", relativeSubstitutionsRef);
         	    	}
         	        Map<String, String> substitutionsMap =
         	        	TransformProperties.convertPropertiesToMap(substitutions); // throws IllegalArgumentException
-        	        masterUpdates.put(substitutionsRef, substitutionsMap);
+        	        masterUpdates.put(simpleNameSelector, substitutionsMap);
         	    }
 
         	    masterXmlUpdates = masterUpdates;
@@ -1069,12 +1069,24 @@ public class Transformer {
     			}
     		}
 
-      		info("Direct strings:");
+      		info("Java string substitutions:");
     		if ( (directStrings == null) || directStrings.isEmpty() ) {
     			info("  [ ** NONE ** ]");
     		} else {
     			for ( Map.Entry<String, String> directEntry : directStrings.entrySet() ) {
     				info( "  [ " + directEntry.getKey() + " ]: [ " + directEntry.getValue() + "]");
+    			}
+    		}
+
+    		info("XML substitutions:");
+    		if ( (masterXmlUpdates == null) || masterXmlUpdates.isEmpty() ) {
+    			info("  [ ** NONE ** ]");
+    		} else {
+    			for ( Map.Entry<String, Map<String, String>> masterXmlEntry : masterXmlUpdates.entrySet() ) {
+        			info("  Pattern [ " + masterXmlEntry.getKey() + " ]");
+        			for ( Map.Entry<String, String> substitution : masterXmlEntry.getValue().entrySet() ) {
+        				info("    [ " + substitution.getKey() + " ]: [ " + substitution.getValue() + " ]");
+        			}
     			}
     		}
     	}
