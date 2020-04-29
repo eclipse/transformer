@@ -123,7 +123,7 @@ public class ClassActionImpl extends ActionImpl {
 	 * Otherwise, use the usual path for the output class name using java class
 	 * resource placement.
 	 *
-	 * @param useLogger Logger for messaging
+	 * @param logger Logger for messaging
 	 * @param inputPath The initial path to the class.
 	 * @param inputClassName The initial class name.
 	 * @param outputClassName The final class name.
@@ -450,7 +450,7 @@ public class ClassActionImpl extends ActionImpl {
 
 		ClassFile outputClass = classBuilder.build();
 
-		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput( inputBytes.length + FileUtils.PAGE_SIZE );
+		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput( inputLength + FileUtils.PAGE_SIZE );
 		try {
 			outputClass.write(outputClassData); // throws IOException
 		} catch ( IOException e ) {
@@ -458,8 +458,8 @@ public class ClassActionImpl extends ActionImpl {
 		}
 
 		byte[] outputBytes = outputClassData.toByteArray();
-		verbose("  Class size: {}: {} -> {}", inputName, inputBytes.length, outputBytes.length);
-		
+		verbose("  Class size: {}: {} -> {}", inputName, inputLength, outputBytes.length);
+
 		return new ByteData(outputName, outputBytes, 0, outputBytes.length);
 	}
 

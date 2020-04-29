@@ -24,16 +24,12 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
   testImplementation 'org.assertj:assertj-core:3.15.0'
 
+  testImplementation 'javax.annotation:javax.annotation-api:1.3.2'
   testImplementation 'javax.inject:javax.inject:1'
+  testImplementation 'javax.servlet:javax.servlet-api:4.0.1'
 
-// Can't load jakarta.annotation.api yet,
-// since it references ca-parent:2.0.0-RC1, which doesn't yet exist
-//
-//  testImplementation 'jakarta.annotation:ca-parent:1.3.5'
-//  testImplementation 'jakarta.annotation:jakarta.annotation-api:2.0.0-RC1'
-
+  testImplementation 'jakarta.annotation:jakarta.annotation-api:2.0.0-RC1'
   testImplementation 'jakarta.inject:jakarta.inject-api:2.0.0-RC2'
-
   testImplementation 'jakarta.servlet:jakarta.servlet-api:5.0.0-M1'
   testImplementation 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:2.3.6'
   testImplementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:1.2.7'
