@@ -41,7 +41,7 @@ public class JakartaTransformer {
     public static final String DEFAULT_VERSIONS_REFERENCE = "jakarta-versions.properties";
     public static final String DEFAULT_BUNDLES_REFERENCE = "jakarta-bundles.properties";
     public static final String DEFAULT_DIRECT_REFERENCE = "jakarta-direct.properties";
-    public static final String DEFAULT_MASTER_XML_REFERENCE = "jakarta-xml.properties";
+    public static final String DEFAULT_MASTER_XML_REFERENCE = "jakarta-xml-master.properties";
 
     public static Map<Transformer.AppOption, String> getOptionDefaults() {
     	HashMap<Transformer.AppOption, String> optionDefaults =
