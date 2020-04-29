@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="UTService">
+  <reference name="uT" cardinality="1..1" interface="javax.transaction.UserTransaction" bind="setUT" unbind="unsetUT"/>
+  <implementation class="com.ibm.tx.jta.UserTransactionFactory"/>
+</component>
