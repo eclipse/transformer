@@ -16,7 +16,7 @@ configurations {
 }
 
 dependencies {
-  implementation 'biz.aQute.bnd:biz.aQute.bndlib:5.0.1'
+  implementation 'biz.aQute.bnd:biz.aQute.bnd.transform:5.1.0-SNAPSHOT'
   implementation 'commons-cli:commons-cli:1.4'
 
   runtimeOnly 'org.slf4j:slf4j-simple:1.7.29'
