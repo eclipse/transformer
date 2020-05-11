@@ -23,9 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import org.eclipse.transformer.jakarta.JakartaTransformer;
 import org.junit.jupiter.api.Test;
-
-import com.ibm.ws.jakarta.transformer.JakartaTransformer;
 
 public class TestLoad {
 
