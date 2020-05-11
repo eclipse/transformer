@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package com.ibm.ws.jakarta.transformer;
+package org.eclipse.transformer.jakarta;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -47,12 +47,11 @@ import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.ClassChangesImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
+import org.eclipse.transformer.jakarta.JakartaTransformer;
 import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import com.ibm.ws.jakarta.transformer.JakartaTransformer;
 
 import aQute.bnd.classfile.AnnotationInfo;
 import aQute.bnd.classfile.AnnotationsAttribute;

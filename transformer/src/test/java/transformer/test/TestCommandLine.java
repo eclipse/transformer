@@ -25,11 +25,9 @@ import java.io.File;
 
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
+import org.eclipse.transformer.jakarta.JakartaTransformer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import com.ibm.ws.jakarta.transformer.JakartaTransformer;
-
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.Transformer.TransformOptions;
 
