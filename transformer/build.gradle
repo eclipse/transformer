@@ -7,6 +7,7 @@ plugins {
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
+
 version = '0.1.0-SNAPSHOT'
 
 configurations {
@@ -38,7 +39,7 @@ dependencies {
 }
 
 application {
-  mainClassName = 'com.ibm.ws.jakarta.transformer.JakartaTransformer'
+  mainClassName = 'org.eclipse.transformer.jakarta.JakartaTransformer'
 }
 
 tasks.named('test') {
