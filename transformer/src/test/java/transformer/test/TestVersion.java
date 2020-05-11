@@ -1,21 +1,14 @@
-/*
+/********************************************************************************
  * Copyright (c) 2020 Contributors to the Eclipse Foundation
  *
- * See the NOTICE file(s) distributed with this work for additional
- * information regarding copyright ownership.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+ * which is available at https://www.apache.org/licenses/LICENSE-2.0.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
+ ********************************************************************************/
+
 package transformer.test;
 
 import java.text.DateFormat;
@@ -41,17 +34,14 @@ public class TestVersion {
 
 		Properties buildProperties = Transformer.loadProperties(Transformer.TRANSFORMER_BUILD_PROPERTIES);
 
-		String copyright = (String) buildProperties.get(Transformer.COPYRIGHT_PROPERTY_NAME);
 		String shortVersion = (String) buildProperties.get(Transformer.SHORT_VERSION_PROPERTY_NAME);
 		String longVersion = (String) buildProperties.get(Transformer.LONG_VERSION_PROPERTY_NAME);
 		String buildDate = (String) buildProperties.get(Transformer.BUILD_DATE_PROPERTY_NAME);
 
-		System.out.println("  Copyright     [ " + copyright + " ] [ " + Transformer.COPYRIGHT_PROPERTY_NAME + " ]");
 		System.out.println("  Short version [ " + shortVersion + " ] [ " + Transformer.SHORT_VERSION_PROPERTY_NAME + " ]");
 		System.out.println("  Long version  [ " + longVersion + " ] [ " + Transformer.LONG_VERSION_PROPERTY_NAME + " ]");
 		System.out.println("  Build date    [ " + buildDate + " ] [ " + Transformer.BUILD_DATE_PROPERTY_NAME + " ]");
 
-		Assertions.assertNotNull(copyright, "Copyright is absent");
 		Assertions.assertNotNull(shortVersion, "Short version is absent");
 		Assertions.assertNotNull(longVersion, "Long version is absent");
 		Assertions.assertNotNull(buildDate, "Build date is absent");
