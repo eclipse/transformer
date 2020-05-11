@@ -1,23 +1,10 @@
 Manifest-Version: 1.0
 Build-Identifier: SNAPSHOT-Wed Nov 20 03:21:12 GMT 2019
-Bundle-Copyright: Copyright (c) 1999, 2019 IBM Corporation and others.
-  All rights reserved. This program and the accompanying materials are
-  made available under the terms of the Eclipse Public License v1.0 wh
- ich accompanies this distribution, and is available at http://www.ecl
- ipse.org/legal/epl-v10.html.
 Bundle-Description: WAS WebContainer 8.0 with Servlet 3.0 support
-Bundle-License: Eclipse Public License; url=https://www.eclipse.org/le
- gal/epl-v10.html
 Bundle-ManifestVersion: 2
 Bundle-Name: WAS WebContainer
-Bundle-SCM: connection=scm:git:https://github.com/OpenLiberty/open-lib
- erty.git, developerConnection=scm:git:https://github.com:OpenLiberty/
- open-liberty.git, url=https://github.com/OpenLiberty/open-liberty/tre
- e/master
 Bundle-SymbolicName: com.ibm.ws.webcontainer
-Bundle-Vendor: IBM
 Bundle-Version: 1.1.35.cl191220191120-0300
-Created-By: 11.0.2 (Eclipse OpenJ9)
 DynamicImport-Package: com.ibm.websphere.monitor.meters;version="1.0.0
  ",com.ibm.websphere.monitor.jmx;version="1.0.0",com.ibm.ws.jsp.webcon
  tainerext,com.ibm.wsspi.request.probe.bci,com.ibm.wsspi.probeExtensio
@@ -462,7 +449,3 @@ Service-Component: OSGI-INF/com.ibm.ws.webcontainer.vhostmgr.xml,OSGI-
  GI-INF/com.ibm.ws.webcontainer.osgi.session.SessionHelper.xml,OSGI-IN
  F/com.ibm.ws.webcontainer.osgi.webapp.WebAppInjectionClassListAdapter
  .xml
-Tool: Bnd-4.1.0.201810181252
-WLP-ServerName: IBM WebSphere Liberty
-WLP-ServerVersion: 19.0.0.12
-

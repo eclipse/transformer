@@ -319,7 +319,7 @@ public class SignatureRuleImpl implements SignatureRule {
 //                           + " *************");
 
         int textLength = text.length();
-              
+
         if ( matchStart > 0 ) {
             char charBeforeMatch = text.charAt(matchStart - 1);
             if ( Character.isJavaIdentifierPart(charBeforeMatch) || (charBeforeMatch == '.')) { 
@@ -331,13 +331,13 @@ public class SignatureRuleImpl implements SignatureRule {
         if ( textLength > matchEnd ) {
 
             char charAfterMatch = text.charAt(matchEnd);
-                        
+
             // Check the next character can also be part of a package name then 
             // we are looking at a larger package name, and thus not a match.
             if ( Character.isJavaIdentifierPart(charAfterMatch) ) {
                 return false;
             }
-            
+
             // If the next char is dot, check the character after the dot.  Assume an upper case letter indicates the start of a 
             // class name and thus the end of the package name which indicates a match. ( This means this doesn't work 
             // for package names that do not follow the convention of using lower case characters ).            

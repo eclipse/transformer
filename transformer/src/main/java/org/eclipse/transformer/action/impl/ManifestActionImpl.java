@@ -181,6 +181,8 @@ public class ManifestActionImpl extends ActionImpl {
 	    useNames.add("Import-Package");
 	    useNames.add("Subsystem-Content");
 	    useNames.add("IBM-API-Package");
+	    useNames.add("Provide-Capability");
+	    useNames.add("Require-Capability");
 	    SELECT_ATTRIBUTES = useNames;
 	}
 
@@ -349,11 +351,17 @@ public class ManifestActionImpl extends ActionImpl {
 				String head = text.substring(0, matchStart);
 				String tail = text.substring(matchStart + keyLen);
 
-                int tailLenBeforeReplaceVersion = tail.length();			
-				tail = replacePackageVersion(tail, getPackageVersions().get(value));
-				int tailLenAfterReplaceVersion = tail.length();
+				int tailLenBeforeReplaceVersion = tail.length();			
+
+				String newVersion = getPackageVersions().get(value);
+				if ( newVersion != null ) {
+					tail = replacePackageVersion(tail, newVersion);
+				} else {
+					debug("replacePackages [ {} ]: [ {} -> {} ]; leaving version", initialText, key, value);
+				}
 
 				text = head + value + tail;
+				int tailLenAfterReplaceVersion = tail.length();					
 
 				lastMatchEnd = matchStart + valueLen;
 
@@ -661,7 +669,7 @@ public class ManifestActionImpl extends ActionImpl {
 //	Subsystem-Type: osgi.subsystem.feature
 //	Subsystem-Vendor: IBM Corp.
 //	Subsystem-Version: 1.0.0
-	
+
 	public boolean transformBundleIdentity(
 		String inputName,
 		Attributes initialMainAttributes,

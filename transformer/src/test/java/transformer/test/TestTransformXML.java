@@ -35,7 +35,7 @@ public class TestTransformXML extends CaptureTest {
 	//
 
 	public static final String TEST_DATA_PREFIX =
-		"transformer/test/data";
+		"transformer/test/data/transaction";
 
 	public static final String UTSERVICE_XML_SIMPLE_NAME =
 		"UTService.xml";
