@@ -36,9 +36,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class XmlActionImpl extends ActionImpl {
+public class TextActionImpl extends ActionImpl {
 
-	public XmlActionImpl(
+	public TextActionImpl(
 		Logger logger, boolean isTerse, boolean isVerbose,
 		InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
@@ -50,62 +50,31 @@ public class XmlActionImpl extends ActionImpl {
 
 	@Override
 	public String getName() {
-		return "XML Action";
+		return "Text Action";
 	}
 
 	@Override
 	public ActionType getActionType() {
-		// return ActionType.XML;
-		return null; // THis action is disabled.
+		return ActionType.TEXT;
 	}
 
 	@Override
 	public String getAcceptExtension() {
-		return ".xml";
+		throw new UnsupportedOperationException("Text does not use this API");
 	}
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-	    if ( resourceName.toLowerCase().endsWith( getAcceptExtension() ) ) {
-	        if ( signatureRule.getTextSubstitutions(resourceName) != null ) {
-	            return true;
-	        }
+		if (signatureRule.getTextSubstitutions(resourceName) != null) {
+			return true;
 	    }
 	    return false;
 	}
 
 	//
 
-    static final boolean XML_AS_PLAIN_TEXT;
-    static {
-        String value = System.getProperty("XML_AS_PLAIN_TEXT", "true");
-        XML_AS_PLAIN_TEXT = Boolean.valueOf(value);
-    }
-
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputCount) throws TransformException {
-	    if (XML_AS_PLAIN_TEXT ) {
-	        return applyAsPlainText(inputName, inputBytes, inputCount);
-	    }
-
-		setResourceNames(inputName, inputName);
-
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputCount);
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputCount);
-
-		transformUsingSaxParser(inputName, inputStream, outputStream);
-
-		if ( !hasNonResourceNameChanges() ) {
-			return null;
-
-		} else {
-			byte[] outputBytes = outputStream.toByteArray();
-			return new ByteData(inputName, outputBytes, 0, outputBytes.length);
-		}
-	}
-
-	@SuppressWarnings("unused")
-	public ByteData applyAsPlainText(String inputName, byte[] inputBytes, int inputLength)
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength)
 	    throws TransformException {
 
 	    String outputName = inputName;
@@ -431,10 +400,10 @@ public class XmlActionImpl extends ActionImpl {
 		    String initialText = new String(chars, start, length);
 		    debug("characters: initialText["+initialText+"]");
 
-		    String finalText = XmlActionImpl.this.replaceText(inputName, initialText);
+		    String finalText = TextActionImpl.this.replaceText(inputName, initialText);
 		    if ( finalText == null ) {
 		        finalText = initialText;
-		        XmlActionImpl.this.addReplacement();
+		        TextActionImpl.this.addReplacement();
 		    }
 
 		    debug("characters:  finalText["+ finalText+"]");

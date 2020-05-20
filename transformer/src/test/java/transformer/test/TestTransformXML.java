@@ -23,7 +23,7 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.action.impl.XmlActionImpl;
+import org.eclipse.transformer.action.impl.TextActionImpl;
 import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -70,7 +70,7 @@ public class TestTransformXML extends CaptureTest {
 	//
 
 	public Map<String, Map<String, String>> masterXmlUpdates;
-	
+
 	public Map<String, Map<String, String>> getMasterXmlUpdates() {
 		if ( masterXmlUpdates == null ) {
 			Map<String, Map<String, String>> useXmlUpdates = new HashMap<String, Map<String, String>>(2);
@@ -85,19 +85,19 @@ public class TestTransformXML extends CaptureTest {
 
 			masterXmlUpdates = useXmlUpdates;
 		}
-		
+
 		return masterXmlUpdates;
 	}
 
 	//
 
-	public XmlActionImpl xmlAction;
+	public TextActionImpl textAction;
 
-	public XmlActionImpl getXmlAction() {
-		if ( xmlAction == null ) {
+	public TextActionImpl getTextAction() {
+		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			xmlAction = new XmlActionImpl(
+			textAction = new TextActionImpl(
 				useLogger, false, false,
 				new InputBufferImpl(),
 				new SelectionRuleImpl( useLogger, getIncludes(), getExcludes() ),
@@ -109,7 +109,7 @@ public class TestTransformXML extends CaptureTest {
 					null) );
 		}
 
-		return xmlAction;
+		return textAction;
 	}
 
 	//
@@ -117,7 +117,7 @@ public class TestTransformXML extends CaptureTest {
 	protected static final class Occurrences {
 		public final String tag;
 		public final int count;
-		
+
 		public Occurrences(String tag, int count) {
 			this.tag = tag;
 			this.count = count;
@@ -130,7 +130,7 @@ public class TestTransformXML extends CaptureTest {
 	};
 
 	public static final Occurrences[] UT_FINAL_OCCURRENCES = {
-		new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 0),		
+		new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 0),
 		new Occurrences(JAKARTA_TRANSACTION_USER_TRANSACTION, 1),
 	};
 
@@ -140,7 +140,7 @@ public class TestTransformXML extends CaptureTest {
 	};
 
 	public static final Occurrences[] TM_FINAL_OCCURRENCES = {
-		new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 0),		
+		new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 0),
 		new Occurrences(JAKARTA_TRANSACTION_TRANSACTION_MANAGER, 1),
 	};
 
@@ -165,18 +165,19 @@ public class TestTransformXML extends CaptureTest {
 		throws TransformException, IOException {
 
 		System.out.println("Transform [ " + resourceRef + " ] ...");
-		
+
 		List<String> initialLines;
 		try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
 			initialLines = display(resourceRef, resourceInput);
 		}
 
-		XmlActionImpl xmlAction = getXmlAction();
-		System.out.println("Transform [ " + resourceRef + " ] using [ " + xmlAction.getName() + " ]");
+		TextActionImpl textAction = getTextAction();
+		System.out.println("Transform [ " + resourceRef + " ] using [ " + textAction.getName() + " ]");
 
 		List<String> finalLines;
 		try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
-			InputStreamData xmlOutput = xmlAction.apply(resourceRef, resourceInput); // throws JakartaTransformException
+			InputStreamData xmlOutput = textAction.apply(resourceRef, resourceInput); // throws
+																						// JakartaTransformException
 			finalLines = display(resourceRef, xmlOutput.stream);
 		}
 
@@ -201,11 +202,11 @@ public class TestTransformXML extends CaptureTest {
 
 			if ( expected != actual ) {
 				Assertions.assertEquals(
-					expected, actual, 
+					expected, actual,
 					"Resource [ " + resourceRef + " ] [ " + caseTag + " ] Value [ " + occurrenceTag + " ] Expected [ " + expected + " ] Actual [ " + actual + " ]");
 			}
 		}
-		
+
 		System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ... done");
 	}
 
@@ -213,13 +214,13 @@ public class TestTransformXML extends CaptureTest {
 
 	@Test
 	public void testTransform_UTServiceXml() throws TransformException, IOException {
-		testTransform(UTSERVICE_XML_PATH, UT_INITIAL_OCCURRENCES, UT_FINAL_OCCURRENCES); 
+		testTransform(UTSERVICE_XML_PATH, UT_INITIAL_OCCURRENCES, UT_FINAL_OCCURRENCES);
 		// throws JakartaTransformException, IOException
 	}
-	
+
 	@Test
 	public void testTransform_TransactionManagerXml() throws TransformException, IOException {
-		testTransform(TRANSACTION_MANAGER_XML_PATH, TM_INITIAL_OCCURRENCES, TM_FINAL_OCCURRENCES); 
+		testTransform(TRANSACTION_MANAGER_XML_PATH, TM_INITIAL_OCCURRENCES, TM_FINAL_OCCURRENCES);
 		// throws JakartaTransformException, IOException
 	}
 }
