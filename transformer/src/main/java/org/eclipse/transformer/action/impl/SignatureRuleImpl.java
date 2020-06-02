@@ -344,10 +344,10 @@ public class SignatureRuleImpl implements SignatureRule {
             // If lower case, then it indicates we are looking at a larger package name, and thus not a match.
             // If the character after the dot is a number, also assume the number is a continuation of the package name.
             if ( !matchSubpackages ) {
-                if (charAfterMatch == '.') {
+                if (charAfterMatch == '.' || charAfterMatch == '/') {
                     if ( textLength > (matchEnd+1) )  {
-                        char charAfterDot = text.charAt(matchEnd+1);
-                        if ( Character.isLowerCase(charAfterDot) || Character.isDigit(charAfterDot) ) {
+                        char charAfterSeparator = text.charAt(matchEnd + 1);
+                        if (Character.isLowerCase(charAfterSeparator) || Character.isDigit(charAfterSeparator)) {
                             return false;
                         }
                     }
