@@ -47,6 +47,7 @@ import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.NullActionImpl;
+import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.RarActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
@@ -1265,6 +1266,8 @@ public class Transformer {
                     useRootAction.addUsing( ManifestActionImpl::newManifestAction );
                 ManifestActionImpl featureAction =
                     useRootAction.addUsing( ManifestActionImpl::newFeatureAction );
+                PropertiesActionImpl propertiesAction
+                        = useRootAction.addUsing(PropertiesActionImpl::new);
 
                 JarActionImpl jarAction =
                     useRootAction.addUsing( JarActionImpl::new );
@@ -1307,6 +1310,7 @@ public class Transformer {
                 jarAction.addAction(manifestAction);
                 jarAction.addAction(featureAction);
                 jarAction.addAction(textAction);
+                jarAction.addAction(propertiesAction);
                 jarAction.addAction(nullAction);
 
                 warAction.addAction(classAction);
