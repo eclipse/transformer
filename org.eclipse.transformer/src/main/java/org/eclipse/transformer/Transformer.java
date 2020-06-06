@@ -25,17 +25,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import org.slf4j.Logger;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Option.Builder;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.Option.Builder;
 import org.eclipse.transformer.TransformerLoggerFactory.LoggerProperty;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
@@ -58,6 +56,7 @@ import org.eclipse.transformer.action.impl.WarActionImpl;
 // import org.eclipse.transformer.action.impl.XmlActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.FileUtils;
+import org.slf4j.Logger;
 
 import aQute.lib.io.IO;
 import aQute.lib.utf8properties.UTF8Properties;
@@ -236,7 +235,7 @@ public class Transformer {
     public static final String USAGE_SHORT_TAG = "-u";
     public static final String USAGE_LONG_TAG = "--usage";
 
-    public static enum AppOption {
+    public enum AppOption {
         USAGE  ("u", "usage", "Display usage",
             !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
             !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
@@ -328,7 +327,7 @@ public class Transformer {
         public String getShortTag() {
             return getSettings().getShortTag();
         }
-        
+
         public String getLongTag() {
             return getSettings().getLongTag();
         }
@@ -391,7 +390,7 @@ public class Transformer {
             useProperties = Transformer.loadProperties(TRANSFORMER_BUILD_PROPERTIES);
         } catch ( IOException e ) {
             useProperties = new Properties();
-            this.error("Failed to load build properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]", e);
+			this.error("Failed to load properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]", e);
         }
         this.buildProperties = useProperties;
 
@@ -400,7 +399,7 @@ public class Transformer {
 
     //
 
-    public static final String[] COPYRIGHT_LINES = {
+	private static final String[]	COPYRIGHT_LINES					= {
          "Copyright (c) 2020 Contributors to the Eclipse Foundation",
          "This program and the accompanying materials are made available under the",
          "terms of the Eclipse Public License 2.0 which is available at",
@@ -410,11 +409,9 @@ public class Transformer {
          ""
     };
 
-    public static final String SHORT_VERSION_PROPERTY_NAME = "SHORT_VERSION";
-    public static final String LONG_VERSION_PROPERTY_NAME = "LONG_VERSION";
-    public static final String BUILD_DATE_PROPERTY_NAME = "BUILD_DATE";
+	private static final String		SHORT_VERSION_PROPERTY_NAME		= "version";
 
-    public static final String TRANSFORMER_BUILD_PROPERTIES = "org/eclipse/transformer/build.properties";
+	private static final String		TRANSFORMER_BUILD_PROPERTIES	= "META-INF/maven/org.eclipse.transformer/org.eclipse.transformer/pom.properties";
 
     private final Properties buildProperties;
 
@@ -423,7 +420,7 @@ public class Transformer {
     }
 
     // TODO: Usual command line usage puts SysOut and SysErr together, which results
-    //       in the build properties writing out twice.
+	// in the properties writing out twice.
 
     private void preInitDisplay(String message) {
         PrintStream useSysOut = getSystemOut();
@@ -444,9 +441,8 @@ public class Transformer {
     private void displayBuildProperties() {
         Properties useBuildProperties = getBuildProperties();
 
-        preInitDisplay( getClass().getName() ); 
+        preInitDisplay( getClass().getName() );
         preInitDisplay( "  Version [ " + useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME) + " ]" );
-        preInitDisplay( "  Build [ " + useBuildProperties.getProperty(BUILD_DATE_PROPERTY_NAME) + " ]" );
         preInitDisplay( "" );
     }
 
@@ -459,7 +455,7 @@ public class Transformer {
     }
 
     private final PrintStream sysErr;
-    
+
     protected PrintStream getSystemErr() {
         return sysErr;
     }
@@ -477,7 +473,7 @@ public class Transformer {
 
     public void outputPrint(String message, Object... parms) {
         systemPrint( getSystemOut(), message, parms );
-    }    
+    }
 
     //
 
@@ -501,7 +497,7 @@ public class Transformer {
 
     /**
      * Set default resource references for the several 'RULE" options.
-     * 
+     *
      * Values are located relative to the option loader class.
      *
      * @param optionLoader The class relative to which to load the default resources.
@@ -515,13 +511,13 @@ public class Transformer {
     public Class<?> getRuleLoader() {
         return ruleLoader;
     }
-    
+
     public Map<AppOption, String> getRuleDefaultRefs() {
         return ruleDefaultRefs;
     }
 
     public String getDefaultReference(AppOption appOption) {
-        Map<AppOption, String> useDefaultRefs = getRuleDefaultRefs();        
+        Map<AppOption, String> useDefaultRefs = getRuleDefaultRefs();
         return ( (useDefaultRefs == null) ? null : getRuleDefaultRefs().get(appOption) );
     }
 
@@ -547,7 +543,7 @@ public class Transformer {
         if ( useArgs != null ) {
             if ( useArgs.length > 0 ) {
                 return useArgs[0]; // First argument
-            } 
+            }
         }
         return null;
     }
@@ -557,7 +553,7 @@ public class Transformer {
         if ( useArgs != null ) {
             if ( useArgs.length > 1 ) {
                 return useArgs[1]; // Second argument
-            } 
+            }
         }
         return null;
     }
@@ -652,7 +648,7 @@ public class Transformer {
 
     /**
      * Load properties for the specified rule option.
-     * 
+     *
      * Answer an empty collection if the rule option was not provided.
      *
      * Options loading tries {@link #getOptionValue(AppOption)}, then
@@ -866,13 +862,13 @@ public class Transformer {
         public String getInputFileName() {
             return inputName;
         }
-        
+
         public String getOutputFileName() {
             return outputName;
         }
 
         private InputBufferImpl buffer;
-        
+
         protected InputBufferImpl getBuffer() {
             if ( buffer == null ) {
                 buffer = new InputBufferImpl();
@@ -977,7 +973,7 @@ public class Transformer {
             return validateRules(packageRenames, packageVersions);
         }
 
-        protected boolean validateRules(Map<String, String> renamesMap, 
+        protected boolean validateRules(Map<String, String> renamesMap,
                                         Map<String, String> versionsMap) {
 
             if ( (versionsMap == null) || versionsMap.isEmpty() ) {
@@ -1012,7 +1008,7 @@ public class Transformer {
 
             return true;
         }
-              
+
         protected String getRuleFileName(AppOption ruleOption) {
             String rulesFileName = getOptionValue(ruleOption, DO_NORMALIZE);
             if ( rulesFileName != null ) {
@@ -1126,8 +1122,8 @@ public class Transformer {
             if ( signatureRules == null ) {
                 signatureRules =  new SignatureRuleImpl(
                     logger,
-                    packageRenames, 
-                    packageVersions, 
+                    packageRenames,
+                    packageVersions,
                     bundleUpdates,
                     masterTextUpdates,
                     directStrings);
@@ -1165,7 +1161,7 @@ public class Transformer {
 //      String inputFileName = getInputFileName();
 //      int indexOfLastSlash = inputFileName.lastIndexOf('/');
 //      if (indexOfLastSlash == -1 ) {
-//          return OUTPUT_PREFIX + inputFileName; 
+//          return OUTPUT_PREFIX + inputFileName;
 //      } else {
 //          return inputFileName.substring(0, indexOfLastSlash+1) + OUTPUT_PREFIX + inputFileName.substring(indexOfLastSlash+1);
 //      }
@@ -1183,8 +1179,8 @@ public class Transformer {
                 if ( indexOfLastSlash == -1 ) {
                     useOutputName = OUTPUT_PREFIX + inputName;
                 } else {
-                    String inputPrefix = inputName.substring( 0, indexOfLastSlash + 1 ); 
-                    String inputSuffix = inputName.substring( indexOfLastSlash + 1 ); 
+                    String inputPrefix = inputName.substring( 0, indexOfLastSlash + 1 );
+                    String inputSuffix = inputName.substring( indexOfLastSlash + 1 );
                     useOutputName = inputPrefix + OUTPUT_PREFIX + inputSuffix;
                 }
             }
@@ -1194,7 +1190,7 @@ public class Transformer {
 
             boolean putIntoDirectory = ( inputFile.isFile() && useOutputFile.isDirectory() );
 
-            if ( putIntoDirectory ) { 
+            if ( putIntoDirectory ) {
                 useOutputName = useOutputName + '/' + inputName;
                 if ( isVerbose ) {
                     dual_info("Output generated using input name and output directory [ %s ]", useOutputName);
@@ -1403,7 +1399,7 @@ public class Transformer {
                 acceptedAction.getLastActiveChanges().display( getLogger(), inputPath, outputPath );
             }
         }
-        
+
         public Changes getLastActiveChanges() {
             if (acceptedAction != null) {
                 return acceptedAction.getLastActiveChanges();
@@ -1442,7 +1438,7 @@ public class Transformer {
         }
         detectLogFile();
 
-        if ( !options.setInput() ) { 
+        if ( !options.setInput() ) {
             return TRANSFORM_ERROR_RC;
         }
 
