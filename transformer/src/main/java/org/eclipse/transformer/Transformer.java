@@ -61,6 +61,7 @@ import org.eclipse.transformer.util.FileUtils;
 import aQute.lib.io.IO;
 import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
+import org.eclipse.transformer.action.Changes;
 
 public class Transformer {
     // TODO: Make this an enum?
@@ -486,6 +487,12 @@ public class Transformer {
 
     private String[] args;
     private CommandLine parsedArgs;
+
+    private Changes lastActiveChanges;
+
+    public Changes getLastActiveChanges() {
+        return lastActiveChanges;
+    }
 
     /**
      * Set default resource references for the several 'RULE" options.
@@ -1389,6 +1396,13 @@ public class Transformer {
                 acceptedAction.getLastActiveChanges().display( getLogger(), inputPath, outputPath );
             }
         }
+        
+        public Changes getLastActiveChanges() {
+            if (acceptedAction != null) {
+                return acceptedAction.getLastActiveChanges();
+            }
+            return null;
+        }
     }
 
     public int run() {
@@ -1451,6 +1465,7 @@ public class Transformer {
 
         try {
             options.transform(); // throws JakartaTransformException
+            lastActiveChanges = options.getLastActiveChanges();
         } catch ( TransformException e ) {
             dual_error("Transform failure:", e);
             return TRANSFORM_ERROR_RC;
