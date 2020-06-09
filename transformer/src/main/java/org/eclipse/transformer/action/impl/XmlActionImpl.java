@@ -48,13 +48,15 @@ public class XmlActionImpl extends ActionImpl {
 
 	//
 
+	@Override
 	public String getName() {
 		return "XML Action";
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ActionType.XML;
+		// return ActionType.XML;
+		return null; // THis action is disabled.
 	}
 
 	@Override
@@ -65,15 +67,15 @@ public class XmlActionImpl extends ActionImpl {
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 	    if ( resourceName.toLowerCase().endsWith( getAcceptExtension() ) ) {
-	        if ( signatureRule.getXmlSubstitutions(resourceName) != null ) {
+	        if ( signatureRule.getTextSubstitutions(resourceName) != null ) {
 	            return true;
 	        }
 	    }
 	    return false;
 	}
-	
+
 	//
-	
+
     static final boolean XML_AS_PLAIN_TEXT;
     static {
         String value = System.getProperty("XML_AS_PLAIN_TEXT", "true");
@@ -103,7 +105,7 @@ public class XmlActionImpl extends ActionImpl {
 	}
 
 	@SuppressWarnings("unused")
-	public ByteData applyAsPlainText(String inputName, byte[] inputBytes, int inputLength) 
+	public ByteData applyAsPlainText(String inputName, byte[] inputBytes, int inputLength)
 	    throws TransformException {
 
 	    String outputName = inputName;
@@ -201,7 +203,7 @@ public class XmlActionImpl extends ActionImpl {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}
 	}
-	
+
 	public void transformUsingSaxParser(String inputName, InputStream input, OutputStream output) throws TransformException {
 	    InputSource inputSource = new InputSource(input);
 	    inputSource.setEncoding("UTF-8");
@@ -238,7 +240,7 @@ public class XmlActionImpl extends ActionImpl {
 	        writer.write('\n');
 	    }
 	}
-	
+
 	//
 
 	public class XMLContentHandler extends DefaultHandler {
@@ -256,7 +258,7 @@ public class XmlActionImpl extends ActionImpl {
 		//
 
 		private final String inputName;
-		
+
 		private final String publicId;
 		private final String systemId;
 		private Charset charset;
@@ -288,7 +290,7 @@ public class XmlActionImpl extends ActionImpl {
 		public void write(String text) throws SAXException {
 			write( text, getCharset() );
 		}
-		
+
 		public void writeUTF8(String text) throws SAXException {
 			write( text, getUTF8() );
 		}
@@ -328,7 +330,7 @@ public class XmlActionImpl extends ActionImpl {
 		    debug("appending [" + text + "]");
 			lineBuilder.append(text);
 		}
-		
+
 		protected void appendLine(String text) {
 		    debug("appendline[" + text + "]");
 			lineBuilder.append(text);
@@ -398,7 +400,7 @@ public class XmlActionImpl extends ActionImpl {
 		      debug("startElement: uri["+uri+"] localName["+localName+"] qName[" +qName+"] attributes[" +attributes+"]");
 		      append('<' + localName);
 		      append(uri);
-		      
+
 		      if ( attributes != null ) {
 		         int numberAttributes = attributes.getLength();
 		         for (int i = 0; i < numberAttributes; i++) {
@@ -449,7 +451,7 @@ public class XmlActionImpl extends ActionImpl {
 //			super.skippedEntity(name);
 //		}
 	}
-	
+
 //	protected void debug(String s) {
 //	    System.out.println(s);
 //	}

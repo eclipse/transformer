@@ -17,7 +17,8 @@ public enum ActionType {
 	CLASS,
 	MANIFEST, FEATURE,
 	SERVICE_LOADER_CONFIG,
-	XML,
+	TEXT,
+	// XML,
 
 	ZIP, JAR, WAR, RAR, EAR,
 	JAVA,

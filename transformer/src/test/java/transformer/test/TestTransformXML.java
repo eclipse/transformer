@@ -23,7 +23,7 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.action.impl.XmlActionImpl;
+import org.eclipse.transformer.action.impl.TextActionImpl;
 import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -32,194 +32,193 @@ import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformXML extends CaptureTest {
 
-	//
+    public static final String TEST_DATA_PREFIX =
+        "transformer/test/data/transaction";
 
-	public static final String TEST_DATA_PREFIX =
-		"transformer/test/data/transaction";
+    public static final String UTSERVICE_XML_SIMPLE_NAME =
+        "UTService.xml";
+    public static final String UTSERVICE_XML_PATH =
+        TEST_DATA_PREFIX + '/' + "OSGI-INF" + '/' + UTSERVICE_XML_SIMPLE_NAME;
 
-	public static final String UTSERVICE_XML_SIMPLE_NAME =
-		"UTService.xml";
-	public static final String UTSERVICE_XML_PATH =
-		TEST_DATA_PREFIX + '/' + "OSGI-INF" + '/' + UTSERVICE_XML_SIMPLE_NAME;
+    public static final String JAVAX_TRANSACTION_USER_TRANACTION =
+        "javax.transaction.UserTransaction";
+    public static final String JAKARTA_TRANSACTION_USER_TRANSACTION =
+        "jakarta.transaction.UserTransaction";
 
-	public static final String JAVAX_TRANSACTION_USER_TRANACTION =
-		"javax.transaction.UserTransaction";
-	public static final String JAKARTA_TRANSACTION_USER_TRANSACTION =
-		"jakarta.transaction.UserTransaction";
+    public static final String TRANSACTION_MANAGER_XML_SIMPLE_NAME =
+        "TransactionManager.xml";
+    public static final String TRANSACTION_MANAGER_XML_PATH =
+        TEST_DATA_PREFIX + '/' + "OSGI-INF" + '/' + TRANSACTION_MANAGER_XML_SIMPLE_NAME;
 
-	public static final String TRANSACTION_MANAGER_XML_SIMPLE_NAME =
-		"TransactionManager.xml";
-	public static final String TRANSACTION_MANAGER_XML_PATH =
-		TEST_DATA_PREFIX + '/' + "OSGI-INF" + '/' + TRANSACTION_MANAGER_XML_SIMPLE_NAME;
+    public static final String JAVAX_TRANSACTION_TRANSACTION_MANAGER =
+        "javax.transaction.TransactionManager";
+    public static final String JAKARTA_TRANSACTION_TRANSACTION_MANAGER =
+        "jakarta.transaction.TransactionManager";
 
-	public static final String JAVAX_TRANSACTION_TRANSACTION_MANAGER =
-		"javax.transaction.TransactionManager";
-	public static final String JAKARTA_TRANSACTION_TRANSACTION_MANAGER =
-		"jakarta.transaction.TransactionManager";
+    //
 
-	//
+    public Set<String> getIncludes() {
+        return Collections.emptySet();
+    }
 
-	public Set<String> getIncludes() {
-		return Collections.emptySet();
-	}
+    public Set<String> getExcludes() {
+        return Collections.emptySet();
+    }
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
-	}
+    //
 
-	//
+    public Map<String, Map<String, String>> masterXmlUpdates;
 
-	public Map<String, Map<String, String>> masterXmlUpdates;
-	
-	public Map<String, Map<String, String>> getMasterXmlUpdates() {
-		if ( masterXmlUpdates == null ) {
-			Map<String, Map<String, String>> useXmlUpdates = new HashMap<String, Map<String, String>>(2);
+    public Map<String, Map<String, String>> getMasterXmlUpdates() {
+        if ( masterXmlUpdates == null ) {
+            Map<String, Map<String, String>> useXmlUpdates = new HashMap<String, Map<String, String>>(2);
 
-			Map<String, String> utServiceUpdates = new HashMap<String, String>(1);
-			utServiceUpdates.put(JAVAX_TRANSACTION_USER_TRANACTION, JAKARTA_TRANSACTION_USER_TRANSACTION);
-			useXmlUpdates.put(UTSERVICE_XML_SIMPLE_NAME, utServiceUpdates);
+            Map<String, String> utServiceUpdates = new HashMap<String, String>(1);
+            utServiceUpdates.put(JAVAX_TRANSACTION_USER_TRANACTION, JAKARTA_TRANSACTION_USER_TRANSACTION);
+            useXmlUpdates.put(UTSERVICE_XML_SIMPLE_NAME, utServiceUpdates);
 
-			Map<String, String> tmServiceUpdates = new HashMap<String, String>(1);
-			tmServiceUpdates.put(JAVAX_TRANSACTION_TRANSACTION_MANAGER, JAKARTA_TRANSACTION_TRANSACTION_MANAGER);
-			useXmlUpdates.put(TRANSACTION_MANAGER_XML_SIMPLE_NAME, tmServiceUpdates);
+            Map<String, String> tmServiceUpdates = new HashMap<String, String>(1);
+            tmServiceUpdates.put(JAVAX_TRANSACTION_TRANSACTION_MANAGER, JAKARTA_TRANSACTION_TRANSACTION_MANAGER);
+            useXmlUpdates.put(TRANSACTION_MANAGER_XML_SIMPLE_NAME, tmServiceUpdates);
 
-			masterXmlUpdates = useXmlUpdates;
-		}
-		
-		return masterXmlUpdates;
-	}
+            masterXmlUpdates = useXmlUpdates;
+        }
 
-	//
+        return masterXmlUpdates;
+    }
 
-	public XmlActionImpl xmlAction;
+    //
 
-	public XmlActionImpl getXmlAction() {
-		if ( xmlAction == null ) {
-			CaptureLoggerImpl useLogger = getCaptureLogger();
+    public TextActionImpl textAction;
 
-			xmlAction = new XmlActionImpl(
-				useLogger, false, false,
-				new InputBufferImpl(),
-				new SelectionRuleImpl( useLogger, getIncludes(), getExcludes() ),
-				new SignatureRuleImpl(
-					useLogger,
-					null, null,
-					null,
-					getMasterXmlUpdates(),
-					null) );
-		}
+    public TextActionImpl getTextAction() {
+        if (textAction == null) {
+            CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		return xmlAction;
-	}
+            textAction = new TextActionImpl(
+                useLogger, false, false,
+                new InputBufferImpl(),
+                new SelectionRuleImpl( useLogger, getIncludes(), getExcludes() ),
+                new SignatureRuleImpl(
+                    useLogger,
+                    null, null,
+                    null,
+                    getMasterXmlUpdates(),
+                    null) );
+        }
 
-	//
+        return textAction;
+    }
 
-	protected static final class Occurrences {
-		public final String tag;
-		public final int count;
-		
-		public Occurrences(String tag, int count) {
-			this.tag = tag;
-			this.count = count;
-		}
-	}
+    //
 
-	public static final Occurrences[] UT_INITIAL_OCCURRENCES= {
-		new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 1),
-		new Occurrences(JAKARTA_TRANSACTION_USER_TRANSACTION, 0),
-	};
+    protected static final class Occurrences {
+        public final String tag;
+        public final int count;
 
-	public static final Occurrences[] UT_FINAL_OCCURRENCES = {
-		new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 0),		
-		new Occurrences(JAKARTA_TRANSACTION_USER_TRANSACTION, 1),
-	};
+        public Occurrences(String tag, int count) {
+            this.tag = tag;
+            this.count = count;
+        }
+    }
 
-	public static final Occurrences[] TM_INITIAL_OCCURRENCES= {
-		new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 1),
-		new Occurrences(JAKARTA_TRANSACTION_TRANSACTION_MANAGER, 0),
-	};
+    public static final Occurrences[] UT_INITIAL_OCCURRENCES= {
+        new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 1),
+        new Occurrences(JAKARTA_TRANSACTION_USER_TRANSACTION, 0),
+    };
 
-	public static final Occurrences[] TM_FINAL_OCCURRENCES = {
-		new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 0),		
-		new Occurrences(JAKARTA_TRANSACTION_TRANSACTION_MANAGER, 1),
-	};
+    public static final Occurrences[] UT_FINAL_OCCURRENCES = {
+        new Occurrences(JAVAX_TRANSACTION_USER_TRANACTION, 0),
+        new Occurrences(JAKARTA_TRANSACTION_USER_TRANSACTION, 1),
+    };
 
-	//
+    public static final Occurrences[] TM_INITIAL_OCCURRENCES= {
+        new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 1),
+        new Occurrences(JAKARTA_TRANSACTION_TRANSACTION_MANAGER, 0),
+    };
 
-	public List<String> display(String resourceRef, InputStream resourceStream) throws IOException {
-		System.out.println("Resource [ " + resourceRef + " ]");
-		List<String> lines = TestUtils.loadLines(resourceStream); // throws IOException
+    public static final Occurrences[] TM_FINAL_OCCURRENCES = {
+        new Occurrences(JAVAX_TRANSACTION_TRANSACTION_MANAGER, 0),
+        new Occurrences(JAKARTA_TRANSACTION_TRANSACTION_MANAGER, 1),
+    };
 
-		int numLines = lines.size();
-		for ( int lineNo = 0; lineNo < numLines; lineNo++ ) {
-			System.out.printf( "[ %3d ] [ %s ]\n", lineNo, lines.get(lineNo) );
-		}
+    //
 
-		return lines;
-	}
+    public List<String> display(String resourceRef, InputStream resourceStream) throws IOException {
+        System.out.println("Resource [ " + resourceRef + " ]");
+        List<String> lines = TestUtils.loadLines(resourceStream); // throws IOException
 
-	public void testTransform(
-		String resourceRef,
-		Occurrences[] initialOccurrences,
-		Occurrences[] finalOccurrences)
-		throws TransformException, IOException {
+        int numLines = lines.size();
+        for ( int lineNo = 0; lineNo < numLines; lineNo++ ) {
+            System.out.printf( "[ %3d ] [ %s ]\n", lineNo, lines.get(lineNo) );
+        }
 
-		System.out.println("Transform [ " + resourceRef + " ] ...");
-		
-		List<String> initialLines;
-		try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
-			initialLines = display(resourceRef, resourceInput);
-		}
+        return lines;
+    }
 
-		XmlActionImpl xmlAction = getXmlAction();
-		System.out.println("Transform [ " + resourceRef + " ] using [ " + xmlAction.getName() + " ]");
+    public void testTransform(
+        String resourceRef,
+        Occurrences[] initialOccurrences,
+        Occurrences[] finalOccurrences)
+        throws TransformException, IOException {
 
-		List<String> finalLines;
-		try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
-			InputStreamData xmlOutput = xmlAction.apply(resourceRef, resourceInput); // throws JakartaTransformException
-			finalLines = display(resourceRef, xmlOutput.stream);
-		}
+        System.out.println("Transform [ " + resourceRef + " ] ...");
 
-		verify(resourceRef, "initial lines", initialOccurrences, initialLines);
-		verify(resourceRef, "final lines", finalOccurrences, finalLines);
+        List<String> initialLines;
+        try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
+            initialLines = display(resourceRef, resourceInput);
+        }
 
-		System.out.println("Transform [ " + resourceRef + " ] ... OK");
-	}
+        TextActionImpl textAction = getTextAction();
+        System.out.println("Transform [ " + resourceRef + " ] using [ " + textAction.getName() + " ]");
 
-	public void verify(
-		String resourceRef,
-		String caseTag, Occurrences[] occurrences,
-		List<String> lines) {
+        List<String> finalLines;
+        try ( InputStream resourceInput = TestUtils.getResourceStream(resourceRef) ) { // throws IOException
+            InputStreamData xmlOutput = textAction.apply(resourceRef, resourceInput); // throws
+                                                                                        // JakartaTransformException
+            finalLines = display(resourceRef, xmlOutput.stream);
+        }
 
-		System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ...");
+        verify(resourceRef, "initial lines", initialOccurrences, initialLines);
+        verify(resourceRef, "final lines", finalOccurrences, finalLines);
 
-		for ( Occurrences occurrence : occurrences ) {
-			String occurrenceTag = occurrence.tag;
-			int expected = occurrence.count;
+        System.out.println("Transform [ " + resourceRef + " ] ... OK");
+    }
 
-			int actual = TestUtils.occurrences(lines, occurrenceTag);
+    public void verify(
+        String resourceRef,
+        String caseTag, Occurrences[] occurrences,
+        List<String> lines) {
 
-			if ( expected != actual ) {
-				Assertions.assertEquals(
-					expected, actual, 
-					"Resource [ " + resourceRef + " ] [ " + caseTag + " ] Value [ " + occurrenceTag + " ] Expected [ " + expected + " ] Actual [ " + actual + " ]");
-			}
-		}
-		
-		System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ... done");
-	}
+        System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ...");
 
-	//
+        for ( Occurrences occurrence : occurrences ) {
+            String occurrenceTag = occurrence.tag;
+            int expected = occurrence.count;
 
-	@Test
-	public void testTransform_UTServiceXml() throws TransformException, IOException {
-		testTransform(UTSERVICE_XML_PATH, UT_INITIAL_OCCURRENCES, UT_FINAL_OCCURRENCES); 
-		// throws JakartaTransformException, IOException
-	}
-	
-	@Test
-	public void testTransform_TransactionManagerXml() throws TransformException, IOException {
-		testTransform(TRANSACTION_MANAGER_XML_PATH, TM_INITIAL_OCCURRENCES, TM_FINAL_OCCURRENCES); 
-		// throws JakartaTransformException, IOException
-	}
+            int actual = TestUtils.occurrences(lines, occurrenceTag);
+
+            if ( expected != actual ) {
+                Assertions.assertEquals(
+                    expected, actual,
+                    "Resource [ " + resourceRef + " ] [ " + caseTag + " ] Value [ " + occurrenceTag + " ] Expected [ " + expected + " ] Actual [ " + actual + " ]");
+            }
+        }
+
+        System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ... done");
+    }
+
+    //
+
+    @Test
+    public void testTransform_UTServiceXml() throws TransformException, IOException {
+        testTransform(UTSERVICE_XML_PATH, UT_INITIAL_OCCURRENCES, UT_FINAL_OCCURRENCES);
+        // throws JakartaTransformException, IOException
+    }
+
+    @Test
+    public void testTransform_TransactionManagerXml() throws TransformException, IOException {
+        testTransform(TRANSACTION_MANAGER_XML_PATH, TM_INITIAL_OCCURRENCES, TM_FINAL_OCCURRENCES);
+        // throws JakartaTransformException, IOException
+    }
 }

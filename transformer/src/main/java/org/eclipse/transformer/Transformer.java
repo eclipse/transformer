@@ -53,8 +53,9 @@ import org.eclipse.transformer.action.impl.RarActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.action.impl.TextActionImpl;
 import org.eclipse.transformer.action.impl.WarActionImpl;
-import org.eclipse.transformer.action.impl.XmlActionImpl;
+// import org.eclipse.transformer.action.impl.XmlActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.FileUtils;
 
@@ -285,10 +286,14 @@ public class Transformer {
         RULES_DIRECT("td", "direct", "Transformation direct string replacements",
             OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
             !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-        
-        RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files",
+
+        RULES_MASTER_TEXT("tf", "xml", "Map of filenames to property files",
             OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
             !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+
+//        RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files",
+//            OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
+//            !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
         INVERT("i", "invert", "Invert transformation rules",
                !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
@@ -812,7 +817,7 @@ public class Transformer {
         public Map<String, String> packageRenames;
         public Map<String, String> packageVersions;
         public Map<String, BundleData> bundleUpdates;
-        public Map<String, Map<String, String>> masterXmlUpdates; // ( pattern -> ( initial -> final ) )
+        public Map<String, Map<String, String>> masterTextUpdates; // ( pattern -> ( initial -> final ) )
         public Map<String, String> directStrings;
 
         public CompositeActionImpl rootAction;
@@ -881,7 +886,7 @@ public class Transformer {
             UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS);
             UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES);
             UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT);
-            UTF8Properties xmlMasterProperties = loadProperties(AppOption.RULES_MASTER_XML);
+            UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT);
 
             invert = hasOption(AppOption.INVERT);
 
@@ -925,11 +930,11 @@ public class Transformer {
                 dual_info("Bundle identities will not be updated");
             }
 
-            if ( !xmlMasterProperties.isEmpty() ) {
-                String masterXmlRef = getOptionValue(AppOption.RULES_MASTER_XML, DO_NORMALIZE);
+            if ( !textMasterProperties.isEmpty() ) {
+                String masterTextRef = getOptionValue(AppOption.RULES_MASTER_TEXT, DO_NORMALIZE);
 
                 Map<String, String> substitutionRefs =
-                    TransformProperties.convertPropertiesToMap(xmlMasterProperties); // throws IllegalArgumentException
+                    TransformProperties.convertPropertiesToMap(textMasterProperties); // throws IllegalArgumentException
 
                 Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
                 for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
@@ -937,10 +942,10 @@ public class Transformer {
                     String substitutionsRef = FileUtils.normalize( substitutionRefEntry.getValue() );
 
                     UTF8Properties substitutions;
-                    if ( masterXmlRef == null ) {
+                    if ( masterTextRef == null ) {
                         substitutions = loadInternalProperties("Substitions matching [ " + simpleNameSelector + " ]", substitutionsRef);
                     } else {
-                        String relativeSubstitutionsRef = relativize(substitutionsRef, masterXmlRef);
+                        String relativeSubstitutionsRef = relativize(substitutionsRef, masterTextRef);
                         if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
                             dual_info(
                                 "Adjusted substition reference from [ %s ] to [ %s ]",
@@ -953,12 +958,12 @@ public class Transformer {
                     masterUpdates.put(simpleNameSelector, substitutionsMap);
                 }
 
-                masterXmlUpdates = masterUpdates;
-                dual_info("XML files will be updated");
+                masterTextUpdates = masterUpdates;
+                dual_info("Text files will be updated");
 
             } else {
-                masterXmlUpdates = null;
-                dual_info("XML files will not be updated");
+                masterTextUpdates = null;
+                dual_info("Text files will not be updated");
             }
 
             if ( !directProperties.isEmpty() ) {
@@ -1093,13 +1098,13 @@ public class Transformer {
                 }
             }
 
-            info("XML substitutions:");
-            if ( (masterXmlUpdates == null) || masterXmlUpdates.isEmpty() ) {
+            info("Text substitutions:");
+            if ( (masterTextUpdates == null) || masterTextUpdates.isEmpty() ) {
                 info("  [ ** NONE ** ]");
             } else {
-                for ( Map.Entry<String, Map<String, String>> masterXmlEntry : masterXmlUpdates.entrySet() ) {
-                    info("  Pattern [ " + masterXmlEntry.getKey() + " ]");
-                    for ( Map.Entry<String, String> substitution : masterXmlEntry.getValue().entrySet() ) {
+                for ( Map.Entry<String, Map<String, String>> masterTextEntry : masterTextUpdates.entrySet() ) {
+                    info("  Pattern [ " + masterTextEntry.getKey() + " ]");
+                    for ( Map.Entry<String, String> substitution : masterTextEntry.getValue().entrySet() ) {
                         info("    [ " + substitution.getKey() + " ]: [ " + substitution.getValue() + " ]");
                     }
                 }
@@ -1124,7 +1129,7 @@ public class Transformer {
                     packageRenames, 
                     packageVersions, 
                     bundleUpdates,
-                    masterXmlUpdates,
+                    masterTextUpdates,
                     directStrings);
             }
             return signatureRules;
@@ -1274,9 +1279,11 @@ public class Transformer {
                 EarActionImpl earAction =
                     useRootAction.addUsing( EarActionImpl::new );
 
-                XmlActionImpl xmlAction =
-                        useRootAction.addUsing( XmlActionImpl::new );
-                
+                TextActionImpl textAction =
+                    useRootAction.addUsing( TextActionImpl::new );
+//              XmlActionImpl xmlAction =
+//                  useRootAction.addUsing( XmlActionImpl::new );
+
                 ZipActionImpl zipAction =
                     useRootAction.addUsing( ZipActionImpl::new );
 
@@ -1295,7 +1302,7 @@ public class Transformer {
                 directoryAction.addAction(warAction);
                 directoryAction.addAction(rarAction);
                 directoryAction.addAction(earAction);
-                directoryAction.addAction(xmlAction);
+                directoryAction.addAction(textAction);
                 directoryAction.addAction(nullAction);
 
                 jarAction.addAction(classAction);
@@ -1303,7 +1310,7 @@ public class Transformer {
                 jarAction.addAction(serviceConfigAction);
                 jarAction.addAction(manifestAction);
                 jarAction.addAction(featureAction);
-                jarAction.addAction(xmlAction);
+                jarAction.addAction(textAction);
                 jarAction.addAction(nullAction);
 
                 warAction.addAction(classAction);
@@ -1312,7 +1319,7 @@ public class Transformer {
                 warAction.addAction(manifestAction);
                 warAction.addAction(featureAction);
                 warAction.addAction(jarAction);
-                warAction.addAction(xmlAction);
+                warAction.addAction(textAction);
                 warAction.addAction(nullAction);
 
                 rarAction.addAction(classAction);
@@ -1321,14 +1328,14 @@ public class Transformer {
                 rarAction.addAction(manifestAction);
                 rarAction.addAction(featureAction);
                 rarAction.addAction(jarAction);
-                rarAction.addAction(xmlAction);
+                rarAction.addAction(textAction);
                 rarAction.addAction(nullAction);
 
                 earAction.addAction(manifestAction);
                 earAction.addAction(jarAction);
                 earAction.addAction(warAction);
                 earAction.addAction(rarAction);
-                earAction.addAction(xmlAction);
+                earAction.addAction(textAction);
                 earAction.addAction(nullAction);
 
                 zipAction.addAction(classAction);
@@ -1340,7 +1347,7 @@ public class Transformer {
                 zipAction.addAction(warAction);
                 zipAction.addAction(rarAction);
                 zipAction.addAction(earAction);
-                zipAction.addAction(xmlAction);
+                zipAction.addAction(textAction);
                 zipAction.addAction(nullAction);
 
                 rootAction = useRootAction;
