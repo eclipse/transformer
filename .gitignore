@@ -1,14 +1,14 @@
-# Ignore Gradle project-specific cache directory
-.gradle/
-
-# Ignore Gradle build output directory
-build/
-
-# Ignore Eclipse build output directory
-bin/
-
-*.bak
+# Eclipse
 /.metadata/
 /.recommenders/
+.classpath
+bin/
+
+# OS
 .DS_Store
 .*.swp
+*.bak
+
+# Maven
+target/
+.flattened-pom.xml

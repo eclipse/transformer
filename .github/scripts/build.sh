@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-./gradlew --no-daemon --version
-./gradlew --no-daemon build "$@"
+./mvnw --version --settings settings.xml
+./mvnw --no-transfer-progress --settings settings.xml clean install "$@"
