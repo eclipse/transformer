@@ -38,16 +38,16 @@ public interface SignatureRule {
 
 	//
 
-	public static enum SignatureType {
+	public enum SignatureType {
 		CLASS, FIELD, METHOD
 	}
 
-	public static final boolean ALLOW_SIMPLE_SUBSTITUTION = true;
-	public static final boolean NO_SIMPLE_SUBSTITUTION = false;
-	
+	boolean ALLOW_SIMPLE_SUBSTITUTION = true;
+	boolean NO_SIMPLE_SUBSTITUTION = false;
+
 	/**
 	 * Replace a single package according to the package rename rules.
-	 * 
+	 *
 	 * Package names must match exactly.
 	 *
 	 * @param initialName The package name which is to be replaced.
@@ -79,8 +79,8 @@ public interface SignatureRule {
 	 * @return The text with all embedded package names replaced.  Null if no
 	 *     replacements were performed.
 	 */
-	String replacePackages(String text);
 	String replacePackages(String text, Map<String, String> packageRenames);
+	String replacePackages(String text);
 
 	String transformConstantAsBinaryType(String inputConstant);
 	String transformConstantAsBinaryType(String inputConstant, boolean allowSimpleSubstitution);
@@ -89,7 +89,7 @@ public interface SignatureRule {
 	 * Modify a fully qualified type name according to the package rename table.
 	 * Answer either the transformed type name, or, if the type name was not changed,
 	 * a wrapped null.
-	 * 
+	 *
 	 * @param inputName A fully qualified type name which is to be transformed.
 	 *
 	 * @return The transformed type name, or a wrapped null if no changed was made.
@@ -98,13 +98,13 @@ public interface SignatureRule {
 
 	String transformConstantAsDescriptor(String inputConstant);
 	String transformConstantAsDescriptor(String inputConstant, boolean allowSimpleSubstitution);
-	
+
 	String transformDescriptor(String inputDescriptor);
 	String transformDescriptor(String inputDescriptor, boolean allowSimpleSubstitution);
 
 	/**
 	 * Transform a class, field, or method signature.
-	 * 
+	 *
 	 * Answer a wrapped null if the signature is not changed by the transformation
 	 * rules.
 	 *

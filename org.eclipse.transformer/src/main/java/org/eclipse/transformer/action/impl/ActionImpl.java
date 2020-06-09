@@ -64,7 +64,7 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	public static interface ActionInit<A extends ActionImpl> {
+	public interface ActionInit<A extends ActionImpl> {
 		A apply(
 			Logger logger, boolean isTerse, boolean isVerbose,
 			InputBufferImpl buffer,
@@ -91,7 +91,7 @@ public abstract class ActionImpl implements Action {
 	public boolean getIsTerse() {
 		return isTerse;
 	}
-	
+
 	public boolean getIsVerbose() {
 		return isVerbose;
 	}
@@ -99,7 +99,7 @@ public abstract class ActionImpl implements Action {
 	public void trace(String message, Object... parms) {
 		getLogger().trace(message, parms);
 	}
-	
+
 	public void debug(String message, Object... parms) {
 		getLogger().debug(message, parms);
 	}
@@ -119,7 +119,7 @@ public abstract class ActionImpl implements Action {
 			info(message, parms);
 		}
 	}
-	
+
 	public void warn(String message, Object... parms) {
 		getLogger().warn(message, parms);
 	}
@@ -169,6 +169,7 @@ public abstract class ActionImpl implements Action {
 		return selectionRule;
     }
 
+	@Override
 	public boolean select(String resourceName) {
 		return getSelectionRule().select(resourceName);
 	}
@@ -185,6 +186,7 @@ public abstract class ActionImpl implements Action {
 
     protected final SignatureRuleImpl signatureRule;
 
+	@Override
 	public SignatureRuleImpl getSignatureRule() {
 		return signatureRule;
     }
@@ -212,7 +214,7 @@ public abstract class ActionImpl implements Action {
 	public String replaceEmbeddedPackages(String embeddingText) {
 		return getSignatureRule().replacePackages(embeddingText);
 	}
-	
+
 	public String replaceText(String inputFileName, String text) {
 	       return getSignatureRule().replaceText(inputFileName, text);
 	}
@@ -220,11 +222,11 @@ public abstract class ActionImpl implements Action {
 	public String transformConstantAsBinaryType(String inputConstant) {
 		return getSignatureRule().transformConstantAsBinaryType(inputConstant);
 	}
-	
+
     public String transformConstantAsBinaryType(String inputConstant, boolean simpleSubstitution) {
         return getSignatureRule().transformConstantAsBinaryType(inputConstant, simpleSubstitution);
     }
-    
+
 	public String transformBinaryType(String inputName) {
 		return getSignatureRule().transformBinaryType(inputName);
 	}
@@ -296,7 +298,7 @@ public abstract class ActionImpl implements Action {
 	public String transformDirectString(String initialValue) {
 		return getSignatureRule().getDirectString(initialValue);
 	}
-	
+
 	//
 
 	public abstract String getAcceptExtension();
@@ -318,7 +320,7 @@ public abstract class ActionImpl implements Action {
 	}
 
 	protected final List<ChangesImpl> changes;
-	protected int numActiveChanges; 
+	protected int numActiveChanges;
 	protected ChangesImpl activeChanges;
 	protected ChangesImpl lastActiveChanges;
 
@@ -432,22 +434,20 @@ public abstract class ActionImpl implements Action {
 
 	//
 
+	@Override
 	public boolean useStreams() {
 		return false;
 	}
 
 	/**
-	 * Read bytes from an input stream.  Answer byte data and
-	 * a count of bytes read.
+	 * Read bytes from an input stream. Answer byte data and a count of bytes
+	 * read.
 	 *
 	 * @param inputName The name of the input stream.
 	 * @param inputStream A stream to be read.
-	 * @param inputCount The count of bytes to read from the stream.
-	 *     {@link Action#UNKNOWN_LENGTH} if the count of
-	 *     input bytes is not known.
-	 *
+	 * @param inputCount The count of bytes to read from the stream. {@code -1}
+	 *            if the count of input bytes is not known.
 	 * @return Byte data from the read.
-	 * 
 	 * @throws TransformException Indicates a read failure.
 	 */
 	protected ByteData read(String inputName, InputStream inputStream, int inputCount) throws TransformException {
@@ -467,12 +467,12 @@ public abstract class ActionImpl implements Action {
 
 	/**
 	 * Write data to an output stream.
-	 * 
+	 *
 	 * Convert any exception thrown when attempting the write into a {@link TransformException}.
-	 * 
+	 *
 	 * @param outputData Data to be written.
 	 * @param outputStream Stream to which to write the data.
-	 * 
+	 *
 	 * @throws TransformException Thrown in case of a write failure.
 	 */
 	protected void write(ByteData outputData, OutputStream outputStream) throws TransformException {
@@ -508,7 +508,7 @@ public abstract class ActionImpl implements Action {
 			stopRecording(inputName);
 		}
 	}
-	
+
 	public InputStreamData basicApply(String inputName, InputStream inputStream, int inputCount)
 		throws TransformException {
 
@@ -525,7 +525,7 @@ public abstract class ActionImpl implements Action {
 			// throws JakartaTransformException
 		} catch ( Throwable th ) {
 			error("Transform failure [ {} ]", th, inputName);
-			outputData = null;			
+			outputData = null;
 		}
 
 		if ( outputData == null ) {
@@ -583,10 +583,10 @@ public abstract class ActionImpl implements Action {
 				   className, methodName, outputData.name, outputData.length );
 		}
 
-		write(outputData, outputStream); // throws JakartaTransformException		
+		write(outputData, outputStream); // throws JakartaTransformException
 	}
 
-	protected abstract ByteData apply(String inputName, byte[] inputBytes, int inputLength) 
+	protected abstract ByteData apply(String inputName, byte[] inputBytes, int inputLength)
 		throws TransformException;
 
     @Override
@@ -628,7 +628,7 @@ public abstract class ActionImpl implements Action {
     		inputStream.close();
     	} catch ( IOException e ) {
         	throw new TransformException("Failed to close input [ " + inputFile.getAbsolutePath() + " ]", e);
-        }        		
+        }
     }
 
     private OutputStream openOutputStream(File outputFile)
