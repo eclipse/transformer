@@ -40,7 +40,7 @@ public class ManifestActionImpl extends ActionImpl {
 	//
 
 	public static final boolean IS_MANIFEST = true;
-	public static final boolean IS_FEATURE = !IS_MANIFEST;	
+	public static final boolean IS_FEATURE = !IS_MANIFEST;
 
 	public static ManifestActionImpl newManifestAction(
 		Logger logger, boolean isTerse, boolean isVerbose,
@@ -72,6 +72,7 @@ public class ManifestActionImpl extends ActionImpl {
 
 	//
 
+	@Override
 	public String getName() {
 		return ( getIsManifest() ? "Manifest Action" : "Feature Action" );
 	}
@@ -145,7 +146,7 @@ public class ManifestActionImpl extends ActionImpl {
 		byte[] finalBytes = outputStream.toByteArray();
 		debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName, initialName, finalBytes.length);
 
-		return new ByteData(initialName, finalBytes); 
+		return new ByteData(initialName, finalBytes);
 	}
 
 	protected void transform(String inputName, Manifest initialManifest, Manifest finalManifest) {
@@ -195,12 +196,12 @@ public class ManifestActionImpl extends ActionImpl {
 		Attributes initialAttributes, Attributes finalAttributes) {
 
 		debug("Transforming [ {} ]: [ {} ] Attributes [ {} ]",
-			inputName, entryName, initialAttributes.size() );		
+			inputName, entryName, initialAttributes.size() );
 
 		int replacements = 0;
 
 		for ( Map.Entry<Object, Object> entries : initialAttributes.entrySet() ) {
-			Object untypedName = entries.getKey(); 
+			Object untypedName = entries.getKey();
 			String typedName = untypedName.toString();
 
 			String initialValue = (String) entries.getValue();
@@ -241,7 +242,7 @@ public class ManifestActionImpl extends ActionImpl {
 	// Copied and updated from:
 	// https://github.com/OpenLiberty/open-liberty/blob/integration/
 	// dev/wlp-featureTasks/src/com/ibm/ws/wlp/feature/tasks/FeatureBuilder.java
-	
+
 	@SuppressWarnings("unused")
 	protected void writeAsFeature(Manifest manifest, OutputStream outputStream) throws IOException {
 		PrintWriter writer = new PrintWriter(outputStream);
@@ -265,7 +266,7 @@ public class ManifestActionImpl extends ActionImpl {
 						writer.append(",\r ");
 					}
 
-					// bnd might have added ~ characters if there are duplicates in 
+					// bnd might have added ~ characters if there are duplicates in
 					// the source, so we should remove them before we output it so we
 					// get back to the original intended content.
 
@@ -323,7 +324,7 @@ public class ManifestActionImpl extends ActionImpl {
 		for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
 			String key = renameEntry.getKey();
 			int keyLen = key.length();
-			
+
 			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
             if (matchSubpackages) {
                 key = SignatureRuleImpl.stripWildcard(key);
@@ -351,7 +352,7 @@ public class ManifestActionImpl extends ActionImpl {
 				String head = text.substring(0, matchStart);
 				String tail = text.substring(matchStart + keyLen);
 
-				int tailLenBeforeReplaceVersion = tail.length();			
+				int tailLenBeforeReplaceVersion = tail.length();
 
 				String newVersion = getPackageVersions().get(value);
 				if ( newVersion != null ) {
@@ -361,7 +362,7 @@ public class ManifestActionImpl extends ActionImpl {
 				}
 
 				text = head + value + tail;
-				int tailLenAfterReplaceVersion = tail.length();					
+				int tailLenAfterReplaceVersion = tail.length();
 
 				lastMatchEnd = matchStart + valueLen;
 
@@ -397,29 +398,27 @@ public class ManifestActionImpl extends ActionImpl {
 	//  ;version="[3.0,4)",com.ibm.ws.runtime.metadata;version="[1.1,2)"
 
 	/**
-	 * Answer package attribute text which has been updated with a new version range.
+	 * Answer package attribute text which has been updated with a new version
+	 * range. Examples
 	 *
-	 * Examples 
-	 * 
-	 * <quote>
+	 * <pre>
 	 * Import-Package: javax.servlet;version="[2.6,3)",javax.servlet.annotation;version="[2.6,3)"
-	 * </quote>
-	 * 
-	 * <quote>
+	 * </pre>
+	 *
+	 * <pre>
 	 * DynamicImport-Package: com.ibm.websphere.monitor.meters;version="1.0.0",com.ibm.websphere.monitor.jmx;version="1.0.0"
-	 * </quote>
-	 * 
-	 * The leading package name must be removed from the attribute text.  Other package
-	 * names and attributes may be present.
-	 * 
-	 * Attribute text for different packages use commas as separators, except, commas inside
-	 * quotation marks are not separators.  This is important because commas are present in
+	 * </pre>
+	 *
+	 * The leading package name must be removed from the attribute text. Other
+	 * package names and attributes may be present. Attribute text for different
+	 * packages use commas as separators, except, commas inside quotation marks
+	 * are not separators. This is important because commas are present in
 	 * version ranges.
 	 *
 	 * @param text Package attribute text.
 	 * @param newVersion Replacement version values for the package attribute.
-	 *                  
-	 * @return String with version numbers of first package replaced by the newVersion.
+	 * @return String with version numbers of first package replaced by the
+	 *         newVersion.
 	 */
 	protected String replacePackageVersion(String text, String newVersion) {
 	    //debug("replacePackageVersion: ( {} )",  text );
@@ -439,7 +438,7 @@ public class ManifestActionImpl extends ActionImpl {
 	    final char QUOTE_MARK = '\"';
 
 	    int versionIndex = packageText.indexOf(VERSION);
-	    if ( versionIndex == -1 ) { 
+	    if ( versionIndex == -1 ) {
 	        return text;  // nothing to replace
 	    }
 
@@ -447,11 +446,11 @@ public class ManifestActionImpl extends ActionImpl {
 	    // Ignore white space that occurs around the "=", but do not ignore white space between quotation marks.
 	    // Everything inside the "" is part of the version and will be replaced.
 	    boolean foundEquals = false;
-	    boolean foundQuotationMark = false; 
+	    boolean foundQuotationMark = false;
 	    int versionBeginIndex = -1;
 	    int versionEndIndex = -1;
 
-	    // skip to actual version number which is after "=".  Version begins inside double quotation marks 
+	    // skip to actual version number which is after "=".  Version begins inside double quotation marks
 	    for (int i=versionIndex + VERSION_LEN; i < packageText.length(); i++) {
 	        char ch = packageText.charAt(i);
 
@@ -520,13 +519,13 @@ public class ManifestActionImpl extends ActionImpl {
 	//  com.ibm.websphere.javaee.jsp.2.3; location:="dev/api/spec/,lib/"; mavenCoordinates="javax.servlet.jsp:javax.servlet.jsp-api:2.3.1"; version="[1.0.0,1.0.200)"
 
 	/**
-	 * 
-	 * @param text  - A string containing package attribute text at the head of the string.
-	 *         Assumptions: - The first package name has already been stripped from the embedding text.
-	 *                      - Other package names and attributes may or may not follow.
-	 *                      - Packages are separated by a comma.
-	 *                      - If a comma is inside quotation marks, it is not a package delimiter.
-	 * @return
+	 * @param text - A string containing package attribute text at the head of
+	 *            the string. Assumptions: - The first package name has already
+	 *            been stripped from the embedding text. - Other package names
+	 *            and attributes may or may not follow. - Packages are separated
+	 *            by a comma. - If a comma is inside quotation marks, it is not
+	 *            a package delimiter.
+	 * @return package attribute text
 	 */
 	protected String getPackageAttributeText(String text) {
 		//debug("getPackageAttributeText ENTER[ text: {}]", text);
@@ -549,7 +548,7 @@ public class ManifestActionImpl extends ActionImpl {
 		// packageText is beginning of text up to and including comma.
 		// Need to test whether the comma is within quotes - thus not the true end of the packageText.
 		// If an odd number of quotes are found, then the comma is in quotes and we need to find the next comma.
-		String packageText = text.substring(0, commaIndex+1);   
+		String packageText = text.substring(0, commaIndex+1);
 		debug("packageText [ {} ]", packageText);
 
 		while (!isPackageDelimitingComma(text, packageText, commaIndex)) {
@@ -560,7 +559,7 @@ public class ManifestActionImpl extends ActionImpl {
 		    } else {
 		        packageText = text.substring(0, commaIndex+1);
 		    }
-		    
+
 		    // If there is a syntax error (missing closing quotes) return what we have
 		    if ( !hasEvenNumberOfOccurrencesOfChar(text, '\"') ) {
 		        break;
@@ -572,7 +571,10 @@ public class ManifestActionImpl extends ActionImpl {
 	}
 
 	/**
-	 * Tell if the first non-white space character of the parameter is a semi-colon.
+	 * Tell if the first non-white space character of the parameter is a
+	 * semi-colon.
+	 * 
+	 * @param s string
 	 */
 	protected boolean firstCharIsSemicolon(String s) {
 	    for ( int i=0; i < s.length(); i++ ) {
@@ -586,7 +588,7 @@ public class ManifestActionImpl extends ActionImpl {
 	    }
 	    return false;
 	}
-	
+
 	protected int indexOfNextNonWhiteSpaceChar(String s, int currentIndex) {
 	    for ( int i=currentIndex; i < s.length(); i++ ) {
 	        if ( Character.isWhitespace(s.charAt(i)) ) {
@@ -595,22 +597,22 @@ public class ManifestActionImpl extends ActionImpl {
 	        return i;
 	    }
 	    return -1;
-	}	
+	}
 
 	/**
-	 * 
+	 *
 	 * @param testString - The entire remaining unprocessed text of a MANIFEST.MF attribute that immediately follows a package name
 	 * @param packageText - Text that immediately follows a package name in a MANIFEST.MF attribute
 	 * @param indexOfComma
 	 * @return
 	 */
-    private boolean isPackageDelimitingComma(String testString, 
-                                             String packageText, 
+    private boolean isPackageDelimitingComma(String testString,
+                                             String packageText,
                                              int indexOfComma) {
-        
+
         int indexOfNextNonWhiteSpaceCharAfterComma = indexOfNextNonWhiteSpaceChar(testString, indexOfComma+1);
         char characterAfterComma = testString.charAt(indexOfNextNonWhiteSpaceCharAfterComma);
-        if (Character.isAlphabetic(characterAfterComma)) { 
+        if (Character.isAlphabetic(characterAfterComma)) {
             if ( !hasEvenNumberOfOccurrencesOfChar(packageText, '\"') ) {
                 return false;
            }
@@ -618,8 +620,8 @@ public class ManifestActionImpl extends ActionImpl {
         }
 
         return false;
-    }	
-	
+    }
+
 	private boolean hasEvenNumberOfOccurrencesOfChar(String testString, char testChar) {
 		long occurrences = testString.chars().filter(ch -> ch == '\"').count();
 		return ((occurrences % 2 ) == 0);
@@ -657,7 +659,7 @@ public class ManifestActionImpl extends ActionImpl {
 //		 open-liberty.git, url=https://github.com/OpenLiberty/open-liberty/tre
 //		 e/master
 //		Bundle-Vendor: IBM
-		
+
 	// Subsystem case:
 	//
 //	Subsystem-Description: %description
@@ -680,13 +682,13 @@ public class ManifestActionImpl extends ActionImpl {
 			debug("Input [ {} ] has no bundle symbolic name", inputName);
 			return false;
 		}
-		
+
 		int indexOfSemiColon = initialSymbolicName.indexOf(';');
 		String symbolicNamesAttributes = null;
 		if ( indexOfSemiColon != -1 ) {
-		    symbolicNamesAttributes = initialSymbolicName.substring(indexOfSemiColon);		    
+		    symbolicNamesAttributes = initialSymbolicName.substring(indexOfSemiColon);
 		    initialSymbolicName = initialSymbolicName.substring(0, indexOfSemiColon);
-		}		
+		}
 
 		String matchCase;
 		boolean matched;
@@ -725,11 +727,11 @@ public class ManifestActionImpl extends ActionImpl {
 					finalSymbolicName.substring(wildcardOffset + 1);
 			}
 		}
-		
+
 		if (symbolicNamesAttributes != null) {
 		   finalSymbolicName += symbolicNamesAttributes;
 		}
-		
+
 		finalMainAttributes.putValue(SYMBOLIC_NAME_PROPERTY_NAME, finalSymbolicName);
 		verbose("Bundle symbolic name: {} --> {}", initialSymbolicName, finalSymbolicName);
 
