@@ -23,10 +23,20 @@ jobs:
       matrix:
         java: [ 8, 11, 14, 15-ea ]
         os: [ ubuntu-latest ]
+        exclude:
+        - os: ubuntu-latest
+          java: 8
         include:
+        - os: ubuntu-latest
+          java: 8
+          canonical: ${{ (github.repository == 'eclipse/transformer') && (github.ref == 'refs/heads/master') && (github.event_name != 'pull_request') }}
+        - os: ubuntu-latest
+          java: 8
+          experimental: true
+          mavenopts: -Pbnd-snapshot
         - os: windows-latest
           java: 8
-    name: JDK${{ matrix.java }} ${{ matrix.os }}
+    name: JDK${{ matrix.java }} ${{ matrix.os }} ${{ matrix.mavenopts }}
     runs-on: ${{ matrix.os }}
     steps:
     - name: Git Checkout
@@ -36,10 +46,26 @@ jobs:
       with:
         java-version: ${{ matrix.java }}
     - name: Build
+      id: build
+      continue-on-error: ${{ matrix.experimental }}
       run: |
-        ./.github/scripts/build.sh
+        ./.github/scripts/build.sh ${{ matrix.mavenopts }}
+    - name: Import GPG key
+      id: import_gpg
+      if: (matrix.canonical)
+      uses: crazy-max/ghaction-import-gpg@v2
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+    - name: GPG key information
+      if: (steps.import_gpg.outcome == 'success')
+      run: |
+        echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+        echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
+        echo "name:        ${{ steps.import_gpg.outputs.name }}"
+        echo "email:       ${{ steps.import_gpg.outputs.email }}"
     - name: Publish
-      if: success() && (matrix.java == '8') && (matrix.os == 'ubuntu-latest') && (github.repository == 'eclipse/transformer') && (github.ref == 'refs/heads/master') && (github.event_name != 'pull_request')
+      if: (matrix.canonical && (steps.build.outcome == 'success'))
       run: |
         ./.github/scripts/publish.sh -Possrh
       env:
