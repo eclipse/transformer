@@ -427,11 +427,11 @@
 			</properties>
 			<distributionManagement>
 				<snapshotRepository>
-					<id>Snapshots</id>
+					<id>ossrh</id>
 					<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 				</snapshotRepository>
 				<repository>
-					<id>Releases</id>
+					<id>ossrh</id>
 					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 				</repository>
 			</distributionManagement>
