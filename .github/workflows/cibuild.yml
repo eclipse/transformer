@@ -56,6 +56,7 @@ jobs:
       uses: crazy-max/ghaction-import-gpg@v2
       env:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
     - name: GPG key information
       if: (steps.import_gpg.outcome == 'success')
       run: |
@@ -70,4 +71,3 @@ jobs:
       env:
         OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
-        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
