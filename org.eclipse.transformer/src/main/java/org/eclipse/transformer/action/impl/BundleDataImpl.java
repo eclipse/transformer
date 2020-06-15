@@ -80,7 +80,8 @@ public class BundleDataImpl implements BundleData {
 		String useName = heads[2];
 		String useDescription = tail;
 
-		if (this.addName = (useName.charAt(0) == ADDITIVE_CHAR)) {
+		addName = (useName.charAt(0) == ADDITIVE_CHAR);
+		if (addName) {
 			useName = useName.substring(1)
 				.trim();
 		}
@@ -90,7 +91,8 @@ public class BundleDataImpl implements BundleData {
 		}
 		this.name = useName;
 
-		if (this.addDescription = (useDescription.charAt(0) == ADDITIVE_CHAR)) {
+		addDescription = (useDescription.charAt(0) == ADDITIVE_CHAR);
+		if (addDescription) {
 			useDescription = useDescription.substring(1)
 				.trim();
 		}
