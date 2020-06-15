@@ -17,12 +17,15 @@ import java.util.List;
 public interface ContainerAction extends Action {
 	@Override
 	ContainerChanges getActiveChanges();
+
 	@Override
 	ContainerChanges getLastActiveChanges();
 
 	CompositeAction getAction();
+
 	List<? extends Action> getActions();
 
-	Action acceptAction(String resourceName);	
+	Action acceptAction(String resourceName);
+
 	Action acceptAction(String resourceName, File resourceFile);
 }

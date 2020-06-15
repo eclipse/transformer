@@ -37,8 +37,8 @@ public class ChangesImpl implements Changes {
 
 	//
 
-	private String inputResourceName;
-	private String outputResourceName;
+	private String	inputResourceName;
+	private String	outputResourceName;
 
 	@Override
 	public String getInputResourceName() {
@@ -63,8 +63,7 @@ public class ChangesImpl implements Changes {
 	@Override
 	public boolean hasResourceNameChange() {
 		// The input name will be null if the transform fails very early.
-		return ( (inputResourceName != null) &&
-				 !inputResourceName.equals(outputResourceName) );
+		return ((inputResourceName != null) && !inputResourceName.equals(outputResourceName));
 	}
 
 	//
@@ -88,42 +87,42 @@ public class ChangesImpl implements Changes {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return ( replacements > 0 );
+		return (replacements > 0);
 	}
 
 	//
 
 	@Override
 	public void addNestedInto(ContainerChanges containerChanges) {
-		// By default do nothing. 
+		// By default do nothing.
 	}
 
 	//
 
 	protected String getChangeTag() {
-		return ( hasNonResourceNameChanges() ? "Changed" : "Unchanged" );
+		return (hasNonResourceNameChanges() ? "Changed" : "Unchanged");
 	}
 
 	@Override
 	public void displayTerse(PrintStream printStream, String inputPath, String outputPath) {
-		if ( !inputPath.equals(outputPath) ) {
-			printStream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag() );
+		if (!inputPath.equals(outputPath)) {
+			printStream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag());
 		} else {
-			printStream.printf("Input [ %s ]: %s\n", inputPath, getChangeTag() );
+			printStream.printf("Input [ %s ]: %s\n", inputPath, getChangeTag());
 		}
 	}
 
 	@Override
 	public void displayTerse(Logger logger, String inputPath, String outputPath) {
-		if ( !logger.isInfoEnabled() ) {
+		if (!logger.isInfoEnabled()) {
 			return;
 		}
 
-		if ( !inputPath.equals(outputPath) ) {
-			if ( !inputPath.equals(outputPath) ) {
-				logger.info("Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag() );
+		if (!inputPath.equals(outputPath)) {
+			if (!inputPath.equals(outputPath)) {
+				logger.info("Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
 			} else {
-				logger.info("Input [ {} ]: {}", inputPath, getChangeTag() );
+				logger.info("Input [ {} ]: {}", inputPath, getChangeTag());
 			}
 		}
 	}
@@ -132,7 +131,7 @@ public class ChangesImpl implements Changes {
 	public void display(PrintStream printStream, String inputPath, String outputPath) {
 		displayTerse(printStream, inputPath, outputPath);
 	}
-	
+
 	@Override
 	public void display(Logger logger, String inputPath, String outputPath) {
 		displayTerse(logger, inputPath, outputPath);
@@ -140,19 +139,19 @@ public class ChangesImpl implements Changes {
 
 	@Override
 	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
-		printStream.printf("Input  [ %s ] as [ %s ]\n", getInputResourceName(), inputPath );
-		printStream.printf("Output [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath );
-		printStream.printf("Replacements  [ %s ]\n", getReplacements() );
+		printStream.printf("Input  [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
+		printStream.printf("Output [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
+		printStream.printf("Replacements  [ %s ]\n", getReplacements());
 	}
-	
+
 	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if ( !logger.isInfoEnabled() ) {
+		if (!logger.isInfoEnabled()) {
 			return;
 		}
 
-		logger.info("Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath );
-		logger.info("Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath );
-		logger.info("Replacements  [ {} ]", getReplacements() );
+		logger.info("Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+		logger.info("Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+		logger.info("Replacements  [ {} ]", getReplacements());
 	}
 }

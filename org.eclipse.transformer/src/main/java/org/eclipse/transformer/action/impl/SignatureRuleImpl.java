@@ -56,8 +56,8 @@ public class SignatureRuleImpl implements SignatureRule {
 			useBinaryRenames = Collections.emptyMap();
 
 		} else {
-			useRenames = new HashMap<String, String>(renames.size());
-			useBinaryRenames = new HashMap<String, String>(renames.size());
+			useRenames = new HashMap<>(renames.size());
+			useBinaryRenames = new HashMap<>(renames.size());
 
 			for (Map.Entry<String, String> renameEntry : renames.entrySet()) {
 				// System.out.println("Binary conversion from [ " +
@@ -80,23 +80,23 @@ public class SignatureRuleImpl implements SignatureRule {
 
 		Map<String, String> useVersions;
 		if ((versions != null) && !versions.isEmpty()) {
-			useVersions = new HashMap<String, String>(versions);
+			useVersions = new HashMap<>(versions);
 		} else {
 			useVersions = Collections.emptyMap();
-        }
+		}
 		this.packageVersions = useVersions;
 
 		Map<String, BundleData> useBundleUpdates;
 		if ((bundleUpdates != null) && !bundleUpdates.isEmpty()) {
-			useBundleUpdates = new HashMap<String, BundleData>(bundleUpdates);
+			useBundleUpdates = new HashMap<>(bundleUpdates);
 		} else {
 			useBundleUpdates = Collections.emptyMap();
 		}
 		this.bundleUpdates = useBundleUpdates;
 
 		if ((masterTextUpdates != null) && !masterTextUpdates.isEmpty()) {
-			Map<String, Map<String, String>> useSpecificTextUpdates = new HashMap<String, Map<String, String>>();
-			Map<Pattern, Map<String, String>> useWildCardTextUpdates = new HashMap<Pattern, Map<String, String>>();
+			Map<String, Map<String, String>> useSpecificTextUpdates = new HashMap<>();
+			Map<Pattern, Map<String, String>> useWildCardTextUpdates = new HashMap<>();
 
 			for (Map.Entry<String, Map<String, String>> entry : masterTextUpdates.entrySet()) {
 				String matchesFileName = entry.getKey();
@@ -125,7 +125,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		if ((directStrings == null) || directStrings.isEmpty()) {
 			useDirectStrings = Collections.emptyMap();
 		} else {
-			useDirectStrings = new HashMap<String, String>(directStrings);
+			useDirectStrings = new HashMap<>(directStrings);
 		}
 		this.directStrings = useDirectStrings;
 
@@ -162,16 +162,16 @@ public class SignatureRuleImpl implements SignatureRule {
 
 	//
 
-    private final Map<String, Map<String, String>> specificTextUpdates;
-    private final Map<Pattern, Map<String, String>> wildCardTextUpdates;
+	private final Map<String, Map<String, String>>	specificTextUpdates;
+	private final Map<Pattern, Map<String, String>>	wildCardTextUpdates;
 
-    public Map<String, Map<String, String>> getSpecificTextUpdates() {
+	public Map<String, Map<String, String>> getSpecificTextUpdates() {
 		return specificTextUpdates;
-    }
+	}
 
-    public Map<Pattern, Map<String, String>> getWildCardTextUpdates() {
+	public Map<Pattern, Map<String, String>> getWildCardTextUpdates() {
 		return wildCardTextUpdates;
-    }
+	}
 
 	//
 
@@ -259,10 +259,10 @@ public class SignatureRuleImpl implements SignatureRule {
 			String key = renameEntry.getKey();
 			int keyLen = key.length();
 
-            boolean matchSubpackages = containsWildcard(key);
-            if (matchSubpackages) {
-                key = stripWildcard(key);
-            }
+			boolean matchSubpackages = containsWildcard(key);
+			if (matchSubpackages) {
+				key = stripWildcard(key);
+			}
 
 			// System.out.println("Next target [ " + key + " ]");
 
@@ -275,10 +275,10 @@ public class SignatureRuleImpl implements SignatureRule {
 					break;
 				}
 
-                if ( !isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
-                    lastMatchEnd = matchStart + keyLen;
-                    continue;
-                }
+				if (!isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
+					lastMatchEnd = matchStart + keyLen;
+					continue;
+				}
 
 				String value = renameEntry.getValue();
 				int valueLen = value.length();
@@ -303,88 +303,90 @@ public class SignatureRuleImpl implements SignatureRule {
 		}
 	}
 
-    /**
-     * Checks the character before and after a match to verify that the match
-     * is NOT a subset of a larger package, and thus not really a match.
-     */
-    public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages ) {
-//        System.out.println("isTruePackageMatch:"
-//                           + " text[" + text + "]"
-//                           + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
-//                           + " tail[" + text.substring(matchStart + keyLen)
-//                           + " *************");
+	/**
+	 * Checks the character before and after a match to verify that the match is
+	 * NOT a subset of a larger package, and thus not really a match.
+	 */
+	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
+		// System.out.println("isTruePackageMatch:"
+		// + " text[" + text + "]"
+		// + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
+		// + " tail[" + text.substring(matchStart + keyLen)
+		// + " *************");
 
-        int textLength = text.length();
+		int textLength = text.length();
 
-        if ( matchStart > 0 ) {
-            char charBeforeMatch = text.charAt(matchStart - 1);
-            if ( Character.isJavaIdentifierPart(charBeforeMatch) || (charBeforeMatch == '.')) {
-                return false;
-            }
-        }
+		if (matchStart > 0) {
+			char charBeforeMatch = text.charAt(matchStart - 1);
+			if (Character.isJavaIdentifierPart(charBeforeMatch) || (charBeforeMatch == '.')) {
+				return false;
+			}
+		}
 
-        int matchEnd = matchStart + keyLen;
-        if ( textLength > matchEnd ) {
+		int matchEnd = matchStart + keyLen;
+		if (textLength > matchEnd) {
 
-            char charAfterMatch = text.charAt(matchEnd);
+			char charAfterMatch = text.charAt(matchEnd);
 
-            // Check the next character can also be part of a package name then
-            // we are looking at a larger package name, and thus not a match.
-            if ( Character.isJavaIdentifierPart(charAfterMatch) ) {
-                return false;
-            }
+			// Check the next character can also be part of a package name then
+			// we are looking at a larger package name, and thus not a match.
+			if (Character.isJavaIdentifierPart(charAfterMatch)) {
+				return false;
+			}
 
-            // If the next char is dot, check the character after the dot.  Assume an upper case letter indicates the start of a
-            // class name and thus the end of the package name which indicates a match. ( This means this doesn't work
-            // for package names that do not follow the convention of using lower case characters ).
-            // If lower case, then it indicates we are looking at a larger package name, and thus not a match.
-            // If the character after the dot is a number, also assume the number is a continuation of the package name.
-            if ( !matchSubpackages ) {
-                if (charAfterMatch == '.' || charAfterMatch == '/') {
-                    if ( textLength > (matchEnd+1) )  {
-                        char charAfterSeparator = text.charAt(matchEnd + 1);
-                        if (Character.isLowerCase(charAfterSeparator) || Character.isDigit(charAfterSeparator)) {
-                            return false;
-                        }
-                    }
-                }
-            }
-        }
-        return true;
-    }
+			// If the next char is dot, check the character after the dot.
+			// Assume an upper case letter indicates the start of a
+			// class name and thus the end of the package name which indicates a
+			// match. ( This means this doesn't work
+			// for package names that do not follow the convention of using
+			// lower case characters ).
+			// If lower case, then it indicates we are looking at a larger
+			// package name, and thus not a match.
+			// If the character after the dot is a number, also assume the
+			// number is a continuation of the package name.
+			if (!matchSubpackages) {
+				if (charAfterMatch == '.' || charAfterMatch == '/') {
+					if (textLength > (matchEnd + 1)) {
+						char charAfterSeparator = text.charAt(matchEnd + 1);
+						if (Character.isLowerCase(charAfterSeparator) || Character.isDigit(charAfterSeparator)) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+		return true;
+	}
 
-    /**
-     * Determines if the key contains a wildcard suffix which indicates
-     * that sub-package names are to be matched.
-     *
-     * Packages names and their replacements are specified in properties files
-     * in key=value pairs or more specifically oldPackageName=newPackageName
-     *
-     * The key can contain a ".*" suffix which indicates that sub-packages are a
-     * match.
-     *
-     * @param key package name
-     * @return true if sub-packages are to be matched
-     */
-    public static boolean containsWildcard(String key) {
+	/**
+	 * Determines if the key contains a wildcard suffix which indicates that
+	 * sub-package names are to be matched. Packages names and their
+	 * replacements are specified in properties files in key=value pairs or more
+	 * specifically oldPackageName=newPackageName The key can contain a ".*"
+	 * suffix which indicates that sub-packages are a match.
+	 *
+	 * @param key package name
+	 * @return true if sub-packages are to be matched
+	 */
+	public static boolean containsWildcard(String key) {
 
-        if (key.endsWith(".*")) {
-            return true;
-        }
-        return false;
-    }
+		if (key.endsWith(".*")) {
+			return true;
+		}
+		return false;
+	}
 
-    public static String stripWildcard(String key) {
-        if (key.endsWith(".*")) {
-            key = key.substring(0, key.length() - 2 );
-        }
-        return key;
-    }
+	public static String stripWildcard(String key) {
+		if (key.endsWith(".*")) {
+			key = key.substring(0, key.length() - 2);
+		}
+		return key;
+	}
 
 	public static boolean matches(Pattern p, CharSequence input) {
-        Matcher m = p.matcher(input);
-        return m.matches();
-    }
+		Matcher m = p.matcher(input);
+		return m.matches();
+	}
 
 	public Map<String, String> getTextSubstitutions(String inputFileName) {
 		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
@@ -403,48 +405,48 @@ public class SignatureRuleImpl implements SignatureRule {
 		return null;
 	}
 
-    public String replaceText(String inputFileName, String text) {
-        Map<String, String> substitutions = getTextSubstitutions(inputFileName);
-        if ( substitutions == null ) {
+	public String replaceText(String inputFileName, String text) {
+		Map<String, String> substitutions = getTextSubstitutions(inputFileName);
+		if (substitutions == null) {
 			throw new IllegalStateException(
 				"Input [ " + inputFileName + " ] selected for TEXT transformation, but found no substitutions");
-        }
+		}
 
-        String initialText = text;
+		String initialText = text;
 
-        for ( Map.Entry<String, String> entry : substitutions.entrySet() ) {
-            String key = entry.getKey();
-            int keyLen = key.length();
+		for (Map.Entry<String, String> entry : substitutions.entrySet()) {
+			String key = entry.getKey();
+			int keyLen = key.length();
 
-            int textLimit = text.length() - keyLen;
+			int textLimit = text.length() - keyLen;
 
-            int lastMatchEnd = 0;
-            while ( lastMatchEnd <= textLimit ) {
-                int matchStart = text.indexOf(key, lastMatchEnd);
-                if ( matchStart == -1 ) {
-                    break;
-                }
+			int lastMatchEnd = 0;
+			while (lastMatchEnd <= textLimit) {
+				int matchStart = text.indexOf(key, lastMatchEnd);
+				if (matchStart == -1) {
+					break;
+				}
 
-                String value = entry.getValue();
-                int valueLen = value.length();
+				String value = entry.getValue();
+				int valueLen = value.length();
 
-                String head = text.substring(0, matchStart);
-                String tail = text.substring(matchStart + keyLen);
-                text = head + value + tail;
+				String head = text.substring(0, matchStart);
+				String tail = text.substring(matchStart + keyLen);
+				text = head + value + tail;
 
-                lastMatchEnd = matchStart + valueLen;
-                textLimit += (valueLen - keyLen);
-            }
-        }
+				lastMatchEnd = matchStart + valueLen;
+				textLimit += (valueLen - keyLen);
+			}
+		}
 
-        if ( initialText == text) {
-            return null;
-        } else {
-            return text;
-        }
-    }
+		if (initialText == text) {
+			return null;
+		} else {
+			return text;
+		}
+	}
 
-    //
+	//
 
 	private final Map<String, String>	changedBinaryTypes;
 	private final Set<String>			unchangedBinaryTypes;
@@ -571,7 +573,6 @@ public class SignatureRuleImpl implements SignatureRule {
 		if (outputDescriptor != null) {
 			return outputDescriptor;
 		}
-
 
 		char c = inputDescriptor.charAt(0);
 		if (c == '(') {

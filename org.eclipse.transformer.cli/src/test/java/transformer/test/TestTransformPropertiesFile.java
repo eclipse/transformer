@@ -29,81 +29,71 @@ import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformPropertiesFile extends CaptureTest {
 
-    public SelectionRuleImpl createSelectionRule(
-            CaptureLoggerImpl useLogger,
-            Set<String> useIncludes,
-            Set<String> useExcludes) {
+	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Set<String> useIncludes,
+		Set<String> useExcludes) {
 
-        return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
-    }
+		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
+	}
 
-    public SignatureRuleImpl createSignatureRule(
-            CaptureLoggerImpl useLogger,
-            Map<String, String> packageRename) {
+	public SignatureRuleImpl createSignatureRule(CaptureLoggerImpl useLogger, Map<String, String> packageRename) {
 
-        return new SignatureRuleImpl(
-                useLogger,
-                packageRename, null,
-                null,
-                null,
-                null);
-    }
-    
-    public static final String JAKARTA_SERVLET = "jakarta.servlet";
+		return new SignatureRuleImpl(useLogger, packageRename, null, null, null, null);
+	}
 
-    public static final String JAVAX_SERVLET = "javax.servlet";
+	public static final String	JAKARTA_SERVLET	= "jakarta.servlet";
 
-    public static final String JAVAX_PATH = "javax/servlet/Bundle.properties";
+	public static final String	JAVAX_SERVLET	= "javax.servlet";
 
-    public static final String JAKARTA_PATH = "jakarta/servlet/Bundle.properties";
+	public static final String	JAVAX_PATH		= "javax/servlet/Bundle.properties";
 
-    protected Set<String> includes;
+	public static final String	JAKARTA_PATH	= "jakarta/servlet/Bundle.properties";
 
-    public Set<String> getIncludes() {
-        if (includes == null) {
-            includes = new HashSet<String>();
-            includes.add(JAVAX_PATH);
-        }
+	protected Set<String>		includes;
 
-        return includes;
-    }
+	public Set<String> getIncludes() {
+		if (includes == null) {
+			includes = new HashSet<>();
+			includes.add(JAVAX_PATH);
+		}
 
-    public Set<String> getExcludes() {
-        return Collections.emptySet();
-    }
+		return includes;
+	}
 
-    protected Map<String, String> packageRenames;
+	public Set<String> getExcludes() {
+		return Collections.emptySet();
+	}
+
+	protected Map<String, String> packageRenames;
 
 	public Map<String, String> getPackageRenames() {
-		if ( packageRenames == null ) {
-			packageRenames = new HashMap<String, String>();
+		if (packageRenames == null) {
+			packageRenames = new HashMap<>();
 			packageRenames.put(JAVAX_SERVLET, JAKARTA_SERVLET);
 		}
 		return packageRenames;
 	}
 
-    public PropertiesActionImpl jakartaPropertiesAction;
+	public PropertiesActionImpl jakartaPropertiesAction;
 
-    public PropertiesActionImpl getJakartaPropertiesAction() {
-        if (jakartaPropertiesAction == null) {
-            CaptureLoggerImpl useLogger = getCaptureLogger();
+	public PropertiesActionImpl getJakartaPropertiesAction() {
+		if (jakartaPropertiesAction == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-            jakartaPropertiesAction = new PropertiesActionImpl(
-                    useLogger, false, false,
-                    createBuffer(),
-                    createSelectionRule(useLogger, getIncludes(), getExcludes()),
-                    createSignatureRule(useLogger, getPackageRenames()));
-        }
-        return jakartaPropertiesAction;
-    }
+			jakartaPropertiesAction = new PropertiesActionImpl(useLogger, false, false, createBuffer(),
+				createSelectionRule(useLogger, getIncludes(), getExcludes()),
+				createSignatureRule(useLogger, getPackageRenames()));
+		}
+		return jakartaPropertiesAction;
+	}
 
-    @Test
-    public void testJakartaTransform() throws IOException, TransformException {
-        PropertiesActionImpl propsAction = getJakartaPropertiesAction();
+	@Test
+	public void testJakartaTransform() throws IOException, TransformException {
+		PropertiesActionImpl propsAction = getJakartaPropertiesAction();
 
-        byte[] content = {};
-        propsAction.apply(JAVAX_PATH, new ByteArrayInputStream(content));
-        Assertions.assertTrue(JAKARTA_PATH.equals(propsAction.getLastActiveChanges().getOutputResourceName()));
-    }
+		byte[] content = {};
+		propsAction.apply(JAVAX_PATH, new ByteArrayInputStream(content));
+		Assertions.assertTrue(JAKARTA_PATH.equals(propsAction.getLastActiveChanges()
+			.getOutputResourceName()));
+	}
 
 }

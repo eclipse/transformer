@@ -33,37 +33,29 @@ import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
 
 public class ManifestActionImpl extends ActionImpl {
-	public static final String META_INF = "META-INF/";
-	public static final String MANIFEST_MF= "MANIFEST.MF";
-	public static final String META_INF_MANIFEST_MF = "META-INF/MANIFEST.MF";
+	public static final String	META_INF				= "META-INF/";
+	public static final String	MANIFEST_MF				= "MANIFEST.MF";
+	public static final String	META_INF_MANIFEST_MF	= "META-INF/MANIFEST.MF";
 
 	//
 
-	public static final boolean IS_MANIFEST = true;
-	public static final boolean IS_FEATURE = !IS_MANIFEST;
+	public static final boolean	IS_MANIFEST				= true;
+	public static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
-	public static ManifestActionImpl newManifestAction(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public static ManifestActionImpl newManifestAction(Logger logger, boolean isTerse, boolean isVerbose,
+		InputBufferImpl buffer, SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		return new ManifestActionImpl(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule, IS_MANIFEST);
 	}
 
-	public static ManifestActionImpl newFeatureAction(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule,
-		SignatureRuleImpl signatureRule) {
+	public static ManifestActionImpl newFeatureAction(Logger logger, boolean isTerse, boolean isVerbose,
+		InputBufferImpl buffer, SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		return new ManifestActionImpl(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule, IS_FEATURE);
 	}
 
-	public ManifestActionImpl(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule,
-		boolean isManifest) {
+	public ManifestActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule, boolean isManifest) {
 
 		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
 
@@ -74,12 +66,12 @@ public class ManifestActionImpl extends ActionImpl {
 
 	@Override
 	public String getName() {
-		return ( getIsManifest() ? "Manifest Action" : "Feature Action" );
+		return (getIsManifest() ? "Manifest Action" : "Feature Action");
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ( getIsManifest() ? ActionType.MANIFEST : ActionType.FEATURE );
+		return (getIsManifest() ? ActionType.MANIFEST : ActionType.FEATURE);
 	}
 
 	//
@@ -96,14 +88,13 @@ public class ManifestActionImpl extends ActionImpl {
 
 	@Override
 	public String getAcceptExtension() {
-		return ( getIsManifest() ? "manifest.mf" : ".mf" );
+		return (getIsManifest() ? "manifest.mf" : ".mf");
 	}
 
 	//
 
 	@Override
-	public ByteData apply(String initialName, byte[] initialBytes, int initialCount)
-		throws TransformException {
+	public ByteData apply(String initialName, byte[] initialBytes, int initialCount) throws TransformException {
 
 		String className = getClass().getSimpleName();
 		String methodName = "apply";
@@ -116,8 +107,8 @@ public class ManifestActionImpl extends ActionImpl {
 
 		Manifest initialManifest;
 		try {
-			initialManifest = new Manifest( initialData.asStream() );
-		} catch ( IOException e ) {
+			initialManifest = new Manifest(initialData.asStream());
+		} catch (IOException e) {
 			error("Failed to parse manifest [ {} ]", e, initialName);
 			return null;
 		}
@@ -127,10 +118,10 @@ public class ManifestActionImpl extends ActionImpl {
 		transform(initialName, initialManifest, finalManifest);
 
 		// info("[ {}.{} ]: [ {} ] Replacements [ {} ]",
-		//     getClass().getSimpleName(), "transform",
-		//     initialName, getActiveChanges().getReplacements());
+		// getClass().getSimpleName(), "transform",
+		// initialName, getActiveChanges().getReplacements());
 
-		if ( !hasNonResourceNameChanges() ) {
+		if (!hasNonResourceNameChanges()) {
 			debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, initialName);
 			return null;
 		}
@@ -138,13 +129,14 @@ public class ManifestActionImpl extends ActionImpl {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(initialCount);
 		try {
 			write(finalManifest, outputStream); // throws IOException
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			error("Failed to write manifest [ {} ]", e, initialName);
 			return null;
 		}
 
 		byte[] finalBytes = outputStream.toByteArray();
-		debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName, initialName, finalBytes.length);
+		debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName, initialName,
+			finalBytes.length);
 
 		return new ByteData(initialName, finalBytes);
 	}
@@ -153,65 +145,63 @@ public class ManifestActionImpl extends ActionImpl {
 		Attributes initialMainAttributes = initialManifest.getMainAttributes();
 		Attributes finalMainAttributes = finalManifest.getMainAttributes();
 
-		addReplacements( transformPackages(inputName, "main", initialMainAttributes, finalMainAttributes) );
+		addReplacements(transformPackages(inputName, "main", initialMainAttributes, finalMainAttributes));
 
-		if ( transformBundleIdentity(inputName, initialMainAttributes, finalMainAttributes) ) {
+		if (transformBundleIdentity(inputName, initialMainAttributes, finalMainAttributes)) {
 			addReplacement();
 		}
 
 		Map<String, Attributes> initialEntries = initialManifest.getEntries();
 		Map<String, Attributes> finalEntries = finalManifest.getEntries();
 
-		for ( Map.Entry<String, Attributes> entry : initialEntries.entrySet() ) {
+		for (Map.Entry<String, Attributes> entry : initialEntries.entrySet()) {
 			String entryKey = entry.getKey();
 			Attributes initialEntryAttributes = entry.getValue();
 
-			Attributes finalAttributes = new Attributes( initialEntryAttributes.size() );
+			Attributes finalAttributes = new Attributes(initialEntryAttributes.size());
 			finalEntries.put(entryKey, finalAttributes);
 
-			addReplacements( transformPackages(inputName, entryKey, initialEntryAttributes, finalAttributes) );
+			addReplacements(transformPackages(inputName, entryKey, initialEntryAttributes, finalAttributes));
 		}
 	}
 
 	private static final Set<String> SELECT_ATTRIBUTES;
 
 	static {
-		Set<String> useNames = new HashSet<String>();
+		Set<String> useNames = new HashSet<>();
 		useNames.add("DynamicImport-Package");
 		useNames.add("Export-Package");
-	    useNames.add("Import-Package");
-	    useNames.add("Subsystem-Content");
-	    useNames.add("IBM-API-Package");
-	    useNames.add("Provide-Capability");
-	    useNames.add("Require-Capability");
-	    SELECT_ATTRIBUTES = useNames;
+		useNames.add("Import-Package");
+		useNames.add("Subsystem-Content");
+		useNames.add("IBM-API-Package");
+		useNames.add("Provide-Capability");
+		useNames.add("Require-Capability");
+		SELECT_ATTRIBUTES = useNames;
 	}
 
 	protected boolean selectAttribute(String name) {
 		return SELECT_ATTRIBUTES.contains(name);
 	}
 
-	protected int transformPackages(
-		String inputName, String entryName,
-		Attributes initialAttributes, Attributes finalAttributes) {
+	protected int transformPackages(String inputName, String entryName, Attributes initialAttributes,
+		Attributes finalAttributes) {
 
-		debug("Transforming [ {} ]: [ {} ] Attributes [ {} ]",
-			inputName, entryName, initialAttributes.size() );
+		debug("Transforming [ {} ]: [ {} ] Attributes [ {} ]", inputName, entryName, initialAttributes.size());
 
 		int replacements = 0;
 
-		for ( Map.Entry<Object, Object> entries : initialAttributes.entrySet() ) {
+		for (Map.Entry<Object, Object> entries : initialAttributes.entrySet()) {
 			Object untypedName = entries.getKey();
 			String typedName = untypedName.toString();
 
 			String initialValue = (String) entries.getValue();
 			String finalValue = null;
 
-			if ( selectAttribute(typedName) ) {
-			   finalValue = replacePackages(initialValue);
+			if (selectAttribute(typedName)) {
+				finalValue = replacePackages(initialValue);
 			}
 
-			if ( finalValue == null ) {
+			if (finalValue == null) {
 				finalValue = initialValue;
 			} else {
 				replacements++;
@@ -220,14 +210,14 @@ public class ManifestActionImpl extends ActionImpl {
 			finalAttributes.put(untypedName, finalValue);
 		}
 
-		debug("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]",
-			inputName, entryName, finalAttributes.size(), replacements );
+		debug("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]", inputName, entryName,
+			finalAttributes.size(), replacements);
 
 		return replacements;
 	}
 
 	protected void write(Manifest manifest, OutputStream outputStream) throws IOException {
-		if ( getIsManifest() ) {
+		if (getIsManifest()) {
 			writeAsManifest(manifest, outputStream); // throws IOException
 		} else {
 			writeAsFeature(manifest, outputStream); // throws IOException
@@ -235,7 +225,7 @@ public class ManifestActionImpl extends ActionImpl {
 	}
 
 	protected void writeAsManifest(Manifest manifest, OutputStream outputStream) throws IOException {
-		//manifest.write(outputStream); // throws IOException
+		// manifest.write(outputStream); // throws IOException
 		ManifestWriter.write(manifest, outputStream);
 	}
 
@@ -249,30 +239,34 @@ public class ManifestActionImpl extends ActionImpl {
 
 		StringBuilder builder = new StringBuilder();
 
-		for ( Map.Entry<Object, Object> mainEntry : manifest.getMainAttributes().entrySet() ) {
-			writer.append( mainEntry.getKey().toString() );
+		for (Map.Entry<Object, Object> mainEntry : manifest.getMainAttributes()
+			.entrySet()) {
+			writer.append(mainEntry.getKey()
+				.toString());
 			writer.append(": ");
 
 			String value = (String) mainEntry.getValue();
-			if ( value.indexOf(',') == -1 ) {
+			if (value.indexOf(',') == -1) {
 				writer.append(value);
 
 			} else {
 				Parameters parms = OSGiHeader.parseHeader(value);
 
 				boolean continuedLine = false;
-				for ( Map.Entry<String, Attrs> parmEntry : parms.entrySet() ) {
-					if ( continuedLine ) {
+				for (Map.Entry<String, Attrs> parmEntry : parms.entrySet()) {
+					if (continuedLine) {
 						writer.append(",\r ");
 					}
 
-					// bnd might have added ~ characters if there are duplicates in
-					// the source, so we should remove them before we output it so we
+					// bnd might have added ~ characters if there are duplicates
+					// in
+					// the source, so we should remove them before we output it
+					// so we
 					// get back to the original intended content.
 
 					String parmName = parmEntry.getKey();
 					int index = parmName.indexOf('~');
-					if ( index != -1 ) {
+					if (index != -1) {
 						parmName = parmName.substring(0, index);
 					}
 					writer.append(parmName);
@@ -280,7 +274,7 @@ public class ManifestActionImpl extends ActionImpl {
 					Attrs parmAttrs = parmEntry.getValue();
 					for (Map.Entry<String, String> parmAttrEntry : parmAttrs.entrySet()) {
 						String parmAttrName = parmAttrEntry.getKey();
-						String parmAttrValue = quote( builder, parmAttrEntry.getValue() );
+						String parmAttrValue = quote(builder, parmAttrEntry.getValue());
 
 						writer.append("; ");
 						writer.append(parmAttrName);
@@ -311,9 +305,8 @@ public class ManifestActionImpl extends ActionImpl {
 	 * packages.
 	 *
 	 * @param text Text embedding zero, one, or more package names.
-	 *
-	 * @return The text with all embedded package names replaced.  Null if no
-	 *     replacements were performed.
+	 * @return The text with all embedded package names replaced. Null if no
+	 *         replacements were performed.
 	 */
 	protected String replacePackages(String text) {
 
@@ -321,27 +314,27 @@ public class ManifestActionImpl extends ActionImpl {
 
 		String initialText = text;
 
-		for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
+		for (Map.Entry<String, String> renameEntry : getPackageRenames().entrySet()) {
 			String key = renameEntry.getKey();
 			int keyLen = key.length();
 
 			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
-            if (matchSubpackages) {
-                key = SignatureRuleImpl.stripWildcard(key);
-            }
+			if (matchSubpackages) {
+				key = SignatureRuleImpl.stripWildcard(key);
+			}
 
 			// System.out.println("Next target [ " + key + " ]");
 
 			int textLimit = text.length() - keyLen;
 
 			int lastMatchEnd = 0;
-			while ( lastMatchEnd <= textLimit ) {
+			while (lastMatchEnd <= textLimit) {
 				int matchStart = text.indexOf(key, lastMatchEnd);
-				if ( matchStart == -1 ) {
+				if (matchStart == -1) {
 					break;
 				}
 
-				if ( !SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
+				if (!SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
 					lastMatchEnd = matchStart + keyLen;
 					continue;
 				}
@@ -355,7 +348,7 @@ public class ManifestActionImpl extends ActionImpl {
 				int tailLenBeforeReplaceVersion = tail.length();
 
 				String newVersion = getPackageVersions().get(value);
-				if ( newVersion != null ) {
+				if (newVersion != null) {
 					tail = replacePackageVersion(tail, newVersion);
 				} else {
 					debug("replacePackages [ {} ]: [ {} -> {} ]; leaving version", initialText, key, value);
@@ -366,7 +359,8 @@ public class ManifestActionImpl extends ActionImpl {
 
 				lastMatchEnd = matchStart + valueLen;
 
-				// Replacing the key or the version can increase or decrease the text length.
+				// Replacing the key or the version can increase or decrease the
+				// text length.
 				textLimit += (valueLen - keyLen);
 				textLimit += (tailLenAfterReplaceVersion - tailLenBeforeReplaceVersion);
 
@@ -374,7 +368,7 @@ public class ManifestActionImpl extends ActionImpl {
 			}
 		}
 
-		if ( initialText == text) {
+		if (initialText == text) {
 			// System.out.println("Final text is unchanged");
 			return null;
 		} else {
@@ -384,18 +378,18 @@ public class ManifestActionImpl extends ActionImpl {
 	}
 
 	// DynamicImport-Package: com.ibm.websphere.monitor.meters;version="1.0.0
-	//  ",com.ibm.websphere.monitor.jmx;version="1.0.0",com.ibm.ws.jsp.webcon
-	//  tainerext,com.ibm.wsspi.request.probe.bci,com.ibm.wsspi.probeExtensio
-	//  n,com.ibm.ws.webcontainer.monitor
+	// ",com.ibm.websphere.monitor.jmx;version="1.0.0",com.ibm.ws.jsp.webcon
+	// tainerext,com.ibm.wsspi.request.probe.bci,com.ibm.wsspi.probeExtensio
+	// n,com.ibm.ws.webcontainer.monitor
 
 	// Import-Package: javax.servlet;version="[2.6,3)",javax.servlet.annotati
-	//  on;version="[2.6,3)",javax.servlet.descriptor;version="[2.6,3)",javax
-	//  .servlet.http;version="[2.6,3)",com.ibm.wsspi.http;version="[2.0,3)",
-	//  com.ibm.ws.javaee.dd;version="1.0",com.ibm.ws.javaee.dd.common;versio
-	//  n="1.0",com.ibm.ws.javaee.dd.common.wsclient;version="1.0",com.ibm.ws
-	//  .javaee.dd.web;version="1.0",com.ibm.ws.javaee.dd.web.common;version=
-	//  "1.0",com.ibm.ws.util;version="[1.0,2)",com.ibm.wsspi.injectionengine
-	//  ;version="[3.0,4)",com.ibm.ws.runtime.metadata;version="[1.1,2)"
+	// on;version="[2.6,3)",javax.servlet.descriptor;version="[2.6,3)",javax
+	// .servlet.http;version="[2.6,3)",com.ibm.wsspi.http;version="[2.0,3)",
+	// com.ibm.ws.javaee.dd;version="1.0",com.ibm.ws.javaee.dd.common;versio
+	// n="1.0",com.ibm.ws.javaee.dd.common.wsclient;version="1.0",com.ibm.ws
+	// .javaee.dd.web;version="1.0",com.ibm.ws.javaee.dd.web.common;version=
+	// "1.0",com.ibm.ws.util;version="[1.0,2)",com.ibm.wsspi.injectionengine
+	// ;version="[3.0,4)",com.ibm.ws.runtime.metadata;version="[1.1,2)"
 
 	/**
 	 * Answer package attribute text which has been updated with a new version
@@ -421,102 +415,112 @@ public class ManifestActionImpl extends ActionImpl {
 	 *         newVersion.
 	 */
 	protected String replacePackageVersion(String text, String newVersion) {
-	    //debug("replacePackageVersion: ( {} )",  text );
+		// debug("replacePackageVersion: ( {} )", text );
 
-	    String packageText = getPackageAttributeText(text);
+		String packageText = getPackageAttributeText(text);
 
-	    if ( packageText == null ) {
-	        return text;
-	    } else if ( packageText.isEmpty() ) {
-	        return text;
-	    }
+		if (packageText == null) {
+			return text;
+		} else if (packageText.isEmpty()) {
+			return text;
+		}
 
-	    //debug("replacePackageVersion: (packageText: {} )", packageText);
+		// debug("replacePackageVersion: (packageText: {} )", packageText);
 
-	    final String VERSION = "version";
-	    final int VERSION_LEN = 7;
-	    final char QUOTE_MARK = '\"';
+		final String VERSION = "version";
+		final int VERSION_LEN = 7;
+		final char QUOTE_MARK = '\"';
 
-	    int versionIndex = packageText.indexOf(VERSION);
-	    if ( versionIndex == -1 ) {
-	        return text;  // nothing to replace
-	    }
+		int versionIndex = packageText.indexOf(VERSION);
+		if (versionIndex == -1) {
+			return text; // nothing to replace
+		}
 
-	    // The actual version numbers are after the "version" and the "=" and between quotation marks ("").
-	    // Ignore white space that occurs around the "=", but do not ignore white space between quotation marks.
-	    // Everything inside the "" is part of the version and will be replaced.
-	    boolean foundEquals = false;
-	    boolean foundQuotationMark = false;
-	    int versionBeginIndex = -1;
-	    int versionEndIndex = -1;
+		// The actual version numbers are after the "version" and the "=" and
+		// between quotation marks ("").
+		// Ignore white space that occurs around the "=", but do not ignore
+		// white space between quotation marks.
+		// Everything inside the "" is part of the version and will be replaced.
+		boolean foundEquals = false;
+		boolean foundQuotationMark = false;
+		int versionBeginIndex = -1;
+		int versionEndIndex = -1;
 
-	    // skip to actual version number which is after "=".  Version begins inside double quotation marks
-	    for (int i=versionIndex + VERSION_LEN; i < packageText.length(); i++) {
-	        char ch = packageText.charAt(i);
+		// skip to actual version number which is after "=". Version begins
+		// inside double quotation marks
+		for (int i = versionIndex + VERSION_LEN; i < packageText.length(); i++) {
+			char ch = packageText.charAt(i);
 
-	        // skip white space until we find equals sign
-	        if ( !foundEquals ) {
-	            if (ch == '=') {
-	                foundEquals = true;
-	                continue;
-	            }
+			// skip white space until we find equals sign
+			if (!foundEquals) {
+				if (ch == '=') {
+					foundEquals = true;
+					continue;
+				}
 
-	            if ( Character.isWhitespace(ch)) {
-	                continue;
-	            }
-	            error("Syntax error found non-white-space character before equals sign in version [{}]", packageText);
-	            return text;   // Syntax error - returning original text
-	        }
+				if (Character.isWhitespace(ch)) {
+					continue;
+				}
+				error("Syntax error found non-white-space character before equals sign in version [{}]", packageText);
+				return text; // Syntax error - returning original text
+			}
 
-	        // Skip white space past the equals sign
-	        if ( Character.isWhitespace(ch) ) {
-	            // debug("ch is \'{}\' and is whitespace.", ch);
-	            continue;
-	        }
+			// Skip white space past the equals sign
+			if (Character.isWhitespace(ch)) {
+				// debug("ch is \'{}\' and is whitespace.", ch);
+				continue;
+			}
 
-	        // When we find the quotation marks past the equals sign, we are finished.
-	        if ( !foundQuotationMark ) {
-	            if ( ch == QUOTE_MARK ) {
-	                versionBeginIndex = i+1;  // just past the 1st quotation mark
+			// When we find the quotation marks past the equals sign, we are
+			// finished.
+			if (!foundQuotationMark) {
+				if (ch == QUOTE_MARK) {
+					versionBeginIndex = i + 1; // just past the 1st quotation
+												// mark
 
-	                versionEndIndex = packageText.indexOf('\"', i+1);
-	                if (versionEndIndex == -1) {
-	                    error("Syntax error, package version does not have closing quotation mark");
-	                    return text; // Syntax error - returning original text
-	                }
-	                versionEndIndex--; // just before the 2nd quotation mark
+					versionEndIndex = packageText.indexOf('\"', i + 1);
+					if (versionEndIndex == -1) {
+						error("Syntax error, package version does not have closing quotation mark");
+						return text; // Syntax error - returning original text
+					}
+					versionEndIndex--; // just before the 2nd quotation mark
 
-	                //debug("versionBeginIndex = [{}]", versionBeginIndex);
-	                //debug("versionEndIndex = [{}]", versionEndIndex);
-	                foundQuotationMark = true; // not necessary, just leave loop
-	                break;
-	            }
+					// debug("versionBeginIndex = [{}]", versionBeginIndex);
+					// debug("versionEndIndex = [{}]", versionEndIndex);
+					foundQuotationMark = true; // not necessary, just leave loop
+					break;
+				}
 
-	            if ( Character.isWhitespace(ch) ) {
-	                continue;
-	            }
+				if (Character.isWhitespace(ch)) {
+					continue;
+				}
 
-	            error("Syntax error found non-white-space character after equals sign  in version [{}]", packageText);
-	            return text;   // Syntax error - returning original text
-	        }
-	    }
+				error("Syntax error found non-white-space character after equals sign  in version [{}]", packageText);
+				return text; // Syntax error - returning original text
+			}
+		}
 
-	    //String oldVersion = packageText.substring(versionBeginIndex, versionEndIndex+1);
-	    //debug("old version[{}] new version[{}]", oldVersion, newVersion);
+		// String oldVersion = packageText.substring(versionBeginIndex,
+		// versionEndIndex+1);
+		// debug("old version[{}] new version[{}]", oldVersion, newVersion);
 
-	    String head = text.substring(0, versionBeginIndex);
-	    String tail = text.substring(versionEndIndex+1);
+		String head = text.substring(0, versionBeginIndex);
+		String tail = text.substring(versionEndIndex + 1);
 
-	    String newText = head + newVersion + tail;
-	    //debug("Old [{}] New [{}]", text , newText);
+		String newText = head + newVersion + tail;
+		// debug("Old [{}] New [{}]", text , newText);
 
-	    return newText;
+		return newText;
 	}
 
 	//
-	// Subsystem-Content: com.ibm.websphere.appserver.javax.el-3.0; apiJar=false; type="osgi.subsystem.feature",
-	//  com.ibm.websphere.appserver.javax.servlet-3.1; ibm.tolerates:="4.0"; apiJar=false; type="osgi.subsystem.feature",
-	//  com.ibm.websphere.javaee.jsp.2.3; location:="dev/api/spec/,lib/"; mavenCoordinates="javax.servlet.jsp:javax.servlet.jsp-api:2.3.1"; version="[1.0.0,1.0.200)"
+	// Subsystem-Content: com.ibm.websphere.appserver.javax.el-3.0;
+	// apiJar=false; type="osgi.subsystem.feature",
+	// com.ibm.websphere.appserver.javax.servlet-3.1; ibm.tolerates:="4.0";
+	// apiJar=false; type="osgi.subsystem.feature",
+	// com.ibm.websphere.javaee.jsp.2.3; location:="dev/api/spec/,lib/";
+	// mavenCoordinates="javax.servlet.jsp:javax.servlet.jsp-api:2.3.1";
+	// version="[1.0.0,1.0.200)"
 
 	/**
 	 * @param text - A string containing package attribute text at the head of
@@ -528,42 +532,46 @@ public class ManifestActionImpl extends ActionImpl {
 	 * @return package attribute text
 	 */
 	protected String getPackageAttributeText(String text) {
-		//debug("getPackageAttributeText ENTER[ text: {}]", text);
+		// debug("getPackageAttributeText ENTER[ text: {}]", text);
 
-		if ( text == null ) {
+		if (text == null) {
 			return null;
 		}
 
-		if ( !firstCharIsSemicolon(text) ) {
-			return "";  // no package attributes
+		if (!firstCharIsSemicolon(text)) {
+			return ""; // no package attributes
 		}
 
 		int commaIndex = text.indexOf(',');
 		debug("Comma index: [{}]", commaIndex);
 		// If there is no comma, then the whole text is the packageAttributeText
-		if ( commaIndex == -1 ) {
+		if (commaIndex == -1) {
 			return text;
 		}
 
 		// packageText is beginning of text up to and including comma.
-		// Need to test whether the comma is within quotes - thus not the true end of the packageText.
-		// If an odd number of quotes are found, then the comma is in quotes and we need to find the next comma.
-		String packageText = text.substring(0, commaIndex+1);
+		// Need to test whether the comma is within quotes - thus not the true
+		// end of the packageText.
+		// If an odd number of quotes are found, then the comma is in quotes and
+		// we need to find the next comma.
+		String packageText = text.substring(0, commaIndex + 1);
 		debug("packageText [ {} ]", packageText);
 
 		while (!isPackageDelimitingComma(text, packageText, commaIndex)) {
-		    commaIndex = text.indexOf(',', packageText.length());
-		    if ( commaIndex == -1 ) {
-		        packageText = text;  // No trailing comma indicates embedding text is the package text.
-		        break;
-		    } else {
-		        packageText = text.substring(0, commaIndex+1);
-		    }
+			commaIndex = text.indexOf(',', packageText.length());
+			if (commaIndex == -1) {
+				packageText = text; // No trailing comma indicates embedding
+									// text is the package text.
+				break;
+			} else {
+				packageText = text.substring(0, commaIndex + 1);
+			}
 
-		    // If there is a syntax error (missing closing quotes) return what we have
-		    if ( !hasEvenNumberOfOccurrencesOfChar(text, '\"') ) {
-		        break;
-		    }
+			// If there is a syntax error (missing closing quotes) return what
+			// we have
+			if (!hasEvenNumberOfOccurrencesOfChar(text, '\"')) {
+				break;
+			}
 		}
 
 		debug("getPackageAttributeText returning: [ {} ]", packageText);
@@ -573,130 +581,130 @@ public class ManifestActionImpl extends ActionImpl {
 	/**
 	 * Tell if the first non-white space character of the parameter is a
 	 * semi-colon.
-	 * 
+	 *
 	 * @param s string
 	 */
 	protected boolean firstCharIsSemicolon(String s) {
-	    for ( int i=0; i < s.length(); i++ ) {
-	        if ( Character.isWhitespace(s.charAt(i)) ) {
-	            continue;
-	        }
-	        if ( s.charAt(i) == ';' ) {
-	            return true;
-	        }
-	        return false;
-	    }
-	    return false;
+		for (int i = 0; i < s.length(); i++) {
+			if (Character.isWhitespace(s.charAt(i))) {
+				continue;
+			}
+			if (s.charAt(i) == ';') {
+				return true;
+			}
+			return false;
+		}
+		return false;
 	}
 
 	protected int indexOfNextNonWhiteSpaceChar(String s, int currentIndex) {
-	    for ( int i=currentIndex; i < s.length(); i++ ) {
-	        if ( Character.isWhitespace(s.charAt(i)) ) {
-	            continue;
-	        }
-	        return i;
-	    }
-	    return -1;
+		for (int i = currentIndex; i < s.length(); i++) {
+			if (Character.isWhitespace(s.charAt(i))) {
+				continue;
+			}
+			return i;
+		}
+		return -1;
 	}
 
 	/**
-	 *
-	 * @param testString - The entire remaining unprocessed text of a MANIFEST.MF attribute that immediately follows a package name
-	 * @param packageText - Text that immediately follows a package name in a MANIFEST.MF attribute
+	 * @param testString - The entire remaining unprocessed text of a
+	 *            MANIFEST.MF attribute that immediately follows a package name
+	 * @param packageText - Text that immediately follows a package name in a
+	 *            MANIFEST.MF attribute
 	 * @param indexOfComma
 	 * @return
 	 */
-    private boolean isPackageDelimitingComma(String testString,
-                                             String packageText,
-                                             int indexOfComma) {
+	private boolean isPackageDelimitingComma(String testString, String packageText, int indexOfComma) {
 
-        int indexOfNextNonWhiteSpaceCharAfterComma = indexOfNextNonWhiteSpaceChar(testString, indexOfComma+1);
-        char characterAfterComma = testString.charAt(indexOfNextNonWhiteSpaceCharAfterComma);
-        if (Character.isAlphabetic(characterAfterComma)) {
-            if ( !hasEvenNumberOfOccurrencesOfChar(packageText, '\"') ) {
-                return false;
-           }
-            return true;
-        }
+		int indexOfNextNonWhiteSpaceCharAfterComma = indexOfNextNonWhiteSpaceChar(testString, indexOfComma + 1);
+		char characterAfterComma = testString.charAt(indexOfNextNonWhiteSpaceCharAfterComma);
+		if (Character.isAlphabetic(characterAfterComma)) {
+			if (!hasEvenNumberOfOccurrencesOfChar(packageText, '\"')) {
+				return false;
+			}
+			return true;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
 	private boolean hasEvenNumberOfOccurrencesOfChar(String testString, char testChar) {
-		long occurrences = testString.chars().filter(ch -> ch == '\"').count();
-		return ((occurrences % 2 ) == 0);
+		long occurrences = testString.chars()
+			.filter(ch -> ch == '\"')
+			.count();
+		return ((occurrences % 2) == 0);
 	}
 
 	//
 
-	public static final String SYMBOLIC_NAME_PROPERTY_NAME = "Bundle-SymbolicName";
-	public static final String VERSION_PROPERTY_NAME = "Bundle-Version";
-	public static final String NAME_PROPERTY_NAME = "Bundle-Name";
-	public static final String DESCRIPTION_PROPERTY_NAME = "Bundle-Description";
+	public static final String	SYMBOLIC_NAME_PROPERTY_NAME	= "Bundle-SymbolicName";
+	public static final String	VERSION_PROPERTY_NAME		= "Bundle-Version";
+	public static final String	NAME_PROPERTY_NAME			= "Bundle-Name";
+	public static final String	DESCRIPTION_PROPERTY_NAME	= "Bundle-Description";
 
-// Bundle case:
-//	Bundle updates:
-//
-//		Updated:
-//
-//		Bundle-Description: WAS WebContainer 8.1 with Servlet 4.0 support
-//		Bundle-Name: WAS WebContainer
-//		Bundle-SymbolicName: com.ibm.ws.webcontainer.servlet.4.0
-//		Bundle-Version: 1.0.36.cl200120200108-0300
-//
-//		Ignored:
-//
-//		Bundle-Copyright: Copyright (c) 1999, 2019 IBM Corporation and others.
-//		  All rights reserved. This program and the accompanying materials are
-//		  made available under the terms of the Eclipse Public License v1.0 wh
-//		 ich accompanies this distribution, and is available at http://www.ecl
-//		 ipse.org/legal/epl-v10.html.
-//		Bundle-License: Eclipse Public License; url=https://www.eclipse.org/le
-//		 gal/epl-v10.html
-//		Bundle-ManifestVersion: 2
-//		Bundle-SCM: connection=scm:git:https://github.com/OpenLiberty/open-lib
-//		 erty.git, developerConnection=scm:git:https://github.com:OpenLiberty/
-//		 open-liberty.git, url=https://github.com/OpenLiberty/open-liberty/tre
-//		 e/master
-//		Bundle-Vendor: IBM
+	// Bundle case:
+	// Bundle updates:
+	//
+	// Updated:
+	//
+	// Bundle-Description: WAS WebContainer 8.1 with Servlet 4.0 support
+	// Bundle-Name: WAS WebContainer
+	// Bundle-SymbolicName: com.ibm.ws.webcontainer.servlet.4.0
+	// Bundle-Version: 1.0.36.cl200120200108-0300
+	//
+	// Ignored:
+	//
+	// Bundle-Copyright: Copyright (c) 1999, 2019 IBM Corporation and others.
+	// All rights reserved. This program and the accompanying materials are
+	// made available under the terms of the Eclipse Public License v1.0 wh
+	// ich accompanies this distribution, and is available at http://www.ecl
+	// ipse.org/legal/epl-v10.html.
+	// Bundle-License: Eclipse Public License; url=https://www.eclipse.org/le
+	// gal/epl-v10.html
+	// Bundle-ManifestVersion: 2
+	// Bundle-SCM: connection=scm:git:https://github.com/OpenLiberty/open-lib
+	// erty.git, developerConnection=scm:git:https://github.com:OpenLiberty/
+	// open-liberty.git, url=https://github.com/OpenLiberty/open-liberty/tre
+	// e/master
+	// Bundle-Vendor: IBM
 
 	// Subsystem case:
 	//
-//	Subsystem-Description: %description
-//	Subsystem-License: https://www.eclipse.org/legal/epl-v10.html
-//	Subsystem-Localization: OSGI-INF/l10n/com.ibm.websphere.appserver.jsp-2.3
-//	Subsystem-ManifestVersion: 1
-//	Subsystem-Name: JavaServer Pages 2.3
-//	Subsystem-SymbolicName: com.ibm.websphere.appserver.jsp-2.3; visibility:=public; singleton:=true
-//	Subsystem-Type: osgi.subsystem.feature
-//	Subsystem-Vendor: IBM Corp.
-//	Subsystem-Version: 1.0.0
+	// Subsystem-Description: %description
+	// Subsystem-License: https://www.eclipse.org/legal/epl-v10.html
+	// Subsystem-Localization: OSGI-INF/l10n/com.ibm.websphere.appserver.jsp-2.3
+	// Subsystem-ManifestVersion: 1
+	// Subsystem-Name: JavaServer Pages 2.3
+	// Subsystem-SymbolicName: com.ibm.websphere.appserver.jsp-2.3;
+	// visibility:=public; singleton:=true
+	// Subsystem-Type: osgi.subsystem.feature
+	// Subsystem-Vendor: IBM Corp.
+	// Subsystem-Version: 1.0.0
 
-	public boolean transformBundleIdentity(
-		String inputName,
-		Attributes initialMainAttributes,
+	public boolean transformBundleIdentity(String inputName, Attributes initialMainAttributes,
 		Attributes finalMainAttributes) {
 
 		String initialSymbolicName = initialMainAttributes.getValue(SYMBOLIC_NAME_PROPERTY_NAME);
-		if ( initialSymbolicName == null ) {
+		if (initialSymbolicName == null) {
 			debug("Input [ {} ] has no bundle symbolic name", inputName);
 			return false;
 		}
 
 		int indexOfSemiColon = initialSymbolicName.indexOf(';');
 		String symbolicNamesAttributes = null;
-		if ( indexOfSemiColon != -1 ) {
-		    symbolicNamesAttributes = initialSymbolicName.substring(indexOfSemiColon);
-		    initialSymbolicName = initialSymbolicName.substring(0, indexOfSemiColon);
+		if (indexOfSemiColon != -1) {
+			symbolicNamesAttributes = initialSymbolicName.substring(indexOfSemiColon);
+			initialSymbolicName = initialSymbolicName.substring(0, indexOfSemiColon);
 		}
 
 		String matchCase;
 		boolean matched;
 		boolean isWildcard;
 		BundleData bundleUpdate = getBundleUpdate(initialSymbolicName);
-		if ( bundleUpdate == null ) {
+		if (bundleUpdate == null) {
 			bundleUpdate = getBundleUpdate("*");
-			if ( bundleUpdate != null ) {
+			if (bundleUpdate != null) {
 				matched = true;
 				isWildcard = true;
 				matchCase = "a wildcard identity update";
@@ -711,35 +719,33 @@ public class ManifestActionImpl extends ActionImpl {
 			matchCase = "identity update";
 		}
 		debug("Input [ {} ] symbolic name [ {} ] has {}", inputName, initialSymbolicName, matchCase);
-		if ( !matched ) {
+		if (!matched) {
 			return false;
 		}
 
 		@SuppressWarnings("null")
 		String finalSymbolicName = bundleUpdate.getSymbolicName();
 
-		if ( isWildcard ) {
+		if (isWildcard) {
 			int wildcardOffset = finalSymbolicName.indexOf('*');
-			if ( wildcardOffset != -1 ) {
-				finalSymbolicName =
-					finalSymbolicName.substring(0, wildcardOffset) +
-					initialSymbolicName +
-					finalSymbolicName.substring(wildcardOffset + 1);
+			if (wildcardOffset != -1) {
+				finalSymbolicName = finalSymbolicName.substring(0, wildcardOffset) + initialSymbolicName
+					+ finalSymbolicName.substring(wildcardOffset + 1);
 			}
 		}
 
 		if (symbolicNamesAttributes != null) {
-		   finalSymbolicName += symbolicNamesAttributes;
+			finalSymbolicName += symbolicNamesAttributes;
 		}
 
 		finalMainAttributes.putValue(SYMBOLIC_NAME_PROPERTY_NAME, finalSymbolicName);
 		verbose("Bundle symbolic name: {} --> {}", initialSymbolicName, finalSymbolicName);
 
-		if ( !isWildcard ) {
+		if (!isWildcard) {
 			String initialVersion = initialMainAttributes.getValue(VERSION_PROPERTY_NAME);
-			if ( initialVersion != null ) {
+			if (initialVersion != null) {
 				String finalVersion = bundleUpdate.getVersion();
-				if ( (finalVersion != null) && !finalVersion.isEmpty() ) {
+				if ((finalVersion != null) && !finalVersion.isEmpty()) {
 					finalMainAttributes.putValue(VERSION_PROPERTY_NAME, finalVersion);
 					verbose("Bundle version: {} --> {}", initialVersion, finalVersion);
 				}
@@ -747,18 +753,18 @@ public class ManifestActionImpl extends ActionImpl {
 		}
 
 		String initialName = initialMainAttributes.getValue(NAME_PROPERTY_NAME);
-		if ( initialName != null ) {
+		if (initialName != null) {
 			String finalName = bundleUpdate.updateName(initialName);
-			if ( (finalName != null) && !finalName.isEmpty() ) {
+			if ((finalName != null) && !finalName.isEmpty()) {
 				finalMainAttributes.putValue(NAME_PROPERTY_NAME, finalName);
 				verbose("Bundle name: {} --> {}", initialName, finalName);
 			}
 		}
 
 		String initialDescription = initialMainAttributes.getValue(DESCRIPTION_PROPERTY_NAME);
-		if ( initialDescription != null ) {
+		if (initialDescription != null) {
 			String finalDescription = bundleUpdate.updateDescription(initialDescription);
-			if ( (finalDescription != null) && !finalDescription.isEmpty() ) {
+			if ((finalDescription != null) && !finalDescription.isEmpty()) {
 				finalMainAttributes.putValue(DESCRIPTION_PROPERTY_NAME, finalDescription);
 				verbose("Bundle description: {} --> {}", initialDescription, finalDescription);
 			}

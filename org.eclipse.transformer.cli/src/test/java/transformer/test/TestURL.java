@@ -27,12 +27,12 @@ import org.junit.jupiter.api.Test;
 public class TestURL {
 
 	public static String classToResource(String className) {
-		return className.replace('.',  '/') + ".class";
+		return className.replace('.', '/') + ".class";
 	}
 
 	public static int firstDifference(byte[] data1, byte[] data2, int length) {
-		for ( int offset = 0; offset< length; offset++ ) {
-			if ( data1[offset] != data2[offset] ) {
+		for (int offset = 0; offset < length; offset++) {
+			if (data1[offset] != data2[offset]) {
 				return offset;
 			}
 		}
@@ -56,7 +56,8 @@ public class TestURL {
 		public TransformURLConnection(URL baseURL) throws IOException {
 			super(baseURL);
 
-			this.baseConnection = this.getURL().openConnection(); // 'openConnection' throws IOException
+			this.baseConnection = this.getURL()
+				.openConnection(); // 'openConnection' throws IOException
 		}
 
 		//
@@ -74,10 +75,13 @@ public class TestURL {
 			getBaseConnection().connect(); // 'connect' throws IOException
 		}
 
+		@Override
 		public InputStream getInputStream() throws IOException {
 			URLConnection useBaseConnection = getBaseConnection();
-			String baseName = useBaseConnection.getURL().toString();
-			InputStream baseStream = useBaseConnection.getInputStream(); // throws IOException
+			String baseName = useBaseConnection.getURL()
+				.toString();
+			InputStream baseStream = useBaseConnection.getInputStream(); // throws
+																			// IOException
 
 			ByteData inputData = FileUtils.read(baseName, baseStream);
 
@@ -100,8 +104,8 @@ public class TestURL {
 
 		URL xformURL;
 		try {
-			xformURL = new URL(null, urlTestURLName, new TransformURLStreamHandler(urlTestURL) );
-		} catch ( MalformedURLException e ) {
+			xformURL = new URL(null, urlTestURLName, new TransformURLStreamHandler(urlTestURL));
+		} catch (MalformedURLException e) {
 			Assertions.fail("Failed to wrap test URL: " + e);
 			return;
 		}
@@ -111,7 +115,7 @@ public class TestURL {
 		ByteData directData;
 		try {
 			directData = FileUtils.read(urlTestURLName, urlTestURL.openStream(), -1);
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			Assertions.fail("Failed to read direct URL [ " + urlTestURLName + " ]: " + e);
 			return;
 		}
@@ -119,20 +123,22 @@ public class TestURL {
 		ByteData indirectData;
 		try {
 			indirectData = FileUtils.read(urlTestURLName, xformURL.openStream(), -1);
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			Assertions.fail("Failed to read indirect URL [ " + urlTestURLName + " ]: " + e);
 			return;
 		}
 
-		if ( (directData != null) && (indirectData != null) ) {
-			if ( directData.length != indirectData.length ) {
-				Assertions.fail("Length change [ " + urlTestURLName + " ] Direct [ " + directData.length + " ] Indirect [ " + indirectData.length + " ]");
+		if ((directData != null) && (indirectData != null)) {
+			if (directData.length != indirectData.length) {
+				Assertions.fail("Length change [ " + urlTestURLName + " ] Direct [ " + directData.length
+					+ " ] Indirect [ " + indirectData.length + " ]");
 			} else {
 				int firstChange = firstDifference(directData.data, indirectData.data, directData.length);
-				if ( firstChange != -1 ) {
+				if (firstChange != -1) {
 					Assertions.fail("Data change [ " + urlTestURLName + " ] at [ " + firstChange + " ]");
 				} else {
-					System.out.println("Direct matches indirect [ " + urlTestURLName + " ] to length [ " + directData.length + " ]");
+					System.out.println(
+						"Direct matches indirect [ " + urlTestURLName + " ] to length [ " + directData.length + " ]");
 				}
 			}
 		}

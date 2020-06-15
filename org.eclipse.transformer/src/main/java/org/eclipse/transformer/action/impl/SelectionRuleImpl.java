@@ -24,43 +24,41 @@ public class SelectionRuleImpl implements SelectionRule {
 	public SelectionRuleImpl(Logger logger, Set<String> includes, Set<String> excludes) {
 		this.logger = logger;
 
-		if ( includes == null ) {
+		if (includes == null) {
 			this.included = Collections.emptySet();
 			this.includedExact = Collections.emptySet();
 			this.includedHead = Collections.emptySet();
 			this.includedTail = Collections.emptySet();
 			this.includedAny = Collections.emptySet();
 		} else {
-			this.included = new HashSet<String>(includes);		
-			this.includedExact = new HashSet<String>();
-			this.includedHead = new HashSet<String>();
-			this.includedTail = new HashSet<String>();
-			this.includedAny = new HashSet<String>();
-			TransformProperties.processSelections(
-				this.included,
-				this.includedExact, this.includedHead, this.includedTail, this.includedAny );
+			this.included = new HashSet<>(includes);
+			this.includedExact = new HashSet<>();
+			this.includedHead = new HashSet<>();
+			this.includedTail = new HashSet<>();
+			this.includedAny = new HashSet<>();
+			TransformProperties.processSelections(this.included, this.includedExact, this.includedHead,
+				this.includedTail, this.includedAny);
 		}
 
-		if ( excludes == null ) {
+		if (excludes == null) {
 			this.excluded = Collections.emptySet();
 			this.excludedExact = Collections.emptySet();
 			this.excludedHead = Collections.emptySet();
 			this.excludedTail = Collections.emptySet();
 			this.excludedAny = Collections.emptySet();
 		} else {
-			this.excluded = new HashSet<String>(excludes);
-			this.excludedExact = new HashSet<String>();
-			this.excludedHead = new HashSet<String>();
-			this.excludedTail = new HashSet<String>();
-			this.excludedAny = new HashSet<String>();
-			TransformProperties.processSelections(
-				this.excluded,
-				this.excludedExact, this.excludedHead, this.excludedTail, this.excludedAny );
+			this.excluded = new HashSet<>(excludes);
+			this.excludedExact = new HashSet<>();
+			this.excludedHead = new HashSet<>();
+			this.excludedTail = new HashSet<>();
+			this.excludedAny = new HashSet<>();
+			TransformProperties.processSelections(this.excluded, this.excludedExact, this.excludedHead,
+				this.excludedTail, this.excludedAny);
 		}
 	}
 
 	//
-	
+
 	private final Logger logger;
 
 	public Logger getLogger() {
@@ -73,51 +71,51 @@ public class SelectionRuleImpl implements SelectionRule {
 
 	//
 
-	private final Set<String> included;
-	private final Set<String> includedExact;
-	private final Set<String> includedHead;
-	private final Set<String> includedTail;
-	private final Set<String> includedAny;
-	
-	private final Set<String> excluded;
-	private final Set<String> excludedExact;
-	private final Set<String> excludedHead;
-	private final Set<String> excludedTail;	
-	private final Set<String> excludedAny;	
+	private final Set<String>	included;
+	private final Set<String>	includedExact;
+	private final Set<String>	includedHead;
+	private final Set<String>	includedTail;
+	private final Set<String>	includedAny;
+
+	private final Set<String>	excluded;
+	private final Set<String>	excludedExact;
+	private final Set<String>	excludedHead;
+	private final Set<String>	excludedTail;
+	private final Set<String>	excludedAny;
 
 	@Override
 	public boolean select(String resourceName) {
 		boolean isIncluded = selectIncluded(resourceName);
 		boolean isExcluded = rejectExcluded(resourceName);
 
-		return ( isIncluded && !isExcluded );
+		return (isIncluded && !isExcluded);
 	}
 
 	@Override
 	public boolean selectIncluded(String resourceName) {
-		if ( included.isEmpty() ) {
+		if (included.isEmpty()) {
 			debug("Include [ {} ]: {}", resourceName, "No includes");
 			return true;
 
-		} else if ( includedExact.contains(resourceName) ) {
+		} else if (includedExact.contains(resourceName)) {
 			debug("Include [ {} ]: {}", resourceName, "Exact include");
 			return true;
 
 		} else {
-			for ( String tail : includedHead ) {
-				if ( resourceName.endsWith(tail) ) {
+			for (String tail : includedHead) {
+				if (resourceName.endsWith(tail)) {
 					debug("Include [ {} ]: {} ({})", resourceName, "Match tail", tail);
 					return true;
 				}
 			}
-			for ( String head : includedTail ) {
-				if ( resourceName.startsWith(head) ) {
+			for (String head : includedTail) {
+				if (resourceName.startsWith(head)) {
 					debug("Include [ {} ]: {} ({})", resourceName, "Match head", head);
 					return true;
 				}
 			}
-			for ( String middle : includedAny ) {
-				if ( resourceName.contains(middle) ) {
+			for (String middle : includedAny) {
+				if (resourceName.contains(middle)) {
 					debug("Include [ {} ]: {} ({})", resourceName, "Match middle", middle);
 					return true;
 				}
@@ -129,30 +127,30 @@ public class SelectionRuleImpl implements SelectionRule {
 	}
 
 	@Override
-	public boolean rejectExcluded(String resourceName ) {
-		if ( excluded.isEmpty() ) {
+	public boolean rejectExcluded(String resourceName) {
+		if (excluded.isEmpty()) {
 			debug("Do not exclude[ {} ]: {}", resourceName, "No excludes");
 			return false;
 
-		} else if ( excludedExact.contains(resourceName) ) {
+		} else if (excludedExact.contains(resourceName)) {
 			debug("Exclude [ {} ]: {}", resourceName, "Exact exclude");
 			return true;
 
 		} else {
-			for ( String tail : excludedHead ) {
-				if ( resourceName.endsWith(tail) ) {
+			for (String tail : excludedHead) {
+				if (resourceName.endsWith(tail)) {
 					debug("Exclude[ {} ]: {} ({})", resourceName, "Match tail", tail);
 					return true;
 				}
 			}
-			for ( String head : excludedTail ) {
-				if ( resourceName.startsWith(head) ) {
+			for (String head : excludedTail) {
+				if (resourceName.startsWith(head)) {
 					debug("Exclude[ {} ]: {} ({})", resourceName, "Match head", head);
 					return true;
 				}
 			}
-			for ( String middle : excludedAny ) {
-				if ( resourceName.contains(middle) ) {
+			for (String middle : excludedAny) {
+				if (resourceName.contains(middle)) {
 					debug("Exclude[ {} ]: {} ({})", resourceName, "Match middle", middle);
 					return true;
 				}

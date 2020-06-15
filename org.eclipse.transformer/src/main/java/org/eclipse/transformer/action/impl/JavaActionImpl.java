@@ -29,24 +29,22 @@ import org.slf4j.Logger;
 
 public class JavaActionImpl extends ActionImpl {
 
-	public JavaActionImpl(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
+	public JavaActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-        super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
 	}
 
 	//
 
 	@Override
 	public String getName() {
-		return ( "Java Action" );
+		return ("Java Action");
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ( ActionType.JAVA );
+		return (ActionType.JAVA);
 	}
 
 	//
@@ -59,85 +57,87 @@ public class JavaActionImpl extends ActionImpl {
 	//
 
 	/**
-     * Replace all embedded packages of specified text with replacement
-     * packages.
-     *
-     * @param text Text embedding zero, one, or more package names.
-     *
-     * @return The text with all embedded package names replaced.  Null if no
-     *     replacements were performed.
-     */
-    protected String replacePackages(String text) {
-        //System.out.println("replacePackages: Initial text [ " + text + " ]");
+	 * Replace all embedded packages of specified text with replacement
+	 * packages.
+	 *
+	 * @param text Text embedding zero, one, or more package names.
+	 * @return The text with all embedded package names replaced. Null if no
+	 *         replacements were performed.
+	 */
+	protected String replacePackages(String text) {
+		// System.out.println("replacePackages: Initial text [ " + text + " ]");
 
-        String initialText = text;
+		String initialText = text;
 
-        for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
-            String key = renameEntry.getKey();
-            int keyLen = key.length();
-            
-            boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
-            if (matchSubpackages) {
-                key = SignatureRuleImpl.stripWildcard(key);
-            }
+		for (Map.Entry<String, String> renameEntry : getPackageRenames().entrySet()) {
+			String key = renameEntry.getKey();
+			int keyLen = key.length();
 
-            //System.out.println("replacePackages: Next target [ " + key + " ]");
-            int textLimit = text.length() - keyLen;
-            
-            int lastMatchEnd = 0;
-            while ( lastMatchEnd <= textLimit ) {
-                int matchStart = text.indexOf(key, lastMatchEnd);
-                if ( matchStart == -1 ) {
-                    break;
-                }
+			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
+			if (matchSubpackages) {
+				key = SignatureRuleImpl.stripWildcard(key);
+			}
 
-                if ( !SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
-                    lastMatchEnd = matchStart + keyLen;
-                    continue;
-                }
+			// System.out.println("replacePackages: Next target [ " + key + "
+			// ]");
+			int textLimit = text.length() - keyLen;
 
-                String value = renameEntry.getValue();
-                int valueLen = value.length();
+			int lastMatchEnd = 0;
+			while (lastMatchEnd <= textLimit) {
+				int matchStart = text.indexOf(key, lastMatchEnd);
+				if (matchStart == -1) {
+					break;
+				}
 
-                String head = text.substring(0, matchStart);
-                String tail = text.substring(matchStart + keyLen);
+				if (!SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
+					lastMatchEnd = matchStart + keyLen;
+					continue;
+				}
 
-//                int tailLenBeforeReplaceVersion = tail.length();            
-//                tail = replacePackageVersion(tail, getPackageVersions().get(value));
-//                int tailLenAfterReplaceVersion = tail.length();
+				String value = renameEntry.getValue();
+				int valueLen = value.length();
 
-                text = head + value + tail;
+				String head = text.substring(0, matchStart);
+				String tail = text.substring(matchStart + keyLen);
 
-                lastMatchEnd = matchStart + valueLen;
+				// int tailLenBeforeReplaceVersion = tail.length();
+				// tail = replacePackageVersion(tail,
+				// getPackageVersions().get(value));
+				// int tailLenAfterReplaceVersion = tail.length();
 
-                // Replacing the key or the version can increase or decrease the text length.
-                textLimit += (valueLen - keyLen);
-//                textLimit += (tailLenAfterReplaceVersion - tailLenBeforeReplaceVersion);
+				text = head + value + tail;
 
-                // System.out.println("Next text [ " + text + " ]");
-            }
-        }
+				lastMatchEnd = matchStart + valueLen;
 
-        if ( initialText == text) {
-            // System.out.println("Final text is unchanged");
-            return null;
-        } else {
-            // System.out.println("Final text [ " + text + " ]");
-            return text;
-        }
-    }
+				// Replacing the key or the version can increase or decrease the
+				// text length.
+				textLimit += (valueLen - keyLen);
+				// textLimit += (tailLenAfterReplaceVersion -
+				// tailLenBeforeReplaceVersion);
+
+				// System.out.println("Next text [ " + text + " ]");
+			}
+		}
+
+		if (initialText == text) {
+			// System.out.println("Final text is unchanged");
+			return null;
+		} else {
+			// System.out.println("Final text [ " + text + " ]");
+			return text;
+		}
+	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) 
-		throws TransformException {
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 
-		String outputName = null; 
+		String outputName = null;
 		// String outputName = renameInput(inputName); // TODO
 		// if ( outputName == null ) {
-			outputName = inputName;
+		outputName = inputName;
 		// } else {
-		//     info("Input class name  [ {} ]", inputName);
-		//     info("Output class name [ {} ]", outputName);
+		// info("Input class name [ {} ]", inputName);
+		// info("Output class name [ {} ]", outputName);
 		// }
 		setResourceNames(inputName, outputName);
 
@@ -145,7 +145,7 @@ public class JavaActionImpl extends ActionImpl {
 		InputStreamReader inputReader;
 		try {
 			inputReader = new InputStreamReader(inputStream, "UTF-8");
-		} catch ( UnsupportedEncodingException e ) {
+		} catch (UnsupportedEncodingException e) {
 			error("Strange: UTF-8 is an unrecognized encoding for reading [ {} ]", e, inputName);
 			return null;
 		}
@@ -156,7 +156,7 @@ public class JavaActionImpl extends ActionImpl {
 		OutputStreamWriter outputWriter;
 		try {
 			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
-		} catch ( UnsupportedEncodingException e ) {
+		} catch (UnsupportedEncodingException e) {
 			error("Strange: UTF-8 is an unrecognized encoding for writing [ {} ]", e, inputName);
 			return null;
 		}
@@ -165,19 +165,19 @@ public class JavaActionImpl extends ActionImpl {
 
 		try {
 			transform(reader, writer); // throws IOException
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			error("Failed to transform [ {} ]", e, inputName);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			error("Failed to flush [ {} ]", e, inputName);
 			return null;
 		}
 
-		if ( !hasNonResourceNameChanges() ) {
+		if (!hasNonResourceNameChanges()) {
 			return null;
 		}
 
@@ -185,13 +185,12 @@ public class JavaActionImpl extends ActionImpl {
 		return new ByteData(inputName, outputBytes, 0, outputBytes.length);
 	}
 
-	protected void transform(BufferedReader reader, BufferedWriter writer)
-		throws IOException {
+	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
 
 		String inputLine;
-		while ( (inputLine = reader.readLine()) != null ) {
+		while ((inputLine = reader.readLine()) != null) {
 			String outputLine = replacePackages(inputLine);
-			if ( outputLine == null ) {
+			if (outputLine == null) {
 				outputLine = inputLine;
 			} else {
 				addReplacement();
@@ -199,17 +198,17 @@ public class JavaActionImpl extends ActionImpl {
 			writer.write(outputLine);
 			writer.write('\n');
 		}
-    }
+	}
 
 	// TODO: Copied from ServiceConfigActionImpl; need to update
-	//       to work for paths.
+	// to work for paths.
 
 	protected String renameInput(String inputName) {
 		String inputPrefix;
 		String classQualifiedName;
 
 		int lastSlash = inputName.lastIndexOf('/');
-		if ( lastSlash == -1 ) {
+		if (lastSlash == -1) {
 			inputPrefix = null;
 			classQualifiedName = inputName;
 		} else {
@@ -218,12 +217,12 @@ public class JavaActionImpl extends ActionImpl {
 		}
 
 		int classStart = classQualifiedName.lastIndexOf('.');
-		if ( classStart == -1 ) {
+		if (classStart == -1) {
 			return null;
 		}
 
 		String packageName = classQualifiedName.substring(0, classStart);
-		if ( packageName.isEmpty() ) {
+		if (packageName.isEmpty()) {
 			return null;
 		}
 
@@ -231,11 +230,11 @@ public class JavaActionImpl extends ActionImpl {
 		String className = classQualifiedName.substring(classStart);
 
 		String outputName = replacePackage(packageName);
-		if ( outputName == null ) {
+		if (outputName == null) {
 			return null;
 		}
 
-		if ( inputPrefix == null ) {
+		if (inputPrefix == null) {
 			return outputName + className;
 		} else {
 			return inputPrefix + outputName + className;

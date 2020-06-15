@@ -34,7 +34,7 @@ public class Sample_InjectAPI_Javax {
 	}
 
 	public static class SampleValue {
-		public int value; 
+		public int value;
 	}
 
 	protected SampleValue sampleValue;
@@ -46,27 +46,32 @@ public class Sample_InjectAPI_Javax {
 	// Basic use of @Inject
 
 	@Inject
-	protected static long injectedLong;
+	protected static long				injectedLong;
 
 	@Inject
-	protected int injectedInt;
+	protected int						injectedInt;
 
 	// @Named use of @Inject
 
 	@Inject
 	@Named("sample1")
-	protected Sample_InjectAPI_Javax injectedSample1;
+	protected Sample_InjectAPI_Javax	injectedSample1;
 
 	@Inject
 	@Named("sample2")
-	protected Sample_InjectAPI_Javax injectedSample2;
+	protected Sample_InjectAPI_Javax	injectedSample2;
 
 	// Use of @Qualifier
 
 	@Qualifier
 	public @interface Color {
 		Value value() default Value.RED;
-		public enum Value { RED, BLUE, YELLOW }
+
+		public enum Value {
+			RED,
+			BLUE,
+			YELLOW
+		}
 	}
 
 	@Inject
@@ -78,8 +83,12 @@ public class Sample_InjectAPI_Javax {
 	@Scope
 	public @interface Lifetime {
 		Value value() default Value.INSTANCE;
-		public enum Value { GLOBAL, INSTANCE }
-	}	
+
+		public enum Value {
+			GLOBAL,
+			INSTANCE
+		}
+	}
 
 	@Inject
 	@Lifetime(Lifetime.Value.GLOBAL)

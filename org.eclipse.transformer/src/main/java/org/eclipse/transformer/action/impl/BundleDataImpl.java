@@ -17,104 +17,109 @@ import org.eclipse.transformer.action.BundleData;
 // Bundle-Name: WAS WebContainer
 // Bundle-SymbolicName: com.ibm.ws.webcontainer
 // Bundle-Version: 1.1.35.cl191220191120-0300
-// 
+//
 // com.ibm.ws.webcontainer=com.ibm.ws.webcontainer.jakarta,2.0,+" Jakarta",+"; Jakarta Enabled"
-// 
+//
 // Bundle-SymbolicName: com.ibm.ws.webcontainer.jakarta
 // Bundle-Version: 2.0
 // Bundle-Name: WAS WebContainer Jakarta
 // Bundle-Description: WAS WebContainer 8.0 with Servlet 3.0 support; Jakarta enabled
 
 public class BundleDataImpl implements BundleData {
-    public BundleDataImpl(
-    	String symbolicName,
-    	String version,
+	public BundleDataImpl(String symbolicName, String version,
 
-    	boolean addName, String name,
-    	boolean addDescription, String description) {
+		boolean addName, String name, boolean addDescription, String description) {
 
-    	this.symbolicName = symbolicName;
-        this.version = version;
+		this.symbolicName = symbolicName;
+		this.version = version;
 
-        this.addName = addName;
-        this.name = name;
+		this.addName = addName;
+		this.name = name;
 
-        this.addDescription = addDescription;
-        this.description = description;
+		this.addDescription = addDescription;
+		this.description = description;
 
-        // String nameText = ( addName ? ('+' + name) : name );
-        // String descriptionText = ( addDescription ? ('+' + description) : description );
-        // System.out.println(
-        //     "BundleData [ " + symbolicName + " ] [ " + version + " ]:" +
-        //     " [ " + nameText + " ] [ " + descriptionText + " ]" );
-    }
+		// String nameText = ( addName ? ('+' + name) : name );
+		// String descriptionText = ( addDescription ? ('+' + description) :
+		// description );
+		// System.out.println(
+		// "BundleData [ " + symbolicName + " ] [ " + version + " ]:" +
+		// " [ " + nameText + " ] [ " + descriptionText + " ]" );
+	}
 
-	// com.ibm.ws.webcontainer=com.ibm.ws.webcontainer.jakarta,2.0,+" Jakarta",+"; Jakarta Enabled"    	
+	// com.ibm.ws.webcontainer=com.ibm.ws.webcontainer.jakarta,2.0,+"
+	// Jakarta",+"; Jakarta Enabled"
 
 	public BundleDataImpl(String packedData) throws IllegalArgumentException {
-    	String[] heads = new String[3];
-    	String tail = packedData;
+		String[] heads = new String[3];
+		String tail = packedData;
 
-    	for ( int commaNo = 0; commaNo < 3; commaNo++ ) {
-    		int comma = tail.indexOf(COMMA_CHAR);
+		for (int commaNo = 0; commaNo < 3; commaNo++) {
+			int comma = tail.indexOf(COMMA_CHAR);
 
-    		String head = null;
-    		String nextTail = null;
-    		if ( comma != -1 ) {
-    			head = tail.substring(0, comma).trim();
-    			nextTail = tail.substring(comma + 1).trim();
-    		}
+			String head = null;
+			String nextTail = null;
+			if (comma != -1) {
+				head = tail.substring(0, comma)
+					.trim();
+				nextTail = tail.substring(comma + 1)
+					.trim();
+			}
 
-    		if ( (head == null) || (nextTail == null) || nextTail.isEmpty() ) {
-    			throw formatError(packedData);
-    		}
+			if ((head == null) || (nextTail == null) || nextTail.isEmpty()) {
+				throw formatError(packedData);
+			}
 
-    		heads[commaNo] = head;
-    		tail = nextTail;
-    	}
+			heads[commaNo] = head;
+			tail = nextTail;
+		}
 
-    	this.symbolicName = heads[0];
-    	this.version = heads[1];
-    	
-    	String useName = heads[2];
-    	String useDescription = tail;
+		this.symbolicName = heads[0];
+		this.version = heads[1];
 
-    	if ( this.addName = (useName.charAt(0) == ADDITIVE_CHAR) ) {
-    		useName = useName.substring(1).trim();
-    	}
-    	useName = unquote(useName);
-    	if ( useName == null ) {
+		String useName = heads[2];
+		String useDescription = tail;
+
+		addName = (useName.charAt(0) == ADDITIVE_CHAR);
+		if (addName) {
+			useName = useName.substring(1)
+				.trim();
+		}
+		useName = unquote(useName);
+		if (useName == null) {
 			throw formatError(packedData);
-    	}
-    	this.name = useName;
+		}
+		this.name = useName;
 
-    	if ( this.addDescription = (useDescription.charAt(0) == ADDITIVE_CHAR) ) {
-    		useDescription = useDescription.substring(1).trim();
-    	}
-    	useDescription = unquote(useDescription);
-    	if ( useDescription == null ) {
+		addDescription = (useDescription.charAt(0) == ADDITIVE_CHAR);
+		if (addDescription) {
+			useDescription = useDescription.substring(1)
+				.trim();
+		}
+		useDescription = unquote(useDescription);
+		if (useDescription == null) {
 			throw formatError(packedData);
-    	}
-    	this.description = useDescription;
-    }
+		}
+		this.description = useDescription;
+	}
 
-    private static IllegalArgumentException formatError(String text) {
+	private static IllegalArgumentException formatError(String text) {
 		return new IllegalArgumentException("Incorrectly formatted bundle identity update [ " + text + " ]");
-    }
+	}
 
 	private static String unquote(String text) {
-		if ( text.isEmpty() ) {
+		if (text.isEmpty()) {
 			return null;
 		}
 
-		if ( text.charAt(0) != QUOTE_CHAR ) {
+		if (text.charAt(0) != QUOTE_CHAR) {
 			return text;
 		}
 
 		int textLen = text.length();
-		if ( textLen < 2 ) {
+		if (textLen < 2) {
 			return null;
-		} else if ( text.charAt(textLen - 1) != QUOTE_CHAR ) {
+		} else if (text.charAt(textLen - 1) != QUOTE_CHAR) {
 			return null;
 		}
 
@@ -123,23 +128,23 @@ public class BundleDataImpl implements BundleData {
 
 	//
 
-	private final String symbolicName;
-    private final String version;
+	private final String	symbolicName;
+	private final String	version;
 
-    @Override
+	@Override
 	public String getSymbolicName() {
 		return symbolicName;
 	}
 
-    @Override
+	@Override
 	public String getVersion() {
 		return version;
 	}
 
-    private final boolean addName;
-    private final String name;
+	private final boolean	addName;
+	private final String	name;
 
-    @Override
+	@Override
 	public boolean getAddName() {
 		return addName;
 	}
@@ -149,10 +154,10 @@ public class BundleDataImpl implements BundleData {
 		return name;
 	}
 
-    private final boolean addDescription;
-    private final String description;
+	private final boolean	addDescription;
+	private final String	description;
 
-	@Override    
+	@Override
 	public boolean getAddDescription() {
 		return addDescription;
 	}
@@ -167,12 +172,12 @@ public class BundleDataImpl implements BundleData {
 	@Override
 	public String updateName(String initialName) {
 		String nameUpdate = getName();
-		return  ( getAddName() ? initialName + nameUpdate : nameUpdate );
+		return (getAddName() ? initialName + nameUpdate : nameUpdate);
 	}
 
 	@Override
 	public String updateDescription(String initialDescription) {
 		String descriptionUpdate = getDescription();
-		return  ( getAddDescription() ? initialDescription + descriptionUpdate : descriptionUpdate );
+		return (getAddDescription() ? initialDescription + descriptionUpdate : descriptionUpdate);
 	}
 }

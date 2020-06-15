@@ -20,17 +20,16 @@ import org.junit.jupiter.api.Test;
 
 public class TestLoad {
 
-	public static final String RULES_RENAMES_PATH =
-		JakartaTransformer.DEFAULT_RENAMES_REFERENCE;
+	public static final String	RULES_RENAMES_PATH	= JakartaTransformer.DEFAULT_RENAMES_REFERENCE;
 
-	public static final String RULES_VERSIONS_PATH =
-		JakartaTransformer.DEFAULT_VERSIONS_REFERENCE;
+	public static final String	RULES_VERSIONS_PATH	= JakartaTransformer.DEFAULT_VERSIONS_REFERENCE;
 
-	public static final String TRANSFORMER_PREFIX;
+	public static final String	TRANSFORMER_PREFIX;
 
 	static {
-		String transformerPackageName = JakartaTransformer.class.getPackage().getName();
-		TRANSFORMER_PREFIX = transformerPackageName.replace('.',  '/') + '/';
+		String transformerPackageName = JakartaTransformer.class.getPackage()
+			.getName();
+		TRANSFORMER_PREFIX = transformerPackageName.replace('.', '/') + '/';
 	}
 
 	public static String putIntoTransformer(String path) {
@@ -59,15 +58,14 @@ public class TestLoad {
 		}
 
 		System.out.println("Loaded [ " + path + " ] [ " + actualLines.size() + " ]");
-		for ( String line : actualLines ) {
+		for (String line : actualLines) {
 			System.out.println(" [ " + line + " ]");
 		}
 	}
 
-	public static final String SIMPLE_RESOURCE_PATH = "transformer/test/data/simple.resource";
-	public static final String[] SIMPLE_RESOURCE_LINES = {
-		"Simple Resource 1",
-		"Simple Resource 2"
+	public static final String		SIMPLE_RESOURCE_PATH	= "transformer/test/data/simple.resource";
+	public static final String[]	SIMPLE_RESOURCE_LINES	= {
+		"Simple Resource 1", "Simple Resource 2"
 	};
 
 	@Test

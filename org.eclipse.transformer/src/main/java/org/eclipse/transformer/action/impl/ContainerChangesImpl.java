@@ -27,8 +27,8 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	protected ContainerChangesImpl() {
 		super();
 
-		this.changedByAction = new HashMap<String, int[]>();
-		this.unchangedByAction = new HashMap<String, int[]>();
+		this.changedByAction = new HashMap<>();
+		this.unchangedByAction = new HashMap<>();
 
 		this.allChanged = 0;
 		this.allUnchanged = 0;
@@ -44,7 +44,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return ( allChanged > 0 );
+		return (allChanged > 0);
 	}
 
 	@Override
@@ -66,15 +66,15 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	//
 
-	private final Map<String, int[]> changedByAction;
-	private final Map<String, int[]> unchangedByAction;
+	private final Map<String, int[]>	changedByAction;
+	private final Map<String, int[]>	unchangedByAction;
 
-	private int allUnchanged;
-	private int allChanged;
+	private int							allUnchanged;
+	private int							allChanged;
 
-	private int allSelected;
-	private int allUnselected;	
-	private int allResources;
+	private int							allSelected;
+	private int							allUnselected;
+	private int							allResources;
 
 	//
 
@@ -83,8 +83,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		Set<String> changedNames = changedByAction.keySet();
 		Set<String> unchangedNames = unchangedByAction.keySet();
 
-		Set<String> allNames =
-			new HashSet<String>( changedNames.size() + unchangedNames.size() );
+		Set<String> allNames = new HashSet<>(changedNames.size() + unchangedNames.size());
 
 		allNames.addAll(changedNames);
 		allNames.addAll(unchangedNames);
@@ -96,12 +95,12 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public Map<String, int[]> getChangedByAction() {
-		return Collections.unmodifiableMap( changedByAction );
+		return Collections.unmodifiableMap(changedByAction);
 	}
 
 	@Override
 	public Map<String, int[]> getUnchangedByAction() {
-		return Collections.unmodifiableMap( unchangedByAction );
+		return Collections.unmodifiableMap(unchangedByAction);
 	}
 
 	//
@@ -133,36 +132,37 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public int getChanged(Action action) {
-		return getChanged( action.getName() );
+		return getChanged(action.getName());
 	}
 
 	@Override
 	public int getChanged(String name) {
 		int[] changes = changedByAction.get(name);
-		return ( (changes == null) ? 0 : changes[0] );
+		return ((changes == null) ? 0 : changes[0]);
 	}
 
 	@Override
 	public int getUnchanged(Action action) {
-		return getUnchanged( action.getName() );
+		return getUnchanged(action.getName());
 	}
 
 	@Override
 	public int getUnchanged(String name) {
 		int[] changes = unchangedByAction.get(name);
-		return ( (changes == null) ? 0 : changes[0] );
+		return ((changes == null) ? 0 : changes[0]);
 	}
 
 	@Override
 	public void record(Action action) {
-		record( action.getName(), action.hadChanges() );
+		record(action.getName(), action.hadChanges());
 
-		action.getLastActiveChanges().addNestedInto(this);
+		action.getLastActiveChanges()
+			.addNestedInto(this);
 	}
 
 	@Override
 	public void record(Action action, boolean hasChanges) {
-		record( action.getName(), hasChanges );
+		record(action.getName(), hasChanges);
 	}
 
 	@Override
@@ -171,7 +171,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		allSelected++;
 
 		Map<String, int[]> target;
-		if ( hasChanges ) {
+		if (hasChanges) {
 			allChanged++;
 			target = changedByAction;
 		} else {
@@ -180,8 +180,10 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		}
 
 		int[] changes = target.get(name);
-		if ( changes == null ) {
-			changes = new int[] { 1 };
+		if (changes == null) {
+			changes = new int[] {
+				1
+			};
 			target.put(name, changes);
 		} else {
 			changes[0]++;
@@ -205,7 +207,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public boolean hasNestedChanges() {
-		return ( allNestedChanges != null );
+		return (allNestedChanges != null);
 	}
 
 	@Override
@@ -214,30 +216,28 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	}
 
 	/**
-	 * Add other changes as nested changes.
-	 *
-	 * Both the immediate part of the other changes and the nested part
-	 * of the other changes are added.
+	 * Add other changes as nested changes. Both the immediate part of the other
+	 * changes and the nested part of the other changes are added.
 	 *
 	 * @param otherChanges Other container changes to add as nested changes.
 	 */
 	@Override
 	public void addNested(ContainerChanges otherChanges) {
-		if ( allNestedChanges == null ) {
+		if (allNestedChanges == null) {
 			allNestedChanges = new ContainerChangesImpl();
 		}
 		allNestedChanges.add(otherChanges);
 
 		ContainerChanges otherNestedChanges = otherChanges.getNestedChanges();
-		if ( otherNestedChanges != null ) {
+		if (otherNestedChanges != null) {
 			allNestedChanges.add(otherNestedChanges);
 		}
 	}
 
 	@Override
 	public void add(ContainerChanges otherChanges) {
-		addChangeMap( this.changedByAction, otherChanges.getChangedByAction() );
-		addChangeMap( this.unchangedByAction, otherChanges.getUnchangedByAction() );
+		addChangeMap(this.changedByAction, otherChanges.getChangedByAction());
+		addChangeMap(this.unchangedByAction, otherChanges.getUnchangedByAction());
 
 		this.allChanged += otherChanges.getAllChanged();
 		this.allUnchanged += otherChanges.getAllUnchanged();
@@ -247,13 +247,12 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		this.allResources += otherChanges.getAllResources();
 	}
 
-	private void addChangeMap(
-		Map<String, int[]> thisChangeMap, Map<String, int[]> otherChangeMap) {
+	private void addChangeMap(Map<String, int[]> thisChangeMap, Map<String, int[]> otherChangeMap) {
 
 		int[] nextChanges = new int[1];
-		for ( Map.Entry<String, int[]> mapEntry : otherChangeMap.entrySet() ) {
-			int[] thisChanges = thisChangeMap.putIfAbsent( mapEntry.getKey(), nextChanges );
-			if ( thisChanges == null ) {
+		for (Map.Entry<String, int[]> mapEntry : otherChangeMap.entrySet()) {
+			int[] thisChanges = thisChangeMap.putIfAbsent(mapEntry.getKey(), nextChanges);
+			if (thisChanges == null) {
 				thisChanges = nextChanges;
 				nextChanges = new int[1];
 			}
@@ -263,217 +262,175 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	//
 
-	private static final String DASH_LINE =
-		"================================================================================";
-	private static final String SMALL_DASH_LINE =
-		"--------------------------------------------------------------------------------";
+	private static final String	DASH_LINE		= "================================================================================";
+	private static final String	SMALL_DASH_LINE	= "--------------------------------------------------------------------------------";
 
-	private static final String DATA_LINE =
-		"[ %22s ] [ %6s ] %10s [ %6s ] %8s [ %6s ]%s";
+	private static final String	DATA_LINE		= "[ %22s ] [ %6s ] %10s [ %6s ] %8s [ %6s ]%s";
 
 	private String formatData(Object... parms) {
 		return String.format(DATA_LINE, parms);
 	}
 
 	protected void displayChanges(PrintStream stream) {
-		stream.print( formatData(
-			"All Resources", getAllResources(),
-			"Unselected", getAllUnselected(),
-			"Selected", getAllSelected(),
-			"\n" ) );
+		stream.print(formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
+			getAllSelected(), "\n"));
 
 		stream.print(SMALL_DASH_LINE);
 		stream.print("\n");
-		
-		stream.print( formatData(
-			"All Actions", getAllSelected(),
-			"Unchanged", getAllUnchanged(),
-			"Changed", getAllChanged(),
-			"\n" ) );
 
-		for ( String actionName : getActionNames() ) {
-			int useUnchangedByAction = getUnchanged(actionName); 
+		stream.print(formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
+			getAllChanged(), "\n"));
+
+		for (String actionName : getActionNames()) {
+			int useUnchangedByAction = getUnchanged(actionName);
 			int useChangedByAction = getChanged(actionName);
-			stream.print( formatData(
-				actionName, useUnchangedByAction + useChangedByAction,
-				"Unchanged", useUnchangedByAction,
-				"Changed", useChangedByAction,
-				"\n" ) );
+			stream.print(formatData(actionName, useUnchangedByAction + useChangedByAction, "Unchanged",
+				useUnchangedByAction, "Changed", useChangedByAction, "\n"));
 		}
 	}
 
 	protected void displayChanges(Logger logger) {
-		logger.info( formatData(
-			"All Resources", getAllResources(),
-			"Unselected", getAllUnselected(),
-			"Selected", getAllSelected(),
-			"" ) );
+		logger.info(formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
+			getAllSelected(), ""));
 
-		logger.info( SMALL_DASH_LINE );
-		logger.info( formatData(
-			"All Actions", getAllSelected(),
-			"Unchanged", getAllUnchanged(),
-			"Changed", getAllChanged(),
-			"" ) );
+		logger.info(SMALL_DASH_LINE);
+		logger.info(formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
+			getAllChanged(), ""));
 
-		for ( String actionName : getActionNames() ) {
-			int useUnchangedByAction = getUnchanged(actionName); 
+		for (String actionName : getActionNames()) {
+			int useUnchangedByAction = getUnchanged(actionName);
 			int useChangedByAction = getChanged(actionName);
-			logger.info( formatData(
-				actionName, useUnchangedByAction + useChangedByAction,
-				"Unchanged", useUnchangedByAction,
-				"Changed", useChangedByAction,
-				"" ) );
+			logger.info(formatData(actionName, useUnchangedByAction + useChangedByAction, "Unchanged",
+				useUnchangedByAction, "Changed", useChangedByAction, ""));
 		}
 	}
 
-	
-    @Override
+	@Override
 	public void displayVerbose(PrintStream stream, String inputPath, String outputPath) {
 		// ================================================================================
-		// [ Input  ] [ test.jar ]
-    	//            [ c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\test.jar ]
+		// [ Input ] [ test.jar ]
+		// [
+		// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\test.jar
+		// ]
 		// [ Output ] [ output_test.jar ]
-    	//            [ c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\testOutput.jar ]
-		// ================================================================================  
-		// [          All Resources ] [     55 ] Unselected [      6 ] Selected [     49 ]
+		// [
+		// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\testOutput.jar
+		// ]
 		// ================================================================================
-    	// [ Immediate changes: ]
-		// --------------------------------------------------------------------------------
-		// [            All Actions ] [     49 ]  Unchanged [     43 ]  Changed [      6 ]
-		// [           Class Action ] [     41 ]  Unchanged [     38 ]  Changed [      3 ]
-		// [        Manifest Action ] [      1 ]  Unchanged [      0 ]  Changed [      1 ]
-		// [  Service Config Action ] [      7 ]  Unchanged [      5 ]  Changed [      2 ]
+		// [ All Resources ] [ 55 ] Unselected [ 6 ] Selected [ 49 ]
 		// ================================================================================
-    	// [ Nested changes: ]
+		// [ Immediate changes: ]
 		// --------------------------------------------------------------------------------
-    	// [ ... ]
+		// [ All Actions ] [ 49 ] Unchanged [ 43 ] Changed [ 6 ]
+		// [ Class Action ] [ 41 ] Unchanged [ 38 ] Changed [ 3 ]
+		// [ Manifest Action ] [ 1 ] Unchanged [ 0 ] Changed [ 1 ]
+		// [ Service Config Action ] [ 7 ] Unchanged [ 5 ] Changed [ 2 ]
+		// ================================================================================
+		// [ Nested changes: ]
+		// --------------------------------------------------------------------------------
+		// [ ... ]
 		// ================================================================================
 
 		stream.print(DASH_LINE);
 		stream.print("\n");
 
-		stream.printf( "[ Input  ] [ %s ]\n           [ %s ]\n", getInputResourceName(), inputPath );
-		stream.printf( "[ Output ] [ %s ]\n           [ %s ]\n", getOutputResourceName(), outputPath );
+		stream.printf("[ Input  ] [ %s ]\n           [ %s ]\n", getInputResourceName(), inputPath);
+		stream.printf("[ Output ] [ %s ]\n           [ %s ]\n", getOutputResourceName(), outputPath);
 		stream.print(DASH_LINE);
 		stream.print("\n");
 
-		stream.printf( "[ Immediate changes: ]\n");
+		stream.printf("[ Immediate changes: ]\n");
 		stream.print(SMALL_DASH_LINE);
 		stream.print("\n");
 
 		displayChanges(stream);
 		stream.print(DASH_LINE);
 		stream.print("\n");
-		
-		if ( allNestedChanges != null ) {
+
+		if (allNestedChanges != null) {
 			stream.printf("[ Nested changes: ]\n");
 			stream.printf(SMALL_DASH_LINE);
 			stream.print("\n");
-			
+
 			allNestedChanges.displayChanges(stream);
 			stream.printf(DASH_LINE);
 			stream.print("\n");
 		}
 	}
-    
-    @Override
-	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-    	if ( !logger.isInfoEnabled() ) {
-    		return;
-    	}
 
-		logger.info( DASH_LINE );
+	@Override
+	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
+		if (!logger.isInfoEnabled()) {
+			return;
+		}
+
+		logger.info(DASH_LINE);
 
 		logger.info("[ Input  ] [ {} ]", getInputResourceName());
 		logger.info("           [ {} ]", inputPath);
 		logger.info("[ Output ] [ {} ]", getOutputResourceName());
-		logger.info("           [ {} ]", outputPath );
-		logger.info( DASH_LINE );
+		logger.info("           [ {} ]", outputPath);
+		logger.info(DASH_LINE);
 
-		logger.info( "[ Immediate changes: ]");
-		logger.info( SMALL_DASH_LINE );
+		logger.info("[ Immediate changes: ]");
+		logger.info(SMALL_DASH_LINE);
 		displayChanges(logger);
-		logger.info( DASH_LINE );
+		logger.info(DASH_LINE);
 
-		if ( allNestedChanges != null ) {
-			logger.info( "[ Nested changes: ]");
-			logger.info( SMALL_DASH_LINE );
+		if (allNestedChanges != null) {
+			logger.info("[ Nested changes: ]");
+			logger.info(SMALL_DASH_LINE);
 			allNestedChanges.displayChanges(logger);
-			logger.info( DASH_LINE );
+			logger.info(DASH_LINE);
 		}
 	}
-    
+
 	@Override
 	public void displayTerse(PrintStream stream, String inputPath, String outputPath) {
-		// [          All Resources ] [     55 ] Unselected [      6 ] Selected [     49 ]
-		// [            All Actions ] [     49 ]  Unchanged [     43 ]  Changed [      6 ]
+		// [ All Resources ] [ 55 ] Unselected [ 6 ] Selected [ 49 ]
+		// [ All Actions ] [ 49 ] Unchanged [ 43 ] Changed [ 6 ]
 
-		if ( !inputPath.equals(outputPath) ) {
-			stream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag() );
+		if (!inputPath.equals(outputPath)) {
+			stream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag());
 		} else {
-			stream.printf("Input [ %s ]: %s\n", inputPath, getChangeTag() );
+			stream.printf("Input [ %s ]: %s\n", inputPath, getChangeTag());
 		}
 
-		stream.print( formatData(
-			"All Resources", getAllResources(),
-			"Unselected", getAllUnselected(),
-			"Selected", getAllSelected(),
-			"\n" ) );
-		stream.print( formatData(
-			"All Actions", getAllSelected(),
-			"Unchanged", getAllUnchanged(),
-			"Changed", getAllChanged(),
-			"\n" ) );
-		if ( allNestedChanges != null ) {
-			stream.print( formatData(
-				"Nested Resources", allNestedChanges.getAllResources(),
-				"Unselected", allNestedChanges.getAllUnselected(),
-				"Selected", allNestedChanges.getAllSelected(),
-				"\n" ) );
-			stream.print( formatData(
-				"Nested Actions", allNestedChanges.getAllSelected(),
-				"Unchanged", allNestedChanges.getAllUnchanged(),
-				"Changed", allNestedChanges.getAllChanged(),
-				"\n" ) );
+		stream.print(formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
+			getAllSelected(), "\n"));
+		stream.print(formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
+			getAllChanged(), "\n"));
+		if (allNestedChanges != null) {
+			stream.print(formatData("Nested Resources", allNestedChanges.getAllResources(), "Unselected",
+				allNestedChanges.getAllUnselected(), "Selected", allNestedChanges.getAllSelected(), "\n"));
+			stream.print(formatData("Nested Actions", allNestedChanges.getAllSelected(), "Unchanged",
+				allNestedChanges.getAllUnchanged(), "Changed", allNestedChanges.getAllChanged(), "\n"));
 		}
 	}
 
 	@Override
 	public void displayTerse(Logger logger, String inputPath, String outputPath) {
-		if ( !logger.isInfoEnabled() ) {
+		if (!logger.isInfoEnabled()) {
 			return;
 		}
 
-		if ( !inputPath.equals(outputPath) ) {
-			if ( !inputPath.equals(outputPath) ) {
-				logger.info("Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag() );
+		if (!inputPath.equals(outputPath)) {
+			if (!inputPath.equals(outputPath)) {
+				logger.info("Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
 			} else {
-				logger.info("Input [ {} ]: {}", inputPath, getChangeTag() );
+				logger.info("Input [ {} ]: {}", inputPath, getChangeTag());
 			}
 		}
 
-		logger.info( formatData(
-			"All Resources", getAllResources(),
-			"Unselected", getAllUnselected(),
-			"Selected", getAllSelected(),
-			"" ) );
-		logger.info( formatData(
-			"All Actions", getAllSelected(),
-			"Unchanged", getAllUnchanged(),
-			"Changed", getAllChanged(),
-			"" ) );
-		if ( allNestedChanges != null ) {
-			logger.info( formatData(
-				"Nested Resources", allNestedChanges.getAllResources(),
-				"Unselected", allNestedChanges.getAllUnselected(),
-				"Selected", allNestedChanges.getAllSelected(),
-				"" ) );
-			logger.info( formatData(
-				"Nested Actions", allNestedChanges.getAllSelected(),
-				"Unchanged", allNestedChanges.getAllUnchanged(),
-				"Changed", allNestedChanges.getAllChanged(),
-				"" ) );
+		logger.info(formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
+			getAllSelected(), ""));
+		logger.info(formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
+			getAllChanged(), ""));
+		if (allNestedChanges != null) {
+			logger.info(formatData("Nested Resources", allNestedChanges.getAllResources(), "Unselected",
+				allNestedChanges.getAllUnselected(), "Selected", allNestedChanges.getAllSelected(), ""));
+			logger.info(formatData("Nested Actions", allNestedChanges.getAllSelected(), "Unchanged",
+				allNestedChanges.getAllUnchanged(), "Changed", allNestedChanges.getAllChanged(), ""));
 		}
 	}
 }

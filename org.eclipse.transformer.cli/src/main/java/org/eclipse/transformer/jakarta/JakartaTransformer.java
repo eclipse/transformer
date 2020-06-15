@@ -21,32 +21,31 @@ import org.osgi.annotation.bundle.Header;
 @Header(name = "Main-Class", value = "${@class}")
 public class JakartaTransformer {
 
-    public static void main(String[] args) throws Exception {
-        Transformer jTrans = new Transformer(System.out, System.err);
-        jTrans.setOptionDefaults( JakartaTransformer.class, getOptionDefaults() );
-        jTrans.setArgs(args);
+	public static void main(String[] args) throws Exception {
+		Transformer jTrans = new Transformer(System.out, System.err);
+		jTrans.setOptionDefaults(JakartaTransformer.class, getOptionDefaults());
+		jTrans.setArgs(args);
 
-        @SuppressWarnings("unused")
-        int rc = jTrans.run();
-        // System.exit(rc); // TODO: How should this code be returned?
-    }
+		@SuppressWarnings("unused")
+		int rc = jTrans.run();
+		// System.exit(rc); // TODO: How should this code be returned?
+	}
 
-    public static final String DEFAULT_RENAMES_REFERENCE = "jakarta-renames.properties";
-    public static final String DEFAULT_VERSIONS_REFERENCE = "jakarta-versions.properties";
-    public static final String DEFAULT_BUNDLES_REFERENCE = "jakarta-bundles.properties";
-    public static final String DEFAULT_DIRECT_REFERENCE = "jakarta-direct.properties";
-    public static final String DEFAULT_MASTER_TEXT_REFERENCE = "jakarta-text-master.properties";
+	public static final String	DEFAULT_RENAMES_REFERENCE		= "jakarta-renames.properties";
+	public static final String	DEFAULT_VERSIONS_REFERENCE		= "jakarta-versions.properties";
+	public static final String	DEFAULT_BUNDLES_REFERENCE		= "jakarta-bundles.properties";
+	public static final String	DEFAULT_DIRECT_REFERENCE		= "jakarta-direct.properties";
+	public static final String	DEFAULT_MASTER_TEXT_REFERENCE	= "jakarta-text-master.properties";
 
-    public static Map<Transformer.AppOption, String> getOptionDefaults() {
-    	HashMap<Transformer.AppOption, String> optionDefaults =
-    		new HashMap<Transformer.AppOption, String>();
+	public static Map<Transformer.AppOption, String> getOptionDefaults() {
+		HashMap<Transformer.AppOption, String> optionDefaults = new HashMap<>();
 
-    	optionDefaults.put(AppOption.RULES_RENAMES, DEFAULT_RENAMES_REFERENCE);
-    	optionDefaults.put(AppOption.RULES_VERSIONS, DEFAULT_VERSIONS_REFERENCE);
-    	optionDefaults.put(AppOption.RULES_BUNDLES, DEFAULT_BUNDLES_REFERENCE);
-    	optionDefaults.put(AppOption.RULES_DIRECT, DEFAULT_DIRECT_REFERENCE);
-    	optionDefaults.put(AppOption.RULES_MASTER_TEXT, DEFAULT_MASTER_TEXT_REFERENCE);
+		optionDefaults.put(AppOption.RULES_RENAMES, DEFAULT_RENAMES_REFERENCE);
+		optionDefaults.put(AppOption.RULES_VERSIONS, DEFAULT_VERSIONS_REFERENCE);
+		optionDefaults.put(AppOption.RULES_BUNDLES, DEFAULT_BUNDLES_REFERENCE);
+		optionDefaults.put(AppOption.RULES_DIRECT, DEFAULT_DIRECT_REFERENCE);
+		optionDefaults.put(AppOption.RULES_MASTER_TEXT, DEFAULT_MASTER_TEXT_REFERENCE);
 
-    	return optionDefaults;
-    }
+		return optionDefaults;
+	}
 }
