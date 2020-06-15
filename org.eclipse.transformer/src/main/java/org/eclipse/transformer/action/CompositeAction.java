@@ -18,5 +18,6 @@ public interface CompositeAction extends Action {
 	List<? extends Action> getActions();
 
 	Action acceptAction(String resourceName, File resourceFile);
+
 	Action getAcceptedAction();
 }

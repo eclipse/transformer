@@ -29,108 +29,104 @@ import org.slf4j.Logger;
 
 public class TextActionImpl extends ActionImpl {
 
-    public TextActionImpl(
-        Logger logger, boolean isTerse, boolean isVerbose,
-        InputBufferImpl buffer,
-        SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public TextActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-        super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
-    }
+		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+	}
 
-    //
+	//
 
-    @Override
-    public String getName() {
-        return "Text Action";
-    }
+	@Override
+	public String getName() {
+		return "Text Action";
+	}
 
-    @Override
-    public ActionType getActionType() {
-        return ActionType.TEXT;
-    }
+	@Override
+	public ActionType getActionType() {
+		return ActionType.TEXT;
+	}
 
-    @Override
-    public String getAcceptExtension() {
-        throw new UnsupportedOperationException("Text does not use this API");
-    }
+	@Override
+	public String getAcceptExtension() {
+		throw new UnsupportedOperationException("Text does not use this API");
+	}
 
-    @Override
-    public boolean accept(String resourceName, File resourceFile) {
-        if (signatureRule.getTextSubstitutions(resourceName) != null) {
-            return true;
-        }
-        return false;
-    }
+	@Override
+	public boolean accept(String resourceName, File resourceFile) {
+		if (signatureRule.getTextSubstitutions(resourceName) != null) {
+			return true;
+		}
+		return false;
+	}
 
-    //
+	//
 
-    @Override
-    public ByteData apply(String inputName, byte[] inputBytes, int inputLength)
-        throws TransformException {
+	@Override
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 
-        String outputName = inputName;
+		String outputName = inputName;
 
-        setResourceNames(inputName, outputName);
+		setResourceNames(inputName, outputName);
 
-        InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputLength);
-        InputStreamReader inputReader;
-        try {
-            inputReader = new InputStreamReader(inputStream, "UTF-8");
-        } catch ( UnsupportedEncodingException e ) {
-            error("Strange: UTF-8 is an unrecognized encoding for reading [ {} ]", e, inputName);
-            return null;
-        }
+		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputLength);
+		InputStreamReader inputReader;
+		try {
+			inputReader = new InputStreamReader(inputStream, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			error("Strange: UTF-8 is an unrecognized encoding for reading [ {} ]", e, inputName);
+			return null;
+		}
 
-        BufferedReader reader = new BufferedReader(inputReader);
+		BufferedReader reader = new BufferedReader(inputReader);
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
-        OutputStreamWriter outputWriter;
-        try {
-            outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
-        } catch ( UnsupportedEncodingException e ) {
-            error("Strange: UTF-8 is an unrecognized encoding for writing [ {} ]", e, inputName);
-            return null;
-        }
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
+		OutputStreamWriter outputWriter;
+		try {
+			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			error("Strange: UTF-8 is an unrecognized encoding for writing [ {} ]", e, inputName);
+			return null;
+		}
 
-        BufferedWriter writer = new BufferedWriter(outputWriter);
+		BufferedWriter writer = new BufferedWriter(outputWriter);
 
-        try {
-            transform(inputName, reader, writer); // throws IOException
-        } catch ( IOException e ) {
-            error("Failed to transform [ {} ]", e, inputName);
-            return null;
-        }
+		try {
+			transform(inputName, reader, writer); // throws IOException
+		} catch (IOException e) {
+			error("Failed to transform [ {} ]", e, inputName);
+			return null;
+		}
 
-        try {
-            writer.flush(); // throws
-        } catch ( IOException e ) {
-            error("Failed to flush [ {} ]", e, inputName);
-            return null;
-        }
+		try {
+			writer.flush(); // throws
+		} catch (IOException e) {
+			error("Failed to flush [ {} ]", e, inputName);
+			return null;
+		}
 
-        if ( !hasNonResourceNameChanges() ) {
-            return null;
-        }
+		if (!hasNonResourceNameChanges()) {
+			return null;
+		}
 
-        byte[] outputBytes = outputStream.toByteArray();
-        return new ByteData(inputName, outputBytes, 0, outputBytes.length);
-    }
+		byte[] outputBytes = outputStream.toByteArray();
+		return new ByteData(inputName, outputBytes, 0, outputBytes.length);
+	}
 
-    //
+	//
 
-    protected void transform(String inputName, BufferedReader reader, BufferedWriter writer)
-        throws IOException {
+	protected void transform(String inputName, BufferedReader reader, BufferedWriter writer) throws IOException {
 
-        String inputLine;
-        while ( (inputLine = reader.readLine()) != null ) {
-            String outputLine = replaceText(inputName, inputLine);
-            if ( outputLine == null ) {
-                outputLine = inputLine;
-            } else {
-                addReplacement();
-            }
-            writer.write(outputLine);
-            writer.write('\n');
-        }
-    }
+		String inputLine;
+		while ((inputLine = reader.readLine()) != null) {
+			String outputLine = replaceText(inputName, inputLine);
+			if (outputLine == null) {
+				outputLine = inputLine;
+			} else {
+				addReplacement();
+			}
+			writer.write(outputLine);
+			writer.write('\n');
+		}
+	}
 }

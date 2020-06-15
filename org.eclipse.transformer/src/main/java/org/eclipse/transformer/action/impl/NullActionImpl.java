@@ -20,17 +20,15 @@ import org.slf4j.Logger;
 
 public class NullActionImpl extends ActionImpl {
 
-	public NullActionImpl(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule,
-		SignatureRuleImpl signatureRule) {
+	public NullActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
 	}
 
 	//
 
+	@Override
 	public String getName() {
 		return "Null Action";
 	}
@@ -53,8 +51,7 @@ public class NullActionImpl extends ActionImpl {
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength)
-		throws TransformException {
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 
 		setResourceNames(inputName, inputName);
 		return new ByteData(inputName, inputBytes, 0, inputLength);

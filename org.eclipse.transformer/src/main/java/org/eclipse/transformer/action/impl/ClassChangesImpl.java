@@ -35,22 +35,20 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return ( ((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName)) ||
-				 ((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName)) ||
+		return (((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName))
+			|| ((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName)) ||
 
-				 (modifiedInterfaces > 0) ||
+			(modifiedInterfaces > 0) ||
 
-				 (modifiedFields > 0) ||
-				 (modifiedMethods > 0) ||
-				 (modifiedAttributes > 0) ||
+			(modifiedFields > 0) || (modifiedMethods > 0) || (modifiedAttributes > 0) ||
 
-				 (modifiedConstants > 0) );
+			(modifiedConstants > 0));
 	}
 
 	//
 
-	private String inputClassName;
-	private String outputClassName;
+	private String	inputClassName;
+	private String	outputClassName;
 
 	public String getInputClassName() {
 		return inputClassName;
@@ -70,8 +68,8 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	//
 
-	private String inputSuperName;
-	private String outputSuperName;
+	private String	inputSuperName;
+	private String	outputSuperName;
 
 	public String getInputSuperName() {
 		return inputSuperName;
@@ -101,14 +99,14 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	public void addModifiedInterface() {
 		modifiedInterfaces++;
-		
+
 	}
 
 	//
 
-	private int modifiedFields;
-	private int modifiedMethods;
-	private int modifiedAttributes;
+	private int	modifiedFields;
+	private int	modifiedMethods;
+	private int	modifiedAttributes;
 
 	public int getModifiedFields() {
 		return modifiedFields;
@@ -166,59 +164,43 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	@Override
 	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
-		printStream.printf(
-			"Input name [ %s ] as [ %s ]\n",
-			getInputResourceName(), inputPath );
-		
-		printStream.printf(
-			"Output name [ %s ] as [ %s ]\n",
-			getOutputResourceName(), outputPath );
+		printStream.printf("Input name [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
 
-		printStream.printf(
-			"Class name [ %s ] [ %s ]\n",
-			getInputClassName(), getOutputClassName() );
+		printStream.printf("Output name [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
+
+		printStream.printf("Class name [ %s ] [ %s ]\n", getInputClassName(), getOutputClassName());
 
 		String useInputSuperName = getInputSuperName();
-		if ( useInputSuperName != null ) {
-			printStream.printf(
-				"Super class name [ %s ] [ %s ]\n",
-				useInputSuperName, getOutputSuperName() );
+		if (useInputSuperName != null) {
+			printStream.printf("Super class name [ %s ] [ %s ]\n", useInputSuperName, getOutputSuperName());
 		}
 
-		printStream.printf( "Modified interfaces [ %s ]\n", getModifiedInterfaces() );
-		printStream.printf( "Modified fields     [ %s ]\n", getModifiedFields() );
-		printStream.printf( "Modified methods    [ %s ]\n", getModifiedMethods() );
-		printStream.printf( "Modified constants  [ %s ]\n", getModifiedConstants() );	
+		printStream.printf("Modified interfaces [ %s ]\n", getModifiedInterfaces());
+		printStream.printf("Modified fields     [ %s ]\n", getModifiedFields());
+		printStream.printf("Modified methods    [ %s ]\n", getModifiedMethods());
+		printStream.printf("Modified constants  [ %s ]\n", getModifiedConstants());
 	}
 
 	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if ( !logger.isInfoEnabled() ) {
+		if (!logger.isInfoEnabled()) {
 			return;
 		}
 
-		logger.info(
-			"Input name [ {} ] as [ {} ]",
-			getInputResourceName(), inputPath );
-		
-		logger.info(
-			"Output name [ {} ] as [ {} ]",
-			getOutputResourceName(), outputPath );
+		logger.info("Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 
-		logger.info(
-			"Class name [ {} ] [ {} ]",
-			getInputClassName(), getOutputClassName() );
+		logger.info("Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+
+		logger.info("Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
 
 		String useInputSuperName = getInputSuperName();
-		if ( useInputSuperName != null ) {
-			logger.info(
-				"Super class name [ {} ] [ {} ]",
-				useInputSuperName, getOutputSuperName() );
+		if (useInputSuperName != null) {
+			logger.info("Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
 		}
 
-		logger.info( "Modified interfaces [ {} ]", getModifiedInterfaces() );
-		logger.info( "Modified fields     [ {} ]", getModifiedFields() );
-		logger.info( "Modified methods    [ {} ]", getModifiedMethods() );
-		logger.info( "Modified constants  [ {} ]", getModifiedConstants() );	
+		logger.info("Modified interfaces [ {} ]", getModifiedInterfaces());
+		logger.info("Modified fields     [ {} ]", getModifiedFields());
+		logger.info("Modified methods    [ {} ]", getModifiedMethods());
+		logger.info("Modified constants  [ {} ]", getModifiedConstants());
 	}
 }

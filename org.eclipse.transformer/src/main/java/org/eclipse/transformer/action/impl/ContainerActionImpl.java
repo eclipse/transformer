@@ -38,14 +38,12 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 		return action;
 	}
 
-	public ContainerActionImpl(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
+	public ContainerActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
 
-		this.compositeAction = createUsing( CompositeActionImpl::new );
+		this.compositeAction = createUsing(CompositeActionImpl::new);
 	}
 
 	//
@@ -115,37 +113,34 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	}
 
 	protected void recordUnselected(Action action, String resourceName) {
-		debug( "Resource [ {} ] Action [ {} ]: Accepted but not selected",
-			   resourceName, action.getName() );
+		debug("Resource [ {} ] Action [ {} ]: Accepted but not selected", resourceName, action.getName());
 
-		getActiveChanges().record( action, !ContainerChanges.HAS_CHANGES );
+		getActiveChanges().record(action, !ContainerChanges.HAS_CHANGES);
 	}
 
 	protected void recordTransform(Action action, String resourceName) {
-		debug( "Resource [ {} ] Action [ {} ]: Changes [ {} ]",
-			   resourceName, action.getName(), action.hadChanges() );
+		debug("Resource [ {} ] Action [ {} ]: Changes [ {} ]", resourceName, action.getName(), action.hadChanges());
 
 		getActiveChanges().record(action);
 	}
 
 	// Byte base container conversion is not supported.
 
+	@Override
 	public boolean useStreams() {
 		return true;
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength)
-		throws TransformException {
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 		throw new UnsupportedOperationException();
 	}
 
 	// Containers default to process input streams as zip archives.
 
 	@Override
-	public void apply(
-		String inputPath, InputStream inputStream, long inputCount,
-		OutputStream outputStream) throws TransformException {
+	public void apply(String inputPath, InputStream inputStream, long inputCount, OutputStream outputStream)
+		throws TransformException {
 
 		startRecording(inputPath);
 
@@ -154,7 +149,8 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 
 			// Use Zip streams instead of Jar streams.
 			//
-			// Jar streams automatically read and consume the manifest, which we don't want.
+			// Jar streams automatically read and consume the manifest, which we
+			// don't want.
 
 			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
 			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
@@ -166,7 +162,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 			} finally {
 				try {
 					zipOutputStream.finish(); // throws IOException
-				} catch ( IOException e ) {
+				} catch (IOException e) {
 					throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
 				}
 			}
@@ -176,9 +172,8 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 		}
 	}
 
-	protected void apply(
-		String inputPath, ZipInputStream zipInputStream,
-		ZipOutputStream zipOutputStream) throws TransformException {
+	protected void apply(String inputPath, ZipInputStream zipInputStream, ZipOutputStream zipOutputStream)
+		throws TransformException {
 
 		String prevName = null;
 		String inputName = null;
@@ -187,18 +182,17 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 			byte[] buffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
 
 			ZipEntry inputEntry;
-			while ( (inputEntry = zipInputStream.getNextEntry()) != null ) {
+			while ((inputEntry = zipInputStream.getNextEntry()) != null) {
 				inputName = inputEntry.getName();
 				long inputLength = inputEntry.getSize();
 
-				debug( "[ {}.{} ] [ {} ] Size [ {} ]",
-					getClass().getSimpleName(), "apply", inputName, inputLength );
+				debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName, inputLength);
 
 				boolean selected = select(inputName);
 				Action acceptedAction = acceptAction(inputName);
 
-				if ( !selected || (acceptedAction == null) ) {
-					if ( acceptedAction == null ) {
+				if (!selected || (acceptedAction == null)) {
+					if (acceptedAction == null) {
 						recordUnaccepted(inputName);
 					} else {
 						recordUnselected(acceptedAction, inputName);
@@ -207,49 +201,63 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 					// TODO: Should more of the entry details be transferred?
 
 					ZipEntry outputEntry = new ZipEntry(inputName);
-					zipOutputStream.putNextEntry(outputEntry); // throws IOException
-					FileUtils.transfer(zipInputStream, zipOutputStream, buffer); // throws IOException 
+					zipOutputStream.putNextEntry(outputEntry); // throws
+																// IOException
+					FileUtils.transfer(zipInputStream, zipOutputStream, buffer); // throws
+																					// IOException
 					zipOutputStream.closeEntry(); // throws IOException
 
 				} else {
-//					long inputCRC = inputEntry.getCrc();
-//
-//					int inputMethod = inputEntry.getMethod();
-//					long inputCompressed = inputEntry.getCompressedSize();
-//
-//					FileTime inputCreation = inputEntry.getCreationTime();
-//					FileTime inputAccess = inputEntry.getLastAccessTime();
-//					FileTime inputModified = inputEntry.getLastModifiedTime();
-//
-//					String className = getClass().getSimpleName();
-//					String methodName = "applyZip";
-//
-//					debug( "[ {}.{} ] [ {} ] Size [ {} ] CRC [ {} ]",
-//						   className, methodName, inputName, inputLength, inputCRC);
-//					debug( "[ {}.{} ] [ {} ] Compressed size [ {} ] Method [ {} ]",
-//						   className, methodName, inputName, inputCompressed, inputMethod);
-//					debug( "[ {}.{} ] [ {} ] Created [ {} ] Accessed [ {} ] Modified [ {} ]",
-//						   className, methodName, inputName, inputCreation, inputAccess, inputModified);
+					// long inputCRC = inputEntry.getCrc();
+					//
+					// int inputMethod = inputEntry.getMethod();
+					// long inputCompressed = inputEntry.getCompressedSize();
+					//
+					// FileTime inputCreation = inputEntry.getCreationTime();
+					// FileTime inputAccess = inputEntry.getLastAccessTime();
+					// FileTime inputModified =
+					// inputEntry.getLastModifiedTime();
+					//
+					// String className = getClass().getSimpleName();
+					// String methodName = "applyZip";
+					//
+					// debug( "[ {}.{} ] [ {} ] Size [ {} ] CRC [ {} ]",
+					// className, methodName, inputName, inputLength, inputCRC);
+					// debug( "[ {}.{} ] [ {} ] Compressed size [ {} ] Method [
+					// {} ]",
+					// className, methodName, inputName, inputCompressed,
+					// inputMethod);
+					// debug( "[ {}.{} ] [ {} ] Created [ {} ] Accessed [ {} ]
+					// Modified [ {} ]",
+					// className, methodName, inputName, inputCreation,
+					// inputAccess, inputModified);
 
 					// Archive type actions are processed using streams,
-					// while non-archive type actions do a full read of the entry
+					// while non-archive type actions do a full read of the
+					// entry
 					// data and process the resulting byte array.
 					//
-					// Ideally, a single pattern would be used for both cases, but
+					// Ideally, a single pattern would be used for both cases,
+					// but
 					// but that is not possible:
 					//
-					// A full read of a nested archive is not possible because the nested
+					// A full read of a nested archive is not possible because
+					// the nested
 					// archive can be very large.
 					//
-					// A read of non-archive data must be performed, since non-archive data
-					// may change the name associated with the data, and that can only be
+					// A read of non-archive data must be performed, since
+					// non-archive data
+					// may change the name associated with the data, and that
+					// can only be
 					// determined after reading the data.
 
-					if ( acceptedAction.useStreams() ) {
-						// TODO: Should more of the entry details be transferred?
+					if (acceptedAction.useStreams()) {
+						// TODO: Should more of the entry details be
+						// transferred?
 
 						ZipEntry outputEntry = new ZipEntry(inputName);
-						zipOutputStream.putNextEntry(outputEntry); // throws IOException
+						zipOutputStream.putNextEntry(outputEntry); // throws
+																	// IOException
 
 						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
 						recordTransform(acceptedAction, inputName);
@@ -257,21 +265,24 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 
 					} else {
 						int intInputLength;
-						if ( inputLength == -1L ) {
+						if (inputLength == -1L) {
 							intInputLength = -1;
 						} else {
 							intInputLength = FileUtils.verifyArray(0, inputLength);
 						}
 
-						InputStreamData outputData =
-							acceptedAction.apply(inputName, zipInputStream, intInputLength);
+						InputStreamData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
 						recordTransform(acceptedAction, inputName);
 
-						// TODO: Should more of the entry details be transferred?
+						// TODO: Should more of the entry details be
+						// transferred?
 
-						ZipEntry outputEntry = new ZipEntry( acceptedAction.getLastActiveChanges().getOutputResourceName() );
-						zipOutputStream.putNextEntry(outputEntry); // throws IOException
-						FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws IOException 
+						ZipEntry outputEntry = new ZipEntry(acceptedAction.getLastActiveChanges()
+							.getOutputResourceName());
+						zipOutputStream.putNextEntry(outputEntry); // throws
+																	// IOException
+						FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws
+																						// IOException
 						zipOutputStream.closeEntry(); // throws IOException
 					}
 				}
@@ -280,11 +291,12 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 				inputName = null;
 			}
 
-		} catch ( IOException e ) {
+		} catch (IOException e) {
 			String message;
-			if ( inputName != null ) { // Actively processing an entry.
+			if (inputName != null) { // Actively processing an entry.
 				message = "Failure while processing [ " + inputName + " ] from [ " + inputPath + " ]";
-			} else if ( prevName != null ) { // Moving to a new entry but not the first entry.
+			} else if (prevName != null) { // Moving to a new entry but not the
+											// first entry.
 				message = "Failure after processing [ " + prevName + " ] from [ " + inputPath + " ]";
 			} else { // Moving to the first entry.
 				message = "Failed to process first entry of [ " + inputPath + " ]";

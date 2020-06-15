@@ -15,9 +15,7 @@ import org.eclipse.transformer.action.ActionType;
 import org.slf4j.Logger;
 
 public class EarActionImpl extends ContainerActionImpl {
-	public EarActionImpl(
-		Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
+	public EarActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
@@ -25,6 +23,7 @@ public class EarActionImpl extends ContainerActionImpl {
 
 	//
 
+	@Override
 	public String getName() {
 		return "EAR Action";
 	}

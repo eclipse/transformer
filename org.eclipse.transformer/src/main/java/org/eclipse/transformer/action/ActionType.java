@@ -15,17 +15,23 @@ public enum ActionType {
 	NULL,
 
 	CLASS,
-	MANIFEST, FEATURE,
+	MANIFEST,
+	FEATURE,
 	SERVICE_LOADER_CONFIG,
-        TEXT,
-   	// XML,
+	TEXT,
+	// XML,
 
-        ZIP, JAR, WAR, RAR, EAR,
-   	JAVA,
-        DIRECTORY,
-        PROPERTIES;
+	ZIP,
+	JAR,
+	WAR,
+	RAR,
+	EAR,
+	JAVA,
+	DIRECTORY,
+	PROPERTIES;
 
 	public boolean matches(String tag) {
-		return name().toLowerCase().startsWith(tag);
+		return name().toLowerCase()
+			.startsWith(tag);
 	}
 }

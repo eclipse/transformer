@@ -27,7 +27,7 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return ( changedProviders > 0 );
+		return (changedProviders > 0);
 	}
 
 	@Override
@@ -40,8 +40,8 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 
 	//
 
-	private int changedProviders;
-	private int unchangedProviders;
+	private int	changedProviders;
+	private int	unchangedProviders;
 
 	public void addChangedProvider() {
 		changedProviders++;
@@ -65,18 +65,18 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
 		printStream.printf("Input  [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
 		printStream.printf("Output [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
-		printStream.printf( "Replacements [ %s ]\n", getChangedProviders() );
+		printStream.printf("Replacements [ %s ]\n", getChangedProviders());
 	}
 
 	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if ( !logger.isInfoEnabled() ) {
+		if (!logger.isInfoEnabled()) {
 			return;
 		}
 
 		logger.info("Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 		logger.info("Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-		logger.info( "Replacements [ {} ]", getChangedProviders() );
+		logger.info("Replacements [ {} ]", getChangedProviders());
 	}
 
 }

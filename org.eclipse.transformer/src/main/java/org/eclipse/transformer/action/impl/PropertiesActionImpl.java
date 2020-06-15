@@ -15,46 +15,45 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
+
 /**
- *
  * @author jdenise
  */
 public class PropertiesActionImpl extends ActionImpl {
 
-    public PropertiesActionImpl(
-            Logger logger, boolean isTerse, boolean isVerbose,
-            InputBufferImpl buffer,
-            SelectionRuleImpl selectionRule,
-            SignatureRuleImpl signatureRule) {
+	public PropertiesActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-        super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
-    }
+		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+	}
 
-    @Override
-    public String getAcceptExtension() {
-        return ".properties";
-    }
+	@Override
+	public String getAcceptExtension() {
+		return ".properties";
+	}
 
-    @Override
-    protected ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	@Override
+	protected ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 
-        String outputName = transformBinaryType(inputName);
-        if (outputName != null) {
-            verbose("Properties file %s, relocated to %s", inputName, outputName);
-            setResourceNames(inputName, outputName);
-            return new ByteData(outputName, inputBytes, 0, inputLength);
-        } else {
-            setResourceNames(inputName, inputName);
-            return new ByteData(inputName, inputBytes, 0, inputLength);
-        }
-    }
+		String outputName = transformBinaryType(inputName);
+		if (outputName != null) {
+			verbose("Properties file %s, relocated to %s", inputName, outputName);
+			setResourceNames(inputName, outputName);
+			return new ByteData(outputName, inputBytes, 0, inputLength);
+		} else {
+			setResourceNames(inputName, inputName);
+			return new ByteData(inputName, inputBytes, 0, inputLength);
+		}
+	}
 
-    public String getName() {
-        return "Properties file relocate";
-    }
+	@Override
+	public String getName() {
+		return "Properties file relocate";
+	}
 
-    public ActionType getActionType() {
-        return ActionType.PROPERTIES;
-    }
+	@Override
+	public ActionType getActionType() {
+		return ActionType.PROPERTIES;
+	}
 
 }

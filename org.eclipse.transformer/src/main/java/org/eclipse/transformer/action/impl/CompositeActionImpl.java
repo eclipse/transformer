@@ -29,16 +29,12 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 		return action;
 	}
 
-	public CompositeActionImpl(
-		Logger logger,
-		boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule,
-		SignatureRuleImpl signatureRule) {
+	public CompositeActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
 
-		this.actions = new ArrayList<ActionImpl>();
+		this.actions = new ArrayList<>();
 		this.acceptedAction = null;
 	}
 
@@ -46,22 +42,22 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 
 	@Override
 	public String getName() {
-		return ( (acceptedAction == null) ? null : acceptedAction.getName() );
+		return ((acceptedAction == null) ? null : acceptedAction.getName());
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ( (acceptedAction == null) ? null : acceptedAction.getActionType() );
+		return ((acceptedAction == null) ? null : acceptedAction.getActionType());
 	}
 
 	@Override
 	public ChangesImpl getLastActiveChanges() {
-		return ( (acceptedAction == null) ? null : acceptedAction.getLastActiveChanges() );
+		return ((acceptedAction == null) ? null : acceptedAction.getLastActiveChanges());
 	}
 
 	@Override
 	public ChangesImpl getActiveChanges() {
-		return ( (acceptedAction == null) ? null : acceptedAction.getActiveChanges() );
+		return ((acceptedAction == null) ? null : acceptedAction.getActiveChanges());
 	}
 
 	@Override
@@ -72,8 +68,8 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 
 	//
 
-	private final List<ActionImpl> actions;
-	private ActionImpl acceptedAction;
+	private final List<ActionImpl>	actions;
+	private ActionImpl				acceptedAction;
 
 	@Override
 	public List<ActionImpl> getActions() {
@@ -91,8 +87,8 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 
 	@Override
 	public ActionImpl acceptAction(String resourceName, File resourceFile) {
-		for ( ActionImpl action : getActions() ) {
-			if ( action.accept(resourceName, resourceFile) ) {
+		for (ActionImpl action : getActions()) {
+			if (action.accept(resourceName, resourceFile)) {
 				acceptedAction = action;
 				return action;
 			}
@@ -103,19 +99,18 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		return ( acceptAction(resourceName, resourceFile) != null );
+		return (acceptAction(resourceName, resourceFile) != null);
 	}
 
 	@Override
 	public ActionImpl getAcceptedAction() {
-		return ( (acceptedAction == null) ? null : acceptedAction );
+		return ((acceptedAction == null) ? null : acceptedAction);
 	}
 
 	//
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength)
-		throws TransformException {
+	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
 
 		return getAcceptedAction().apply(inputName, inputBytes, inputLength);
 	}
