@@ -49,7 +49,9 @@ import aQute.bnd.classfile.AnnotationInfo;
 import aQute.bnd.classfile.AnnotationsAttribute;
 import aQute.bnd.classfile.Attribute;
 import aQute.bnd.classfile.ClassFile;
+import aQute.bnd.classfile.ConstantPool;
 import aQute.bnd.classfile.ElementValueInfo;
+import aQute.bnd.classfile.EnclosingMethodAttribute;
 import aQute.bnd.classfile.FieldInfo;
 import aQute.bnd.classfile.MethodInfo;
 import aQute.lib.io.ByteBufferDataInput;
@@ -675,6 +677,98 @@ public class TestTransformClass extends CaptureTest {
 		Assertions.assertEquals(expectedChanges, actualChanges, "Incorrect count of constant changes");
 	}
 
+    public static final String OUTER_CLASS_RESOURCE_NAME = "/xformme/Sample_OuterClass$1.class";
+
+    @Test
+    public void testOuterClass() throws TransformException, IOException {
+        consumeCapturedEvents();
+
+        final ClassActionImpl classAction = createOuterClassAction();
+
+        final String resourceName = TEST_DATA_RESOURCE_NAME + OUTER_CLASS_RESOURCE_NAME;
+        final InputStream inputStream = getResourceStream(resourceName); // throws IOException
+
+        @SuppressWarnings("unused")
+        final InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+        final InputStream is = outputStreamData.stream;
+
+        final ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        int bytesRead = -1;
+        byte[] buffer = new byte[8192];
+
+        while ((bytesRead = is.read(buffer)) > -1) {
+            os.write(buffer, 0, bytesRead);
+        }
+
+        is.close();
+        os.close();
+
+        display(classAction.getLastActiveChanges());
+
+        // We do not assert the number of changes to the constants here, as different versions
+        // of Java produce slightly different constants.
+        // JDK 14, for example, includes an additional NameAndType constant for
+        // Ltransformer/test/data/xformme/Sample_OuterClass;this$0, which JDK 8 doesn't.
+
+        final List<? extends CaptureLoggerImpl.LogEvent> capturedEvents =
+            consumeCapturedEvents();
+
+        final byte[] classBytes = os.toByteArray();
+        DataInput inputClassData = ByteBufferDataInput.wrap(classBytes, 0, classBytes.length);
+        final ClassFile classFile = ClassFile.parseClassFile(inputClassData);
+
+        int foundEnclosingMethodAttributes = 0;
+        final Attribute[] attributes = classFile.attributes;
+        for (final Attribute attribute : attributes) {
+            if (attribute instanceof EnclosingMethodAttribute) {
+                foundEnclosingMethodAttributes++;
+
+                final EnclosingMethodAttribute ema = (EnclosingMethodAttribute) attribute;
+                Assertions.assertFalse(ema.class_name.contains("xformme"));
+            }
+        }
+
+		Assertions.assertEquals(1, foundEnclosingMethodAttributes);
+
+		final ConstantPool constants = classFile.constant_pool;
+		for (int constantNo = 1; constantNo < constants.size(); constantNo++) {
+			switch (constants.tag(constantNo) ) {
+				case ConstantPool.CONSTANT_Utf8:
+					final String inputUtf8 = constants.entry(constantNo);
+
+					if (inputUtf8 != null) {
+						Assertions.assertFalse(inputUtf8.contains("xformme"));
+					}
+
+					break;
+
+				case ConstantPool.CONSTANT_String: {
+					final ConstantPool.StringInfo stringInfo = constants.entry(constantNo);
+					final String inputString = constants.utf8(stringInfo.string_index);
+
+					if (inputString != null) {
+						Assertions.assertFalse(inputString.contains("xformme"));
+					}
+
+					break;
+				}
+			}
+		}
+
+
+    }
+
+    private ClassActionImpl createOuterClassAction() {
+        CaptureLoggerImpl useLogger = getCaptureLogger();
+
+        Map<String, String> renames = new HashMap<>();
+        renames.put("transformer.test.data.xformme", "transformer.test.data.xformed");
+
+        return new ClassActionImpl(useLogger, false, false, createBuffer(),
+            createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
+            createSignatureRule(useLogger, renames, null, null, null));
+    }
 	public static final boolean IS_EXACT = false;
 
 	public static class ClassRelocation {
