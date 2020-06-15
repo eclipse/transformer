@@ -450,8 +450,8 @@ public class ClassActionImpl extends ActionImpl {
 
 	//
 
-	private <M extends MemberInfo> M transform(M member, MemberInfo.Constructor<M> constructor,
-		SignatureType signatureType) {
+	private <MEMBERINFO extends MemberInfo> MEMBERINFO transform(MEMBERINFO member,
+		MemberInfo.Constructor<MEMBERINFO> constructor, SignatureType signatureType) {
 
 		String inputDescriptor = member.descriptor;
 		String outputDescriptor = transformDescriptor(inputDescriptor);
@@ -835,8 +835,8 @@ public class ClassActionImpl extends ActionImpl {
 		}
 	}
 
-	private <A extends AnnotationsAttribute> A transform(A inputAttribute,
-		AnnotationsAttribute.Constructor<A> constructor) {
+	private <ANNOTATIONSATTRIBUTE extends AnnotationsAttribute> ANNOTATIONSATTRIBUTE transform(
+		ANNOTATIONSATTRIBUTE inputAttribute, AnnotationsAttribute.Constructor<ANNOTATIONSATTRIBUTE> constructor) {
 
 		AnnotationInfo[] outputAnnotations = transform(inputAttribute.annotations);
 
@@ -860,8 +860,9 @@ public class ClassActionImpl extends ActionImpl {
 		return outputAnnotations;
 	}
 
-	private <A extends ParameterAnnotationsAttribute> A transform(A attribute,
-		ParameterAnnotationsAttribute.Constructor<A> constructor) {
+	private <PARAMETERANNOTATIONSATTRIBUTE extends ParameterAnnotationsAttribute> PARAMETERANNOTATIONSATTRIBUTE transform(
+		PARAMETERANNOTATIONSATTRIBUTE attribute,
+		ParameterAnnotationsAttribute.Constructor<PARAMETERANNOTATIONSATTRIBUTE> constructor) {
 
 		ParameterAnnotationInfo[] outputParmAnnotations = transform(attribute.parameter_annotations);
 
@@ -890,8 +891,9 @@ public class ClassActionImpl extends ActionImpl {
 		return outputParmAnnotations;
 	}
 
-	private <A extends TypeAnnotationsAttribute> A transform(A inputAttribute,
-		TypeAnnotationsAttribute.Constructor<A> constructor) {
+	private <TYPEANNOTATIONSATTRIBUTE extends TypeAnnotationsAttribute> TYPEANNOTATIONSATTRIBUTE transform(
+		TYPEANNOTATIONSATTRIBUTE inputAttribute,
+		TypeAnnotationsAttribute.Constructor<TYPEANNOTATIONSATTRIBUTE> constructor) {
 
 		TypeAnnotationInfo[] outputAnnotations = transform(inputAttribute.type_annotations);
 
@@ -922,7 +924,8 @@ public class ClassActionImpl extends ActionImpl {
 		return outputAnnotations;
 	}
 
-	private <A extends AnnotationInfo> A transform(A inputAnnotation, AnnotationInfo.Constructor<A> constructor) {
+	private <ANNOTATIONINFO extends AnnotationInfo> ANNOTATIONINFO transform(ANNOTATIONINFO inputAnnotation,
+		AnnotationInfo.Constructor<ANNOTATIONINFO> constructor) {
 
 		String inputType = inputAnnotation.type;
 		String outputType = transformDescriptor(inputType);
