@@ -89,6 +89,14 @@
 			<groupId>jakarta.management.j2ee</groupId>
 			<artifactId>jakarta.management.j2ee-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.jboss.shrinkwrap</groupId>
+			<artifactId>shrinkwrap-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.jboss.shrinkwrap</groupId>
+			<artifactId>shrinkwrap-impl-base</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

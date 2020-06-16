@@ -113,7 +113,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 		}
 		setResourceNames(inputName, outputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes);
+		InputStream inputStream = new ByteArrayInputStream(inputBytes,  0, inputLength);
 		InputStreamReader inputReader;
 		try {
 			inputReader = new InputStreamReader(inputStream, "UTF-8");
@@ -124,7 +124,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputLength);
 		OutputStreamWriter outputWriter;
 		try {
 			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
