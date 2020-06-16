@@ -2,7 +2,7 @@
 
 ## Overview of actions:
 
-All are in package "org.eclipse.transformer.action.impl"
+All are in package **org.eclipse.transformer.action.impl**:
 
 * Container Type Actions
 
@@ -27,9 +27,9 @@ All are in package "org.eclipse.transformer.action.impl"
 
   * NullActionImpl
 
-# Update Cases
+## Update Cases
 
-## Case: Package Rename
+### Case: Package Rename
 
 **Command line argument**: -tr, --renames
 
@@ -64,7 +64,7 @@ For example:
 
 * Rename any properties file using the package rename rules.  (Note that property file contents are not updated.)
 
-## Case: Package Version Update
+### Case: Package Version Update
 
 **Command line argument**: -tv, --version
 
@@ -80,7 +80,7 @@ For example:
 
 **Used by**: Manifest action and feature manifest action
 
-## Case: Bundle Identity Update
+### Case: Bundle Identity Update
 
 **Command line argument**: -tb, --bundles
 
@@ -100,7 +100,7 @@ The bundle version is not updated when the initial bundle symbolic name is '*'.
 
 **Used by**: Manifest action and featuure manifest action
 
-## Case: Class simple string update
+### Case: Class simple string update
 
 **Command line argument**: -td, --direct 
 
@@ -110,7 +110,7 @@ The bundle version is not updated when the initial bundle symbolic name is '*'.
 
 **Used by**: Class action
 
-## Case: Text simple string update
+### Case: Text simple string update
 
 **Command line argument**: -tf
 
@@ -119,7 +119,7 @@ The bundle version is not updated when the initial bundle symbolic name is '*'.
 For example:
 
 ~~~
-    jakarta-text-master.properties
+jakarta-text-master.properties
 ~~~
 
 ~~~
