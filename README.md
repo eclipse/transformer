@@ -52,11 +52,11 @@ Container resources:
 
 The Eclipse Transformer provides three core APIs: A java entry point and two command line entry points:
 
-* Class ~~~org.eclipse.transformer.Transformer~~~ provides a standard ~~~main~~~ command line entry point.
+* Class ~org.eclipse.transformer.Transformer~ provides a standard ~main~ command line entry point.
 
-* Class ~~~org.eclipse.transformer.Transformer~~~ also provides for direct invocation from java using ~~~int Transformer.runWith(PrintStream, PrintStream, String[])~~~.
+* Class ~org.eclipse.transformer.Transformer~ also provides for direct invocation from java using ~int Transformer.runWith(PrintStream, PrintStream, String[])~.
 
-* Class ~~~org.eclipse.transformer.jakarta.JakartaTransformer~~~ provides an addition ~~~main~~~ command line entry point.  !!!JakartaTransformer~~~ is packaged with default update properties files and supplies these as default property files for the several update properties files.
+* Class ~org.eclipse.transformer.jakarta.JakartaTransformer~ provides an addition ~main~ command line entry point.  !!!JakartaTransformer~ is packaged with default update properties files and supplies these as default property files for the several update properties files.
 
 ## Use Cases
 
