@@ -8,6 +8,7 @@ The Eclipse Transformer is stored in a standard Git repository, hosted under the
 
 Build scripts and standard files are located at the root:
 
+| File      | Description                  |
 |-----------|------------------------------|
 | README.md | Standard project readme      |
 | INFRA.md  | Infrastructure notes         |
@@ -21,6 +22,7 @@ Build scripts and standard files are located at the root:
 
 Project contents are currently managed as two maven modules:
 
+| Module                      | Description                                     |
 |-----------------------------|-------------------------------------------------|
 | org.eclipse.transformer     | Core transformer and raw command line interface |
 | org.eclipse.transformer.cli | Jakarta command line interface                  |
@@ -31,6 +33,7 @@ The Eclipse Transformer uses maven build scripts.  See comments the maven build 
 
 Generally, a JDK home directory must be set via environment variable "JAVA_HOME", and a maven home directory should be set via environment variable "M2_HOME":
 
+| Property  | Description           |
 |-----------|-----------------------|
 | JAVA_HOME | JDK home directory    |
 | M2_HOME   | maven2 home directory |
