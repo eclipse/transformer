@@ -950,6 +950,10 @@ public class ClassActionImpl extends ActionImpl {
 				if (outputString == null) {
 					transformCase = "direct";
 					outputString = transformDirectString(inputString);
+					if (outputString == null) {
+						transformCase = "direct per class";
+						outputString = transformConstantString(inputString, inputName);
+					}
 				}
 			}
 			if (outputString == null) {
@@ -1115,6 +1119,14 @@ public class ClassActionImpl extends ActionImpl {
 			AnnotationInfo annotationValue = (AnnotationInfo) inputValue;
 			return transform(annotationValue, AnnotationInfo::new);
 
+		} else if (inputValue instanceof String) {
+			String inputString = (String) inputValue;
+			String outputString = transformDirectString(inputString);
+			if (outputString == null) {
+				outputString = transformConstantString(inputString, inputName);
+			}
+			return outputString;
+
 		} else if (inputValue instanceof Object[]) {
 			Object[] inputElementValues = ((Object[]) inputValue);
 			Object[] outputElementValues = null;
@@ -1250,6 +1262,10 @@ public class ClassActionImpl extends ActionImpl {
 							if (outputUtf8 == null) {
 								transformCase = "Direct";
 								outputUtf8 = transformDirectString(inputUtf8);
+								if (outputUtf8 == null) {
+									transformCase = "Direct per class";
+									outputUtf8 = transformConstantString(inputUtf8, inputName);
+								}
 							}
 						}
 					}
@@ -1278,6 +1294,10 @@ public class ClassActionImpl extends ActionImpl {
 						if (outputString == null) {
 							transformCase = "Direct";
 							outputString = transformDirectString(inputString);
+							if (outputString == null) {
+								transformCase = "Direct per class";
+								outputString = transformConstantString(inputString, inputName);
+							}
 						}
 					}
 					if (outputString != null) {
