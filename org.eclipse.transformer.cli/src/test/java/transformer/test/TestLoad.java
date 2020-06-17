@@ -63,6 +63,7 @@ public class TestLoad {
 		}
 	}
 
+	public static final String		COMPLEX_RESOURCE_PATH	= "transformer/test/data/complex.properties";
 	public static final String		SIMPLE_RESOURCE_PATH	= "transformer/test/data/simple.resource";
 	public static final String[]	SIMPLE_RESOURCE_LINES	= {
 		"Simple Resource 1", "Simple Resource 2"

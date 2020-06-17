@@ -33,6 +33,7 @@
 		<assertj.version>3.16.1</assertj.version>
 		<!-- Reproducible build -->
 		<project.build.outputTimestamp>1980-02-01T00:00:00Z</project.build.outputTimestamp>
+		<shrinkwrap.version>1.2.6</shrinkwrap.version>
 	</properties>
 
 	<modules>
@@ -424,6 +425,18 @@
 				<groupId>jakarta.management.j2ee</groupId>
 				<artifactId>jakarta.management.j2ee-api</artifactId>
 				<version>1.1.4</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.shrinkwrap</groupId>
+				<artifactId>shrinkwrap-api</artifactId>
+				<version>${shrinkwrap.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jboss.shrinkwrap</groupId>
+				<artifactId>shrinkwrap-impl-base</artifactId>
+				<version>${shrinkwrap.version}</version>
 				<scope>test</scope>
 			</dependency>
 		</dependencies>
