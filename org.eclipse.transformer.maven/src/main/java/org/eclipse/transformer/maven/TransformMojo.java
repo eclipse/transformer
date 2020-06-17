@@ -58,6 +58,9 @@ public class TransformMojo extends AbstractMojo {
 	@Parameter(property = "transformer-plugin.direct", defaultValue = "")
 	private String				rulesDirectUri;
 
+	@Parameter(property = "transformer-plugin.per-class-constant", defaultValue = "")
+	private String rulesPerClassConstantUri;
+
 	@Parameter(property = "transformer-plugin.xml", defaultValue = "")
 	private String				rulesXmlsUri;
 
@@ -169,6 +172,8 @@ public class TransformMojo extends AbstractMojo {
 			isEmpty(rulesDirectUri) ? "jakarta-direct.properties" : rulesDirectUri);
 		optionDefaults.put(Transformer.AppOption.RULES_MASTER_TEXT,
 			isEmpty(rulesXmlsUri) ? "jakarta-text-master.properties" : rulesXmlsUri);
+		optionDefaults.put(Transformer.AppOption.RULES_PER_CLASS_CONSTANT,
+			isEmpty(rulesPerClassConstantUri) ? "jakarta-per-class-constant-master.properties" : rulesPerClassConstantUri);
 		return optionDefaults;
 	}
 

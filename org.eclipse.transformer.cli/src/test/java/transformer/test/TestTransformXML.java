@@ -90,7 +90,7 @@ public class TestTransformXML extends CaptureTest {
 
 			textAction = new TextActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, null, null, null, getMasterXmlUpdates(), null));
+				new SignatureRuleImpl(useLogger, null, null, null, getMasterXmlUpdates(), null, Collections.emptyMap()));
 		}
 
 		return textAction;

@@ -36,6 +36,7 @@ public class JakartaTransformer {
 	public static final String	DEFAULT_BUNDLES_REFERENCE		= "jakarta-bundles.properties";
 	public static final String	DEFAULT_DIRECT_REFERENCE		= "jakarta-direct.properties";
 	public static final String	DEFAULT_MASTER_TEXT_REFERENCE	= "jakarta-text-master.properties";
+	public static final String	DEFAULT_PER_CLASS_CONSTANT_MASTER_REFERENCE	= "jakarta-per-class-constant-master.properties";
 
 	public static Map<Transformer.AppOption, String> getOptionDefaults() {
 		HashMap<Transformer.AppOption, String> optionDefaults = new HashMap<>();
@@ -45,6 +46,7 @@ public class JakartaTransformer {
 		optionDefaults.put(AppOption.RULES_BUNDLES, DEFAULT_BUNDLES_REFERENCE);
 		optionDefaults.put(AppOption.RULES_DIRECT, DEFAULT_DIRECT_REFERENCE);
 		optionDefaults.put(AppOption.RULES_MASTER_TEXT, DEFAULT_MASTER_TEXT_REFERENCE);
+		optionDefaults.put(AppOption.RULES_PER_CLASS_CONSTANT, DEFAULT_PER_CLASS_CONSTANT_MASTER_REFERENCE);
 
 		return optionDefaults;
 	}

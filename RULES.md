@@ -144,3 +144,33 @@ javax.ejb.TimerService=jakarta.ejb.TimerService
 **Description**: Updates target files, reading these as UTF-8, line delimited, files.  Select update values (a table of initial and final text values) based on file name patterns.
 
 **Used by**: Text action
+
+### Case: Per class constant string update
+
+**Command line argument**: -tp, --per-class-constant
+
+**Property format**: Two tiers of property files are used.  The first tier maps class files to second tier files.  The second tier maps initial text values to final text values.
+
+For example:
+
+~~~
+jakarta-per-class-constant-master.properties
+~~~
+
+~~~
+org/apache/jasper/compiler/Generator.class=jsp-compiler.properties
+~~~
+
+~~~
+jsp-compiler.properties
+~~~
+
+~~~
+javax.servlet=jakarta.servlet
+~~~
+
+**Wildcard support**: None
+
+**Description**: Updates target classes. All occurrences of mapping keys present in constant strings are replaced with mapping values. 
+
+**Used by**: Class action

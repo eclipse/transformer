@@ -377,7 +377,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (fields.hasNext()) {
 			FieldInfo inputField = fields.next();
-			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD);
+			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputName);
 			if (outputField != null) {
 				fields.set(outputField);
 				addModifiedField();
@@ -394,7 +394,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (methods.hasNext()) {
 			MethodInfo inputMethod = methods.next();
-			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD);
+			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD, inputName);
 			if (outputMethod != null) {
 				methods.set(outputMethod);
 				addModifiedMethod();
@@ -415,7 +415,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (attributes.hasNext()) {
 			Attribute inputAttribute = attributes.next();
-			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS);
+			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputName);
 			if (outputAttribute != null) {
 				attributes.set(outputAttribute);
 				addModifiedAttribute();
@@ -427,7 +427,7 @@ public class ClassActionImpl extends ActionImpl {
 		MutableConstantPool constants = classBuilder.constant_pool();
 		debug("  Constant pool: {}", constants.size());
 
-		int modifiedConstants = transform(constants);
+		int modifiedConstants = transform(constants, inputName);
 		if (modifiedConstants > 0) {
 			setModifiedConstants(modifiedConstants);
 		}
@@ -455,7 +455,7 @@ public class ClassActionImpl extends ActionImpl {
 	//
 
 	private <MEMBERINFO extends MemberInfo> MEMBERINFO transform(MEMBERINFO member,
-		MemberInfo.Constructor<MEMBERINFO> constructor, SignatureType signatureType) {
+		MemberInfo.Constructor<MEMBERINFO> constructor, SignatureType signatureType, String inputName) {
 
 		String inputDescriptor = member.descriptor;
 		String outputDescriptor = transformDescriptor(inputDescriptor);
@@ -465,7 +465,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 
 		Attribute[] inputAttributes = member.attributes;
-		Attribute[] outputAttributes = transform(inputAttributes, signatureType);
+		Attribute[] outputAttributes = transform(inputAttributes, signatureType, inputName);
 
 		if ((outputDescriptor == null) && (outputAttributes == null)) {
 			return null;
@@ -476,12 +476,12 @@ public class ClassActionImpl extends ActionImpl {
 			((outputAttributes == null) ? inputAttributes : outputAttributes));
 	}
 
-	private Attribute[] transform(Attribute[] inputAttributes, SignatureType signatureType) {
+	private Attribute[] transform(Attribute[] inputAttributes, SignatureType signatureType, String inputName) {
 		Attribute[] outputAttributes = null;
 
 		for (int attributeNo = 0; attributeNo < inputAttributes.length; attributeNo++) {
 			Attribute inputAttribute = inputAttributes[attributeNo];
-			Attribute outputAttribute = transform(inputAttribute, signatureType);
+			Attribute outputAttribute = transform(inputAttribute, signatureType, inputName);
 			if (outputAttribute != null) {
 				if (outputAttributes == null) {
 					outputAttributes = inputAttributes.clone();
@@ -496,7 +496,7 @@ public class ClassActionImpl extends ActionImpl {
 		return outputAttributes;
 	}
 
-	private Attribute transform(Attribute attr, SignatureType signatureType) {
+	private Attribute transform(Attribute attr, SignatureType signatureType, String inputName) {
 		switch (attr.name()) {
 			case SignatureAttribute.NAME : {
 				SignatureAttribute inputAttribute = (SignatureAttribute) attr;
@@ -546,7 +546,7 @@ public class ClassActionImpl extends ActionImpl {
 				// runtime to rename types
 
 				Attribute[] inputAttributes = attribute.attributes;
-				Attribute[] outputAttributes = transform(inputAttributes, SignatureType.METHOD);
+				Attribute[] outputAttributes = transform(inputAttributes, SignatureType.METHOD, inputName);
 
 				if ((outputHandlers == null) && (outputAttributes == null)) {
 					return null;
@@ -737,48 +737,48 @@ public class ClassActionImpl extends ActionImpl {
 			case RuntimeVisibleAnnotationsAttribute.NAME : {
 				RuntimeVisibleAnnotationsAttribute inputAttribute = (RuntimeVisibleAnnotationsAttribute) attr;
 				RuntimeVisibleAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeVisibleAnnotationsAttribute::new);
+					RuntimeVisibleAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case RuntimeInvisibleAnnotationsAttribute.NAME : {
 				RuntimeInvisibleAnnotationsAttribute inputAttribute = (RuntimeInvisibleAnnotationsAttribute) attr;
 				RuntimeInvisibleAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeInvisibleAnnotationsAttribute::new);
+					RuntimeInvisibleAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case RuntimeVisibleParameterAnnotationsAttribute.NAME : {
 				RuntimeVisibleParameterAnnotationsAttribute inputAttribute = (RuntimeVisibleParameterAnnotationsAttribute) attr;
 				RuntimeVisibleParameterAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeVisibleParameterAnnotationsAttribute::new);
+					RuntimeVisibleParameterAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case RuntimeInvisibleParameterAnnotationsAttribute.NAME : {
 				RuntimeInvisibleParameterAnnotationsAttribute inputAttribute = (RuntimeInvisibleParameterAnnotationsAttribute) attr;
 				RuntimeInvisibleParameterAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeInvisibleParameterAnnotationsAttribute::new);
+					RuntimeInvisibleParameterAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case RuntimeVisibleTypeAnnotationsAttribute.NAME : {
 				RuntimeVisibleTypeAnnotationsAttribute inputAttribute = (RuntimeVisibleTypeAnnotationsAttribute) attr;
 				RuntimeVisibleTypeAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeVisibleTypeAnnotationsAttribute::new);
+					RuntimeVisibleTypeAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case RuntimeInvisibleTypeAnnotationsAttribute.NAME : {
 				RuntimeInvisibleTypeAnnotationsAttribute inputAttribute = (RuntimeInvisibleTypeAnnotationsAttribute) attr;
 				RuntimeInvisibleTypeAnnotationsAttribute outputAttribute = transform(inputAttribute,
-					RuntimeInvisibleTypeAnnotationsAttribute::new);
+					RuntimeInvisibleTypeAnnotationsAttribute::new, inputName);
 				return outputAttribute;
 			}
 
 			case AnnotationDefaultAttribute.NAME : {
 				AnnotationDefaultAttribute inputAttribute = (AnnotationDefaultAttribute) attr;
-				Object outputValue = transformElementValue(inputAttribute.value);
+				Object outputValue = transformElementValue(inputAttribute.value, inputName);
 				return ((outputValue == null) ? null : new AnnotationDefaultAttribute(outputValue));
 			}
 
@@ -928,7 +928,7 @@ public class ClassActionImpl extends ActionImpl {
 			case ConstantValueAttribute.NAME : {
 				ConstantValueAttribute inputAttribute = (ConstantValueAttribute) attr;
 				Object inputValue = inputAttribute.value;
-				Object outputValue = transformConstantValue(inputValue);
+				Object outputValue = transformConstantValue(inputValue, inputName);
 				return ((outputValue == null) ? null : new ConstantValueAttribute(outputValue));
 			}
 
@@ -939,7 +939,7 @@ public class ClassActionImpl extends ActionImpl {
 		return null;
 	}
 
-	private Object transformConstantValue(Object inputValue) {
+	private Object transformConstantValue(Object inputValue, String inputName) {
 		if (inputValue instanceof String) {
 			String inputString = (String) inputValue;
 			String transformCase = "constant"; // dotted package format
@@ -971,19 +971,19 @@ public class ClassActionImpl extends ActionImpl {
 	}
 
 	private <ANNOTATIONSATTRIBUTE extends AnnotationsAttribute> ANNOTATIONSATTRIBUTE transform(
-		ANNOTATIONSATTRIBUTE inputAttribute, AnnotationsAttribute.Constructor<ANNOTATIONSATTRIBUTE> constructor) {
+		ANNOTATIONSATTRIBUTE inputAttribute, AnnotationsAttribute.Constructor<ANNOTATIONSATTRIBUTE> constructor, String inputName) {
 
-		AnnotationInfo[] outputAnnotations = transform(inputAttribute.annotations);
+		AnnotationInfo[] outputAnnotations = transform(inputAttribute.annotations, inputName);
 
 		return ((outputAnnotations == null) ? null : constructor.init(outputAnnotations));
 	}
 
-	private AnnotationInfo[] transform(AnnotationInfo[] inputAnnotations) {
+	private AnnotationInfo[] transform(AnnotationInfo[] inputAnnotations, String inputName) {
 		AnnotationInfo[] outputAnnotations = null;
 
 		for (int annoNo = 0; annoNo < inputAnnotations.length; annoNo++) {
 			AnnotationInfo inputAnnotation = inputAnnotations[annoNo];
-			AnnotationInfo outputAnnotation = transform(inputAnnotation, AnnotationInfo::new);
+			AnnotationInfo outputAnnotation = transform(inputAnnotation, AnnotationInfo::new, inputName);
 			if (outputAnnotation != null) {
 				if (outputAnnotations == null) {
 					outputAnnotations = inputAnnotations.clone();
@@ -997,9 +997,9 @@ public class ClassActionImpl extends ActionImpl {
 
 	private <PARAMETERANNOTATIONSATTRIBUTE extends ParameterAnnotationsAttribute> PARAMETERANNOTATIONSATTRIBUTE transform(
 		PARAMETERANNOTATIONSATTRIBUTE attribute,
-		ParameterAnnotationsAttribute.Constructor<PARAMETERANNOTATIONSATTRIBUTE> constructor) {
+		ParameterAnnotationsAttribute.Constructor<PARAMETERANNOTATIONSATTRIBUTE> constructor, String inputName) {
 
-		ParameterAnnotationInfo[] outputParmAnnotations = transform(attribute.parameter_annotations);
+		ParameterAnnotationInfo[] outputParmAnnotations = transform(attribute.parameter_annotations, inputName);
 
 		if (outputParmAnnotations == null) {
 			return null;
@@ -1008,12 +1008,12 @@ public class ClassActionImpl extends ActionImpl {
 		}
 	}
 
-	private ParameterAnnotationInfo[] transform(ParameterAnnotationInfo[] inputParmAnnotations) {
+	private ParameterAnnotationInfo[] transform(ParameterAnnotationInfo[] inputParmAnnotations, String inputName) {
 		ParameterAnnotationInfo[] outputParmAnnotations = null;
 
 		for (int parmNo = 0; parmNo < inputParmAnnotations.length; parmNo++) {
 			ParameterAnnotationInfo inputParmAnnotation = inputParmAnnotations[parmNo];
-			AnnotationInfo[] outputAnnotations = transform(inputParmAnnotation.annotations);
+			AnnotationInfo[] outputAnnotations = transform(inputParmAnnotation.annotations, inputName);
 			if (outputAnnotations != null) {
 				if (outputParmAnnotations == null) {
 					outputParmAnnotations = inputParmAnnotations.clone();
@@ -1028,9 +1028,9 @@ public class ClassActionImpl extends ActionImpl {
 
 	private <TYPEANNOTATIONSATTRIBUTE extends TypeAnnotationsAttribute> TYPEANNOTATIONSATTRIBUTE transform(
 		TYPEANNOTATIONSATTRIBUTE inputAttribute,
-		TypeAnnotationsAttribute.Constructor<TYPEANNOTATIONSATTRIBUTE> constructor) {
+		TypeAnnotationsAttribute.Constructor<TYPEANNOTATIONSATTRIBUTE> constructor, String inputName) {
 
-		TypeAnnotationInfo[] outputAnnotations = transform(inputAttribute.type_annotations);
+		TypeAnnotationInfo[] outputAnnotations = transform(inputAttribute.type_annotations, inputName);
 
 		if (outputAnnotations == null) {
 			return null;
@@ -1039,14 +1039,14 @@ public class ClassActionImpl extends ActionImpl {
 		}
 	}
 
-	private TypeAnnotationInfo[] transform(TypeAnnotationInfo[] inputAnnotations) {
+	private TypeAnnotationInfo[] transform(TypeAnnotationInfo[] inputAnnotations, String inputName) {
 		TypeAnnotationInfo[] outputAnnotations = null;
 
 		for (int annoNo = 0; annoNo < inputAnnotations.length; annoNo++) {
 			TypeAnnotationInfo inputAnnotation = inputAnnotations[annoNo];
 			TypeAnnotationInfo outputAnnotation = transform(inputAnnotation,
 				(type, values) -> new TypeAnnotationInfo(inputAnnotation.target_type, inputAnnotation.target_info,
-					inputAnnotation.target_index, inputAnnotation.type_path, type, values));
+					inputAnnotation.target_index, inputAnnotation.type_path, type, values), inputName);
 
 			if (outputAnnotation != null) {
 				if (outputAnnotations == null) {
@@ -1060,13 +1060,13 @@ public class ClassActionImpl extends ActionImpl {
 	}
 
 	private <ANNOTATIONINFO extends AnnotationInfo> ANNOTATIONINFO transform(ANNOTATIONINFO inputAnnotation,
-		AnnotationInfo.Constructor<ANNOTATIONINFO> constructor) {
+		AnnotationInfo.Constructor<ANNOTATIONINFO> constructor, String inputName) {
 
 		String inputType = inputAnnotation.type;
 		String outputType = transformDescriptor(inputType);
 
 		ElementValueInfo[] inputValues = inputAnnotation.values;
-		ElementValueInfo[] outputValues = transform(inputValues);
+		ElementValueInfo[] outputValues = transform(inputValues, inputName);
 
 		if ((outputType == null) && (outputValues == null)) {
 			return null;
@@ -1076,12 +1076,12 @@ public class ClassActionImpl extends ActionImpl {
 		}
 	}
 
-	private ElementValueInfo[] transform(ElementValueInfo[] inputElementValues) {
+	private ElementValueInfo[] transform(ElementValueInfo[] inputElementValues, String inputName) {
 		ElementValueInfo[] outputElementValues = null;
 
 		for (int valueNo = 0; valueNo < inputElementValues.length; valueNo++) {
 			ElementValueInfo inputElementValue = inputElementValues[valueNo];
-			Object outputValue = transformElementValue(inputElementValue.value);
+			Object outputValue = transformElementValue(inputElementValue.value, inputName);
 
 			if (outputValue != null) {
 				if (outputElementValues == null) {
@@ -1094,7 +1094,7 @@ public class ClassActionImpl extends ActionImpl {
 		return outputElementValues;
 	}
 
-	private Object transformElementValue(Object inputValue) {
+	private Object transformElementValue(Object inputValue, String inputName) {
 		if (inputValue instanceof EnumConst) {
 			EnumConst enumValue = (EnumConst) inputValue;
 			String inputType = enumValue.type;
@@ -1117,7 +1117,7 @@ public class ClassActionImpl extends ActionImpl {
 
 		} else if (inputValue instanceof AnnotationInfo) {
 			AnnotationInfo annotationValue = (AnnotationInfo) inputValue;
-			return transform(annotationValue, AnnotationInfo::new);
+			return transform(annotationValue, AnnotationInfo::new, inputName);
 
 		} else if (inputValue instanceof String) {
 			String inputString = (String) inputValue;
@@ -1132,7 +1132,7 @@ public class ClassActionImpl extends ActionImpl {
 			Object[] outputElementValues = null;
 
 			for (int valueNo = 0; valueNo < inputElementValues.length; valueNo++) {
-				Object outputElementValue = transformElementValue(inputElementValues[valueNo]);
+				Object outputElementValue = transformElementValue(inputElementValues[valueNo], inputName);
 				if (outputElementValue != null) {
 					if (outputElementValues == null) {
 						outputElementValues = inputElementValues.clone();
@@ -1188,7 +1188,7 @@ public class ClassActionImpl extends ActionImpl {
 
 	//
 
-	private int transform(MutableConstantPool constants) throws TransformException {
+	private int transform(MutableConstantPool constants, String inputName) throws TransformException {
 		int modifiedConstants = 0;
 
 		int numConstants = constants.size();

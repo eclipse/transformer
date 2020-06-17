@@ -253,7 +253,7 @@ public class TestTransformClass extends CaptureTest {
 
 			toJakartaJarAction = new JarActionImpl(useLogger, false, false, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
-				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null));
+				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 		}
 
 		return toJakartaJarAction;
@@ -267,7 +267,7 @@ public class TestTransformClass extends CaptureTest {
 
 			toJavaxJarAction = new JarActionImpl(useLogger, false, false, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
-				createSignatureRule(useLogger, toJavaxRenames, null, null, null));
+				createSignatureRule(useLogger, toJavaxRenames, null, null, null, Collections.emptyMap()));
 		}
 
 		return toJavaxJarAction;
@@ -355,7 +355,7 @@ public class TestTransformClass extends CaptureTest {
 
 		return new ClassActionImpl(useLogger, false, false, createBuffer(),
 			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
-			createSignatureRule(useLogger, getToJakartaRenames(), null, null, null));
+			createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 	}
 
 	protected void toJakartaRewrite(String simpleClassName) throws TransformException, IOException {
@@ -640,6 +640,16 @@ public class TestTransformClass extends CaptureTest {
 												// update (not found) // 0 hits
 	}
 
+	public static final String PER_CLASS_RESOURCE_NAME = "Sample_PerClassConstant.class";
+	public static final Map<String, Map<String, String>> PER_CLASS_CONSTANT_MASTER;
+
+	static {
+		PER_CLASS_CONSTANT_MASTER = new HashMap();
+		Map<String, String> mapping = new HashMap<>();
+		mapping.put("javax.servlet", "jakarta.servlet");
+		PER_CLASS_CONSTANT_MASTER.put(TEST_DATA_RESOURCE_NAME + '/' + PER_CLASS_RESOURCE_NAME, mapping);
+	}
+
 	public static final Map<String, String> getDirectStrings() {
 		return DIRECT_STRINGS;
 	}
@@ -649,7 +659,15 @@ public class TestTransformClass extends CaptureTest {
 
 		return new ClassActionImpl(useLogger, false, false, createBuffer(),
 			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
-			createSignatureRule(useLogger, Collections.emptyMap(), null, null, getDirectStrings()));
+			createSignatureRule(useLogger, Collections.emptyMap(), null, null, getDirectStrings(), Collections.emptyMap()));
+	}
+
+	public ClassActionImpl createPerClassConstantClassAction() {
+		CaptureLoggerImpl useLogger = getCaptureLogger();
+
+		return new ClassActionImpl(useLogger, false, false, createBuffer(),
+				createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
+				createSignatureRule(useLogger, Collections.emptyMap(), null, null, null, PER_CLASS_CONSTANT_MASTER));
 	}
 
 	public static final String DIRECT_STRINGS_RESOURCE_NAME = "Sample_DirectStrings.class";
@@ -673,6 +691,43 @@ public class TestTransformClass extends CaptureTest {
 		int actualChanges = classAction.getLastActiveChanges()
 			.getModifiedConstants();
 		Assertions.assertEquals(expectedChanges, actualChanges, "Incorrect count of constant changes");
+	}
+
+	@Test
+	public void testPerClassConstant() throws TransformException, IOException {
+		consumeCapturedEvents();
+
+		ClassActionImpl classAction = createPerClassConstantClassAction();
+
+		{
+			String resourceName = TEST_DATA_RESOURCE_NAME + '/' + PER_CLASS_RESOURCE_NAME;
+			InputStream inputStream = getResourceStream(resourceName); // throws IOException
+
+			@SuppressWarnings("unused")
+			InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			display(classAction.getLastActiveChanges());
+
+			// 2 to pass although should be 1. Both UTF8 and ConstantString are counted.
+			int expectedChanges = 2;
+			int actualChanges = classAction.getLastActiveChanges()
+					.getModifiedConstants();
+			Assertions.assertEquals(expectedChanges, actualChanges, "Incorrect count of constant changes");
+		}
+
+		{
+			String resourceName = TEST_DATA_RESOURCE_NAME + '/' + DIRECT_STRINGS_RESOURCE_NAME;
+			InputStream inputStream = getResourceStream(resourceName); // throws IOException
+
+			@SuppressWarnings("unused")
+			InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			display(classAction.getLastActiveChanges());
+
+			int expectedChanges = 0;
+			int actualChanges = classAction.getLastActiveChanges()
+					.getModifiedConstants();
+			Assertions.assertEquals(expectedChanges, actualChanges, "Incorrect count of constant changes");
+		}
+
 	}
 
 	public static final boolean IS_EXACT = false;
@@ -770,7 +825,7 @@ public class TestTransformClass extends CaptureTest {
 
 		return new ClassActionImpl(useLogger, false, false, createBuffer(),
 			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
-			createSignatureRule(useLogger, getStandardRenames(), null, null, null));
+			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
 		// 'getStandardRenames' throws IOException
 	}
 

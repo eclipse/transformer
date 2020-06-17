@@ -42,9 +42,9 @@ import aQute.bnd.signatures.TypeVariableSignature;
 public class SignatureRuleImpl implements SignatureRule {
 
 	public SignatureRuleImpl(Logger logger,
-
 		Map<String, String> renames, Map<String, String> versions, Map<String, BundleData> bundleUpdates,
-		Map<String, Map<String, String>> masterTextUpdates, Map<String, String> directStrings) {
+		Map<String, Map<String, String>> masterTextUpdates, Map<String, String> directStrings,
+		Map<String, Map<String, String>> perClassConstant) {
 
 		this.logger = logger;
 
@@ -137,6 +137,14 @@ public class SignatureRuleImpl implements SignatureRule {
 
 		this.unchangedDescriptors = new HashSet<>();
 		this.changedDescriptors = new HashMap<>();
+
+		Map<String, Map<String, String>> perClass;
+		if ((perClassConstant == null) || perClassConstant.isEmpty()) {
+			perClass = Collections.emptyMap();
+		} else {
+			perClass = new HashMap<>(perClassConstant);
+		}
+		this.perClassConstantStrings = perClass;
 	}
 
 	//
@@ -180,6 +188,40 @@ public class SignatureRuleImpl implements SignatureRule {
 	@Override
 	public String getDirectString(String initialValue) {
 		return directStrings.get(initialValue);
+	}
+
+	private final Map<String, Map<String, String>> perClassConstantStrings;
+
+	@Override
+	public String getConstantString(String initialValue, String clazz) {
+		Map<String, String> m = perClassConstantStrings.get(clazz);
+
+		if (m == null) {
+			return null;
+		}
+
+		// Do we have a direct mapping?
+		String full = m.get(initialValue);
+		if (full != null) {
+			debug("Per class direct replacement:[%s], %s=> %s", clazz, initialValue, full);
+			return full;
+		}
+		String transformedString = initialValue;
+		boolean transformed = false;
+		// Transform all tokens possibly present in the inputValue
+		for (String k : m.keySet()) {
+			//  The 'contains' test might be changed to use regular expressions in the future
+			if (transformedString.contains(k)) {
+				transformedString = transformedString.replace(k, m.get(k));
+				debug("Per class token replacement:[%s], key=%s, initialValue=%s", clazz, k, initialValue);
+				transformed = true;
+			}
+		}
+		if (transformed) {
+			debug("Per class token replacement, done:[%s] %s", clazz, transformedString);
+			return transformedString;
+		}
+		return null;
 	}
 
 	//
