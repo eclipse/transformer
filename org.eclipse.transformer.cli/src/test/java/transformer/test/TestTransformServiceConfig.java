@@ -11,6 +11,8 @@
 
 package transformer.test;
 
+import static transformer.test.TestLoad.COMPLEX_RESOURCE_PATH;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,7 +35,6 @@ import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.InputStreamData;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
@@ -43,8 +44,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import transformer.test.util.CaptureLoggerImpl;
-
-import static transformer.test.TestLoad.COMPLEX_RESOURCE_PATH;
 
 public class TestTransformServiceConfig extends CaptureTest {
 

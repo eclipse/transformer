@@ -52,6 +52,10 @@ import aQute.bnd.classfile.LocalVariableTypeTableAttribute.LocalVariableType;
 import aQute.bnd.classfile.MemberInfo;
 import aQute.bnd.classfile.MethodInfo;
 import aQute.bnd.classfile.ModuleAttribute;
+import aQute.bnd.classfile.ModuleAttribute.Export;
+import aQute.bnd.classfile.ModuleAttribute.Open;
+import aQute.bnd.classfile.ModuleAttribute.Provide;
+import aQute.bnd.classfile.ModuleMainClassAttribute;
 import aQute.bnd.classfile.ModulePackagesAttribute;
 import aQute.bnd.classfile.NestHostAttribute;
 import aQute.bnd.classfile.NestMembersAttribute;
@@ -450,8 +454,8 @@ public class ClassActionImpl extends ActionImpl {
 
 	//
 
-	private <M extends MemberInfo> M transform(M member, MemberInfo.Constructor<M> constructor,
-		SignatureType signatureType) {
+	private <MEMBERINFO extends MemberInfo> MEMBERINFO transform(MEMBERINFO member,
+		MemberInfo.Constructor<MEMBERINFO> constructor, SignatureType signatureType) {
 
 		String inputDescriptor = member.descriptor;
 		String outputDescriptor = transformDescriptor(inputDescriptor);
@@ -553,32 +557,30 @@ public class ClassActionImpl extends ActionImpl {
 				}
 			}
 
-			case EnclosingMethodAttribute.NAME: {
-                EnclosingMethodAttribute attribute = (EnclosingMethodAttribute) attr;
+			case EnclosingMethodAttribute.NAME : {
+				EnclosingMethodAttribute attribute = (EnclosingMethodAttribute) attr;
 
-                String inputDescriptor = attribute.method_descriptor;
+				String inputDescriptor = attribute.method_descriptor;
 
-                String className = transformBinaryType(attribute.class_name);
+				String className = transformBinaryType(attribute.class_name);
 
-                if ( inputDescriptor == null && className == null) {
-                    return null;
-                }
+				if (inputDescriptor == null && className == null) {
+					return null;
+				}
 
-                String outputDescriptor = null;
+				String outputDescriptor = null;
 
-                if (inputDescriptor != null) {
-                    outputDescriptor = transformDescriptor(inputDescriptor);
-                }
+				if (inputDescriptor != null) {
+					outputDescriptor = transformDescriptor(inputDescriptor);
+				}
 
-                if ( outputDescriptor == null  && className == null) {
-                    return null;
-                }
+				if (outputDescriptor == null && className == null) {
+					return null;
+				}
 
-                return new EnclosingMethodAttribute(
-                        className == null ? attribute.class_name : className,
-                        attribute.method_name,
-                        outputDescriptor == null ? inputDescriptor : outputDescriptor);
-            }
+				return new EnclosingMethodAttribute(className == null ? attribute.class_name : className,
+					attribute.method_name, outputDescriptor == null ? inputDescriptor : outputDescriptor);
+			}
 
 			case StackMapTableAttribute.NAME : {
 				StackMapTableAttribute inputAttribute = (StackMapTableAttribute) attr;
@@ -780,18 +782,147 @@ public class ClassActionImpl extends ActionImpl {
 				return ((outputValue == null) ? null : new AnnotationDefaultAttribute(outputValue));
 			}
 
-			case ModuleAttribute.NAME :
-			case ModulePackagesAttribute.NAME :
-				// TODO Handle module metadata in case some
-				// used by some Java EE 8/Jakarta EE 8 artifacts.
-				break;
+			case ModuleAttribute.NAME : {
+				ModuleAttribute inputAttribute = (ModuleAttribute) attr;
+				// transform exports package names
+				Export[] inputExports = inputAttribute.exports;
+				Export[] outputExports = null;
+				for (int i = 0; i < inputExports.length; i++) {
+					Export inputExport = inputExports[i];
+					String outputExport = replaceBinaryPackage(inputExport.exports);
+					if (outputExport != null) {
+						if (outputExports == null) {
+							outputExports = inputExports.clone();
+						}
+						outputExports[i] = new Export(outputExport, inputExport.exports_flags, inputExport.exports_to);
+					}
+				}
+				// transform opens package names
+				Open[] inputOpens = inputAttribute.opens;
+				Open[] outputOpens = null;
+				for (int i = 0; i < inputOpens.length; i++) {
+					Open inputOpen = inputOpens[i];
+					String outputOpen = replaceBinaryPackage(inputOpen.opens);
+					if (outputOpen != null) {
+						if (outputOpens == null) {
+							outputOpens = inputOpens.clone();
+						}
+						outputOpens[i] = new Open(outputOpen, inputOpen.opens_flags, inputOpen.opens_to);
+					}
+				}
+				// transform uses class names
+				String[] inputUses = inputAttribute.uses;
+				String[] outputUses = null;
+				for (int i = 0; i < inputUses.length; i++) {
+					String outputUse = transformBinaryType(inputUses[i]);
+					if (outputUse != null) {
+						if (outputUses == null) {
+							outputUses = inputUses.clone();
+						}
+						outputUses[i] = outputUse;
+					}
+				}
+				// transform provides class names
+				Provide[] inputProvides = inputAttribute.provides;
+				Provide[] outputProvides = null;
+				for (int i = 0; i < inputProvides.length; i++) {
+					Provide inputProvide = inputProvides[i];
+					String outputProvide = transformBinaryType(inputProvide.provides);
+					String[] inputProvideWiths = inputProvide.provides_with;
+					String[] outputProvideWiths = null;
+					for (int j = 0; j < inputProvideWiths.length; j++) {
+						String outputProvideWith = transformBinaryType(inputProvideWiths[j]);
+						if (outputProvideWith != null) {
+							if (outputProvideWiths == null) {
+								outputProvideWiths = inputProvideWiths.clone();
+							}
+							outputProvideWiths[j] = outputProvideWith;
+						}
 
-			case NestHostAttribute.NAME :
+					}
+					if ((outputProvide != null) || (outputProvideWiths != null)) {
+						if (outputProvide == null) {
+							outputProvide = inputProvide.provides;
+						}
+						if (outputProvideWiths == null) {
+							outputProvideWiths = inputProvideWiths;
+						}
+						if (outputProvides == null) {
+							outputProvides = inputProvides.clone();
+						}
+						outputProvides[i] = new Provide(outputProvide, outputProvideWiths);
+					}
+				}
+
+				if ((outputExports == null) && (outputOpens == null) && (outputUses == null)
+					&& (outputProvides == null)) {
+					return null;
+				}
+				if (outputExports == null) {
+					outputExports = inputExports;
+				}
+				if (outputOpens == null) {
+					outputOpens = inputOpens;
+				}
+				if (outputUses == null) {
+					outputUses = inputUses;
+				}
+				if (outputProvides == null) {
+					outputProvides = inputProvides;
+				}
+				return new ModuleAttribute(inputAttribute.module_name, inputAttribute.module_flags,
+					inputAttribute.module_version, inputAttribute.requires, outputExports, outputOpens, outputUses,
+					outputProvides);
+			}
+
+			case ModuleMainClassAttribute.NAME : {
+				ModuleMainClassAttribute inputAttribute = (ModuleMainClassAttribute) attr;
+				String inputMainClass = inputAttribute.main_class;
+				String outputMainClass = transformBinaryType(inputMainClass);
+				return (outputMainClass == null) ? null : new ModuleMainClassAttribute(outputMainClass);
+			}
+
+			case ModulePackagesAttribute.NAME : {
+				ModulePackagesAttribute inputAttribute = (ModulePackagesAttribute) attr;
+				String[] inputPackages = inputAttribute.packages;
+				String[] outputPackages = null;
+
+				for (int i = 0; i < inputPackages.length; i++) {
+					String outputPackage = replaceBinaryPackage(inputPackages[i]);
+					if (outputPackage != null) {
+						if (outputPackages == null) {
+							outputPackages = inputPackages.clone();
+						}
+						outputPackages[i] = outputPackage;
+					}
+				}
+
+				return (outputPackages == null) ? null : new ModulePackagesAttribute(outputPackages);
+			}
+
+			case NestHostAttribute.NAME : {
+				NestHostAttribute inputAttribute = (NestHostAttribute) attr;
+				String inputHostClass = inputAttribute.host_class;
+				String outputHostClass = transformBinaryType(inputHostClass);
+				return (outputHostClass == null) ? null : new NestHostAttribute(outputHostClass);
+			}
+
 			case NestMembersAttribute.NAME : {
-				// TODO These Java SE 9+ attributes should not be used
-				// by Java EE 8/Jakarta EE 8 artifacts, so
-				// we ignore them for now.
-				break;
+				NestMembersAttribute inputAttribute = (NestMembersAttribute) attr;
+				String[] inputClasses = inputAttribute.classes;
+				String[] outputClasses = null;
+
+				for (int i = 0; i < inputClasses.length; i++) {
+					String outputClass = transformBinaryType(inputClasses[i]);
+					if (outputClass != null) {
+						if (outputClasses == null) {
+							outputClasses = inputClasses.clone();
+						}
+						outputClasses[i] = outputClass;
+					}
+				}
+
+				return (outputClasses == null) ? null : new NestMembersAttribute(outputClasses);
 			}
 
 			case ConstantValueAttribute.NAME : {
@@ -835,8 +966,8 @@ public class ClassActionImpl extends ActionImpl {
 		}
 	}
 
-	private <A extends AnnotationsAttribute> A transform(A inputAttribute,
-		AnnotationsAttribute.Constructor<A> constructor) {
+	private <ANNOTATIONSATTRIBUTE extends AnnotationsAttribute> ANNOTATIONSATTRIBUTE transform(
+		ANNOTATIONSATTRIBUTE inputAttribute, AnnotationsAttribute.Constructor<ANNOTATIONSATTRIBUTE> constructor) {
 
 		AnnotationInfo[] outputAnnotations = transform(inputAttribute.annotations);
 
@@ -860,8 +991,9 @@ public class ClassActionImpl extends ActionImpl {
 		return outputAnnotations;
 	}
 
-	private <A extends ParameterAnnotationsAttribute> A transform(A attribute,
-		ParameterAnnotationsAttribute.Constructor<A> constructor) {
+	private <PARAMETERANNOTATIONSATTRIBUTE extends ParameterAnnotationsAttribute> PARAMETERANNOTATIONSATTRIBUTE transform(
+		PARAMETERANNOTATIONSATTRIBUTE attribute,
+		ParameterAnnotationsAttribute.Constructor<PARAMETERANNOTATIONSATTRIBUTE> constructor) {
 
 		ParameterAnnotationInfo[] outputParmAnnotations = transform(attribute.parameter_annotations);
 
@@ -890,8 +1022,9 @@ public class ClassActionImpl extends ActionImpl {
 		return outputParmAnnotations;
 	}
 
-	private <A extends TypeAnnotationsAttribute> A transform(A inputAttribute,
-		TypeAnnotationsAttribute.Constructor<A> constructor) {
+	private <TYPEANNOTATIONSATTRIBUTE extends TypeAnnotationsAttribute> TYPEANNOTATIONSATTRIBUTE transform(
+		TYPEANNOTATIONSATTRIBUTE inputAttribute,
+		TypeAnnotationsAttribute.Constructor<TYPEANNOTATIONSATTRIBUTE> constructor) {
 
 		TypeAnnotationInfo[] outputAnnotations = transform(inputAttribute.type_annotations);
 
@@ -922,7 +1055,8 @@ public class ClassActionImpl extends ActionImpl {
 		return outputAnnotations;
 	}
 
-	private <A extends AnnotationInfo> A transform(A inputAnnotation, AnnotationInfo.Constructor<A> constructor) {
+	private <ANNOTATIONINFO extends AnnotationInfo> ANNOTATIONINFO transform(ANNOTATIONINFO inputAnnotation,
+		AnnotationInfo.Constructor<ANNOTATIONINFO> constructor) {
 
 		String inputType = inputAnnotation.type;
 		String outputType = transformDescriptor(inputType);

@@ -197,7 +197,7 @@ public class CaptureLoggerImpl implements Logger {
 
 	private final List<LogEvent> capturedEvents;
 
-	public List<? extends LogEvent> getCapturedEvents() {
+	public List<LogEvent> getCapturedEvents() {
 		return capturedEvents;
 	}
 
@@ -205,8 +205,8 @@ public class CaptureLoggerImpl implements Logger {
 		capturedEvents.add(logEvent);
 	}
 
-	public List<? extends LogEvent> consumeCapturedEvents() {
-		List<? extends LogEvent> events = new ArrayList<>(capturedEvents);
+	public List<LogEvent> consumeCapturedEvents() {
+		List<LogEvent> events = new ArrayList<>(capturedEvents);
 		capturedEvents.clear();
 		return events;
 	}

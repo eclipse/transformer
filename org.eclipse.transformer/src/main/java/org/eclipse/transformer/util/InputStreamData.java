@@ -11,8 +11,9 @@
 
 package org.eclipse.transformer.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+
+import aQute.lib.io.ByteBufferInputStream;
 
 public class InputStreamData {
 	/** A name associated with the input stream. */
@@ -56,7 +57,7 @@ public class InputStreamData {
 	 */
 	public InputStreamData(ByteData byteData) {
 		this.name = byteData.name;
-		this.stream = new ByteArrayInputStream(byteData.data, byteData.offset, byteData.length);
+		this.stream = new ByteBufferInputStream(byteData.data, byteData.offset, byteData.length);
 		this.length = byteData.length;
 	}
 }

@@ -11,7 +11,6 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -31,6 +30,7 @@ import org.slf4j.Logger;
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
+import aQute.lib.io.ByteBufferOutputStream;
 
 public class ManifestActionImpl extends ActionImpl {
 	public static final String	META_INF				= "META-INF/";
@@ -126,7 +126,7 @@ public class ManifestActionImpl extends ActionImpl {
 			return null;
 		}
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(initialCount);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(initialCount);
 		try {
 			write(finalManifest, outputStream); // throws IOException
 		} catch (IOException e) {

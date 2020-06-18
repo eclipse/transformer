@@ -11,17 +11,16 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.SAXParser;
@@ -35,6 +34,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import aQute.lib.io.ByteBufferInputStream;
+import aQute.lib.io.ByteBufferOutputStream;
 
 public class XmlActionImpl extends ActionImpl {
 
@@ -89,8 +91,8 @@ public class XmlActionImpl extends ActionImpl {
 
 		setResourceNames(inputName, inputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputCount);
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputCount);
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputCount);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputCount);
 
 		transformUsingSaxParser(inputName, inputStream, outputStream);
 
@@ -110,25 +112,13 @@ public class XmlActionImpl extends ActionImpl {
 
 		setResourceNames(inputName, outputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputLength);
-		InputStreamReader inputReader;
-		try {
-			inputReader = new InputStreamReader(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			error("Strange: UTF-8 is an unrecognized encoding for reading [ {} ]", e, inputName);
-			return null;
-		}
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
+		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
-		OutputStreamWriter outputWriter;
-		try {
-			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			error("Strange: UTF-8 is an unrecognized encoding for writing [ {} ]", e, inputName);
-			return null;
-		}
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
+		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
@@ -168,23 +158,9 @@ public class XmlActionImpl extends ActionImpl {
 		return parserFactory;
 	}
 
-	//
-
-	private static Charset utf8;
-
-	static {
-		utf8 = Charset.forName("UTF-8");
-	}
-
-	public static Charset getUTF8() {
-		return utf8;
-	}
-
-	//
-
 	public void transform(String inputName, InputStream input, OutputStream output) throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding("UTF-8");
+		inputSource.setEncoding(UTF_8.name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
@@ -206,7 +182,7 @@ public class XmlActionImpl extends ActionImpl {
 	public void transformUsingSaxParser(String inputName, InputStream input, OutputStream output)
 		throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding("UTF-8");
+		inputSource.setEncoding(UTF_8.name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
@@ -292,7 +268,7 @@ public class XmlActionImpl extends ActionImpl {
 		}
 
 		public void writeUTF8(String text) throws SAXException {
-			write(text, getUTF8());
+			write(text, UTF_8);
 		}
 
 		public void write(String text, Charset useCharset) throws SAXException {
