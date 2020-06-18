@@ -13,8 +13,6 @@ package org.eclipse.transformer.action.impl;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +24,9 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
+
+import aQute.lib.io.ByteBufferInputStream;
+import aQute.lib.io.ByteBufferOutputStream;
 
 public class TextActionImpl extends ActionImpl {
 
@@ -69,7 +70,7 @@ public class TextActionImpl extends ActionImpl {
 
 		setResourceNames(inputName, outputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
 		InputStreamReader inputReader;
 		try {
 			inputReader = new InputStreamReader(inputStream, "UTF-8");
@@ -80,7 +81,7 @@ public class TextActionImpl extends ActionImpl {
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
 		OutputStreamWriter outputWriter;
 		try {
 			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");

@@ -11,10 +11,11 @@
 
 package org.eclipse.transformer.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
+import aQute.lib.io.ByteBufferInputStream;
 
 public class ByteData {
 	public final String	name;
@@ -37,7 +38,7 @@ public class ByteData {
 	}
 
 	public InputStream asStream() {
-		return new ByteArrayInputStream(data, offset, length);
+		return new ByteBufferInputStream(data, offset, length);
 	}
 
 	public void write(OutputStream outputStream) throws IOException {

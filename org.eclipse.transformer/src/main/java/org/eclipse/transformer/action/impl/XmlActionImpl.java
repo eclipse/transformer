@@ -13,8 +13,6 @@ package org.eclipse.transformer.action.impl;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +33,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import aQute.lib.io.ByteBufferInputStream;
+import aQute.lib.io.ByteBufferOutputStream;
 
 public class XmlActionImpl extends ActionImpl {
 
@@ -89,8 +90,8 @@ public class XmlActionImpl extends ActionImpl {
 
 		setResourceNames(inputName, inputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputCount);
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputCount);
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputCount);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputCount);
 
 		transformUsingSaxParser(inputName, inputStream, outputStream);
 
@@ -110,7 +111,7 @@ public class XmlActionImpl extends ActionImpl {
 
 		setResourceNames(inputName, outputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes, 0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
 		InputStreamReader inputReader;
 		try {
 			inputReader = new InputStreamReader(inputStream, "UTF-8");
@@ -121,7 +122,7 @@ public class XmlActionImpl extends ActionImpl {
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputBytes.length);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
 		OutputStreamWriter outputWriter;
 		try {
 			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");

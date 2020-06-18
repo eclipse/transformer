@@ -13,8 +13,6 @@ package org.eclipse.transformer.action.impl;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +24,9 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
+
+import aQute.lib.io.ByteBufferInputStream;
+import aQute.lib.io.ByteBufferOutputStream;
 
 /**
  * Transform service configuration bytes. Per:
@@ -113,7 +114,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 		}
 		setResourceNames(inputName, outputName);
 
-		InputStream inputStream = new ByteArrayInputStream(inputBytes,  0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
 		InputStreamReader inputReader;
 		try {
 			inputReader = new InputStreamReader(inputStream, "UTF-8");
@@ -124,7 +125,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream(inputLength);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputLength);
 		OutputStreamWriter outputWriter;
 		try {
 			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
