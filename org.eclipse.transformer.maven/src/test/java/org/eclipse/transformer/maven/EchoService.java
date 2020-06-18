@@ -19,12 +19,11 @@ import javax.ws.rs.Produces;
 @Path("echo")
 public class EchoService {
 
-    @POST
-    @Produces("text/plain")
-    @Consumes("text/plain")
-    public String echo(final String input) {
-        return input;
-    }
-
+	@POST
+	@Produces("text/plain")
+	@Consumes("text/plain")
+	public String echo(final String input) {
+		return input;
+	}
 
 }
