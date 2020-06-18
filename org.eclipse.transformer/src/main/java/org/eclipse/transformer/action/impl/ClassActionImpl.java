@@ -52,6 +52,10 @@ import aQute.bnd.classfile.LocalVariableTypeTableAttribute.LocalVariableType;
 import aQute.bnd.classfile.MemberInfo;
 import aQute.bnd.classfile.MethodInfo;
 import aQute.bnd.classfile.ModuleAttribute;
+import aQute.bnd.classfile.ModuleAttribute.Export;
+import aQute.bnd.classfile.ModuleAttribute.Open;
+import aQute.bnd.classfile.ModuleAttribute.Provide;
+import aQute.bnd.classfile.ModuleMainClassAttribute;
 import aQute.bnd.classfile.ModulePackagesAttribute;
 import aQute.bnd.classfile.NestHostAttribute;
 import aQute.bnd.classfile.NestMembersAttribute;
@@ -778,11 +782,124 @@ public class ClassActionImpl extends ActionImpl {
 				return ((outputValue == null) ? null : new AnnotationDefaultAttribute(outputValue));
 			}
 
-			case ModuleAttribute.NAME :
-			case ModulePackagesAttribute.NAME :
-				// TODO Handle module metadata in case some
-				// used by some Java EE 8/Jakarta EE 8 artifacts.
-				break;
+			case ModuleAttribute.NAME : {
+				ModuleAttribute inputAttribute = (ModuleAttribute) attr;
+				// transform exports package names
+				Export[] inputExports = inputAttribute.exports;
+				Export[] outputExports = null;
+				for (int i = 0; i < inputExports.length; i++) {
+					Export inputExport = inputExports[i];
+					String outputExport = replaceBinaryPackage(inputExport.exports);
+					if (outputExport != null) {
+						if (outputExports == null) {
+							outputExports = inputExports.clone();
+						}
+						outputExports[i] = new Export(outputExport, inputExport.exports_flags, inputExport.exports_to);
+					}
+				}
+				// transform opens package names
+				Open[] inputOpens = inputAttribute.opens;
+				Open[] outputOpens = null;
+				for (int i = 0; i < inputOpens.length; i++) {
+					Open inputOpen = inputOpens[i];
+					String outputOpen = replaceBinaryPackage(inputOpen.opens);
+					if (outputOpen != null) {
+						if (outputOpens == null) {
+							outputOpens = inputOpens.clone();
+						}
+						outputOpens[i] = new Open(outputOpen, inputOpen.opens_flags, inputOpen.opens_to);
+					}
+				}
+				// transform uses class names
+				String[] inputUses = inputAttribute.uses;
+				String[] outputUses = null;
+				for (int i = 0; i < inputUses.length; i++) {
+					String outputUse = transformBinaryType(inputUses[i]);
+					if (outputUse != null) {
+						if (outputUses == null) {
+							outputUses = inputUses.clone();
+						}
+						outputUses[i] = outputUse;
+					}
+				}
+				// transform provides class names
+				Provide[] inputProvides = inputAttribute.provides;
+				Provide[] outputProvides = null;
+				for (int i = 0; i < inputProvides.length; i++) {
+					Provide inputProvide = inputProvides[i];
+					String outputProvide = transformBinaryType(inputProvide.provides);
+					String[] inputProvideWiths = inputProvide.provides_with;
+					String[] outputProvideWiths = null;
+					for (int j = 0; j < inputProvideWiths.length; j++) {
+						String outputProvideWith = transformBinaryType(inputProvideWiths[j]);
+						if (outputProvideWith != null) {
+							if (outputProvideWiths == null) {
+								outputProvideWiths = inputProvideWiths.clone();
+							}
+							outputProvideWiths[j] = outputProvideWith;
+						}
+
+					}
+					if ((outputProvide != null) || (outputProvideWiths != null)) {
+						if (outputProvide == null) {
+							outputProvide = inputProvide.provides;
+						}
+						if (outputProvideWiths == null) {
+							outputProvideWiths = inputProvideWiths;
+						}
+						if (outputProvides == null) {
+							outputProvides = inputProvides.clone();
+						}
+						outputProvides[i] = new Provide(outputProvide, outputProvideWiths);
+					}
+				}
+
+				if ((outputExports == null) && (outputOpens == null) && (outputUses == null)
+					&& (outputProvides == null)) {
+					return null;
+				}
+				if (outputExports == null) {
+					outputExports = inputExports;
+				}
+				if (outputOpens == null) {
+					outputOpens = inputOpens;
+				}
+				if (outputUses == null) {
+					outputUses = inputUses;
+				}
+				if (outputProvides == null) {
+					outputProvides = inputProvides;
+				}
+				return new ModuleAttribute(inputAttribute.module_name, inputAttribute.module_flags,
+					inputAttribute.module_version, inputAttribute.requires, outputExports, outputOpens, outputUses,
+					outputProvides);
+			}
+
+			case ModuleMainClassAttribute.NAME : {
+				ModuleMainClassAttribute inputAttribute = (ModuleMainClassAttribute) attr;
+				String inputMainClass = inputAttribute.main_class;
+				String outputMainClass = transformBinaryType(inputMainClass);
+				return (outputMainClass == null) ? null : new ModuleMainClassAttribute(outputMainClass);
+			}
+
+			case ModulePackagesAttribute.NAME : {
+				ModulePackagesAttribute inputAttribute = (ModulePackagesAttribute) attr;
+				String[] inputPackages = inputAttribute.packages;
+				String[] outputPackages = null;
+
+				for (int i = 0; i < inputPackages.length; i++) {
+					String outputPackage = replaceBinaryPackage(inputPackages[i]);
+					if (outputPackage != null) {
+						if (outputPackages == null) {
+							outputPackages = inputPackages.clone();
+						}
+						outputPackages[i] = outputPackage;
+					}
+				}
+
+				return (outputPackages == null) ? null : new ModulePackagesAttribute(outputPackages);
+			}
+
 
 			case NestHostAttribute.NAME :
 			case NestMembersAttribute.NAME : {
