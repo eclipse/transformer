@@ -900,13 +900,29 @@ public class ClassActionImpl extends ActionImpl {
 				return (outputPackages == null) ? null : new ModulePackagesAttribute(outputPackages);
 			}
 
+			case NestHostAttribute.NAME : {
+				NestHostAttribute inputAttribute = (NestHostAttribute) attr;
+				String inputHostClass = inputAttribute.host_class;
+				String outputHostClass = transformBinaryType(inputHostClass);
+				return (outputHostClass == null) ? null : new NestHostAttribute(outputHostClass);
+			}
 
-			case NestHostAttribute.NAME :
 			case NestMembersAttribute.NAME : {
-				// TODO These Java SE 9+ attributes should not be used
-				// by Java EE 8/Jakarta EE 8 artifacts, so
-				// we ignore them for now.
-				break;
+				NestMembersAttribute inputAttribute = (NestMembersAttribute) attr;
+				String[] inputClasses = inputAttribute.classes;
+				String[] outputClasses = null;
+
+				for (int i = 0; i < inputClasses.length; i++) {
+					String outputClass = transformBinaryType(inputClasses[i]);
+					if (outputClass != null) {
+						if (outputClasses == null) {
+							outputClasses = inputClasses.clone();
+						}
+						outputClasses[i] = outputClass;
+					}
+				}
+
+				return (outputClasses == null) ? null : new NestMembersAttribute(outputClasses);
 			}
 
 			case ConstantValueAttribute.NAME : {

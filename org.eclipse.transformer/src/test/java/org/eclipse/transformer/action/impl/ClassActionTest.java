@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +38,9 @@ import aQute.bnd.classfile.ElementInfo;
 import aQute.bnd.classfile.ModuleAttribute;
 import aQute.bnd.classfile.ModuleMainClassAttribute;
 import aQute.bnd.classfile.ModulePackagesAttribute;
+import aQute.bnd.classfile.NestHostAttribute;
+import aQute.bnd.classfile.NestMembersAttribute;
+import aQute.bnd.classfile.builder.ClassFileBuilder;
 import aQute.bnd.classfile.builder.ModuleInfoBuilder;
 import aQute.lib.io.ByteBufferDataInput;
 import aQute.lib.io.ByteBufferDataOutput;
@@ -178,6 +182,56 @@ public class ClassActionTest {
 			.map(m -> m.main_class)
 			.get(InstanceOfAssertFactories.STRING)
 			.isEqualTo("transformed/main/Main");
+	}
+
+	@Test
+	public void nest_transform() throws Exception {
+		ClassFileBuilder builder = new ClassFileBuilder(Modifier.PUBLIC, ClassFile.MAJOR_VERSION, 0, "nest/Test",
+			"java/lang/Object");
+		builder.attributes(new NestHostAttribute("original/host/NestHost"));
+		builder.attributes(new NestMembersAttribute(new String[] {
+			"original/member/NestMember1", "pkg/member/NestMember2"
+		}));
+		ClassFile original = builder.build();
+		assertThat(original.this_class).as("test class name")
+			.isEqualTo("nest/Test");
+		assertThat(attribute(NestHostAttribute.class, original))
+			.as("test class has a %s attribute", NestHostAttribute.NAME)
+			.isNotEmpty();
+		assertThat(attribute(NestMembersAttribute.class, original))
+			.as("test class has a %s attribute", NestMembersAttribute.NAME)
+			.isNotEmpty();
+
+		ByteBufferDataOutput dataOutput = new ByteBufferDataOutput();
+		original.write(dataOutput);
+		ByteBufferInputStream inputStream = new ByteBufferInputStream(dataOutput.toByteBuffer());
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputStream.available());
+
+		Map<String, String> renames = new HashMap<>();
+		renames.put("original.host", "transformed.host");
+		renames.put("original.member", "transformed.member");
+		Action classAction = new ClassActionImpl(logger, false, false, new InputBufferImpl(),
+			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
+			new SignatureRuleImpl(logger, renames, null, null, null, null));
+		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
+
+		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
+
+		assertThat(transformed.this_class)
+			.as("transformed class name")
+			.isEqualTo("nest/Test");
+
+		assertThat(attribute(NestHostAttribute.class, transformed))
+			.as("transformed class nest host")
+			.map(h -> h.host_class)
+			.get(InstanceOfAssertFactories.STRING)
+			.isEqualTo("transformed/host/NestHost");
+
+		assertThat(attribute(NestMembersAttribute.class, transformed))
+			.as("transformed class nest members")
+			.map(m -> m.classes)
+			.get(InstanceOfAssertFactories.array(String[].class))
+			.containsExactlyInAnyOrder("transformed/member/NestMember1", "pkg/member/NestMember2");
 	}
 
 }
