@@ -11,13 +11,14 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
@@ -143,24 +144,12 @@ public class JavaActionImpl extends ActionImpl {
 		setResourceNames(inputName, outputName);
 
 		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
-		InputStreamReader inputReader;
-		try {
-			inputReader = new InputStreamReader(inputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			error("Strange: UTF-8 is an unrecognized encoding for reading [ {} ]", e, inputName);
-			return null;
-		}
+		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
-		OutputStreamWriter outputWriter;
-		try {
-			outputWriter = new OutputStreamWriter(outputStream, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			error("Strange: UTF-8 is an unrecognized encoding for writing [ {} ]", e, inputName);
-			return null;
-		}
+		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
