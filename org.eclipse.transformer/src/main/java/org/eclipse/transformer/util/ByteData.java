@@ -13,6 +13,7 @@ package org.eclipse.transformer.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 public class ByteData {
@@ -35,7 +36,7 @@ public class ByteData {
 		this.length = length;
 	}
 
-	public ByteArrayInputStream asStream() {
+	public InputStream asStream() {
 		return new ByteArrayInputStream(data, offset, length);
 	}
 
