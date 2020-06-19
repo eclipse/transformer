@@ -1,14 +1,25 @@
 # Eclipse Transformer
 
-## Additional documentation
+The [Eclipse Transformer project](https://projects.eclipse.org/projects/technology.transformer) is part of the [Eclipse Technology top-level project](https://projects.eclipse.org/projects/technology).
 
-See the following files for more detailed information:
+Eclipse Transformer provides tools and runtime components that transform Java binaries, such as individual class files and complete JARs and WARs, mapping changes to Java packages, type names, and related resource names.
 
-* LICENSE       Apache Licence, Version 2.0; Eclipse Public License Version 2.0
-* README.md     Root readme (this file)
-* INFRA.md      Project infrastructure and build notes
-* DEV.md        Developer overview
-* RULES.md      Transformer actions and rules details
+While the initial impetus for the project was the Jakarta EE package renaming issue, the scope of the project is broader to support other renaming scenarios. For example, shading.
+
+We operate under the [Eclipse Code of Conduct](https://eclipse.org/org/documents/Community_Code_of_Conduct.php) to promote fairness, openness, and inclusion.
+
+## Build Status
+
+![CI Build](https://github.com/eclipse/transformer/workflows/CI%20Build/badge.svg)
+
+## Project licence
+
+[![License](https://img.shields.io/badge/License-EPL%202.0-green.svg)](https://opensource.org/licenses/EPL-2.0)
+[![License](https://img.shields.io/badge/License-APL%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+
+All Eclipse Transformer project materials are made available under the Eclipse Public
+License 2.0 or the Apache 2.0 license. You can choose which license you wish
+to follow.  Please see our [LICENSE](LICENSE) file for more details.
 
 ## Summary
 
@@ -28,8 +39,6 @@ The Eclipse Transformer is provided with Command Line and with Java APIs:
 
 * Transformation function is accessible through two Command Line APIs.  A generic command line API, which requires user specified update data, may be used.  A Jakarta command line API, which has built-in Jakarta rules data, may also be used.
 
-TODO: Provisions for use from Maven and Gradle are expected to be provided, but are not yet available.
-
 ## Scope
 
 The Eclipse Transformer operates on resources, including but not limited to the following:
@@ -48,7 +57,7 @@ Container resources:
 * JavaEE archives (JAR, WAR, RAR, and EAR files)
 * ZIP archives
 
-## APIs:
+## APIs
 
 The Eclipse Transformer provides three core APIs: A java entry point and two command line entry points:
 
@@ -117,3 +126,51 @@ An additional core property file is used as a master table for text updates:
 | -tf --text          | Text master data             | jakarta-text-master.properties |
 
 The master text properties file maps file selection patterns (for example, "*.xml", or "*.html") to specific text properties files.
+
+## Artifacts
+
+The Eclipse Transformer artifacts are released to Maven Central.
+
+Snapshot artifacts are released to the Sonatype OSS repository: <https://oss.sonatype.org/content/repositories/snapshots/>.
+
+To use the snapshot artifacts in your Maven build, you can configure the Sonatype OSS snapshot repository.
+
+```xml
+<repositories>
+    <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        <layout>default</layout>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+    </repository>
+</repositories>
+```
+
+To use the snapshot transformer maven plugin in your Maven build, you can configure the Sonatype OSS snapshot repository.
+
+```xml
+<pluginRepositories>
+    <pluginRepository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        <layout>default</layout>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+    </pluginRepository>
+</pluginRepositories>
+```
+
+## Contributing
+
+If you would like to contribute to Transformer, check out the [contributing guide](CONTRIBUTING.md) for more information.
+
+## Additional documentation
+
+See the following files for more detailed information:
+
+* [INFRA.md](INFRA.md)      Project infrastructure and build notes
+* [DEV.md](DEV.md)        Developer overview
+* [RULES.md](RULES.md)      Transformer actions and rules details
