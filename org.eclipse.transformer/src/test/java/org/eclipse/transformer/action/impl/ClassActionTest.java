@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.assertj.core.api.OptionalAssert;
 import org.eclipse.transformer.action.Action;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import aQute.bnd.classfile.Attribute;
 import aQute.bnd.classfile.ClassFile;
 import aQute.bnd.classfile.ElementInfo;
+import aQute.bnd.classfile.EnclosingMethodAttribute;
 import aQute.bnd.classfile.ModuleAttribute;
 import aQute.bnd.classfile.ModuleMainClassAttribute;
 import aQute.bnd.classfile.ModulePackagesAttribute;
@@ -122,63 +122,60 @@ public class ClassActionTest {
 
 		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
 
-		assertThat(transformed.this_class)
-			.as("transformed class name is a module")
+		assertThat(transformed.this_class).as("transformed class name is a module")
 			.isEqualTo("module-info");
 
-		OptionalAssert<ModuleAttribute> moduleAssert = assertThat(attribute(ModuleAttribute.class, transformed))
-			.as("transformed class module attribute");
-		moduleAssert.as("transformed class module name, flags, and version")
+		Optional<ModuleAttribute> attribute = attribute(ModuleAttribute.class, transformed);
+
+		assertThat(attribute).as("transformed class module name, flags, and version")
 			.get()
 			.isEqualToComparingOnlyGivenFields(originalModule, "module_name", "module_flags", "module_version");
 
-		moduleAssert.map(m -> m.requires)
+		assertThat(attribute).map(m -> m.requires)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Require[].class))
 			.as("transformed class module requires")
 			.usingElementComparatorIgnoringFields()
 			.isEqualTo(originalModule.requires);
 
-		moduleAssert.map(m -> m.opens)
+		assertThat(attribute).map(m -> m.opens)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Open[].class))
 			.as("transformed class module opens flags and to")
 			.usingElementComparatorIgnoringFields("opens")
 			.isEqualTo(originalModule.opens);
-		moduleAssert.map(m -> m.opens)
+		assertThat(attribute).map(m -> m.opens)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Open[].class))
 			.as("transformed class module opens packages")
 			.extracting(o -> o.opens)
 			.containsExactlyInAnyOrder("pkg/opens", "transformed/opens");
 
-		moduleAssert.map(m -> m.exports)
+		assertThat(attribute).map(m -> m.exports)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Export[].class))
 			.as("transformed class module exports flags and to")
 			.usingElementComparatorIgnoringFields("exports")
 			.isEqualTo(originalModule.exports);
-		moduleAssert.map(m -> m.exports)
+		assertThat(attribute).map(m -> m.exports)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Export[].class))
 			.as("transformed class module exports packages")
 			.extracting(o -> o.exports)
 			.containsExactlyInAnyOrder("pkg/something", "transformed/exports");
 
-		moduleAssert.map(m -> m.provides)
+		assertThat(attribute).map(m -> m.provides)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Provide[].class))
 			.as("transformed class module provides packages")
 			.extracting(p -> p.provides)
 			.containsExactlyInAnyOrder("pkg/provides/SomeInterface", "transformed/provides/Interface");
-		moduleAssert.map(m -> m.provides)
+		assertThat(attribute).map(m -> m.provides)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Provide[].class))
 			.as("transformed class module provides packages")
 			.flatExtracting(p -> Arrays.asList(p.provides_with))
 			.containsExactlyInAnyOrder("pkg/provides/impl/SomeImpl", "transformed/provides/impl/SomeImpl");
 
-		assertThat(attribute(ModulePackagesAttribute.class, transformed))
-			.as("transformed class module packages")
+		assertThat(attribute(ModulePackagesAttribute.class, transformed)).as("transformed class module packages")
 			.map(m -> m.packages)
 			.get(InstanceOfAssertFactories.array(String[].class))
 			.noneMatch(p -> p.contains("original"));
 
-		assertThat(attribute(ModuleMainClassAttribute.class, transformed))
-			.as("transformed class module main class")
+		assertThat(attribute(ModuleMainClassAttribute.class, transformed)).as("transformed class module main class")
 			.map(m -> m.main_class)
 			.get(InstanceOfAssertFactories.STRING)
 			.isEqualTo("transformed/main/Main");
@@ -217,21 +214,57 @@ public class ClassActionTest {
 
 		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
 
-		assertThat(transformed.this_class)
-			.as("transformed class name")
+		assertThat(transformed.this_class).as("transformed class name")
 			.isEqualTo("nest/Test");
 
-		assertThat(attribute(NestHostAttribute.class, transformed))
-			.as("transformed class nest host")
+		assertThat(attribute(NestHostAttribute.class, transformed)).as("transformed class nest host")
 			.map(h -> h.host_class)
 			.get(InstanceOfAssertFactories.STRING)
 			.isEqualTo("transformed/host/NestHost");
 
-		assertThat(attribute(NestMembersAttribute.class, transformed))
-			.as("transformed class nest members")
+		assertThat(attribute(NestMembersAttribute.class, transformed)).as("transformed class nest members")
 			.map(m -> m.classes)
 			.get(InstanceOfAssertFactories.array(String[].class))
 			.containsExactlyInAnyOrder("transformed/member/NestMember1", "pkg/member/NestMember2");
+	}
+
+	@Test
+	public void enclosing_method_transform() throws Exception {
+		ClassFileBuilder builder = new ClassFileBuilder(Modifier.PUBLIC, ClassFile.MAJOR_VERSION, 0, "enclosing/Test",
+			"java/lang/Object");
+		builder.attributes(new EnclosingMethodAttribute("original/enclosing/Enclosing", "method",
+			"(Loriginal/param/Param1;Lpkg/other/Param2;)Loriginal/result/Result;"));
+		ClassFile original = builder.build();
+		assertThat(original.this_class).as("test class name")
+			.isEqualTo("enclosing/Test");
+		assertThat(attribute(EnclosingMethodAttribute.class, original))
+			.as("test class has a %s attribute", EnclosingMethodAttribute.NAME)
+			.isNotEmpty();
+
+		ByteBufferDataOutput dataOutput = new ByteBufferDataOutput();
+		original.write(dataOutput);
+		ByteBufferInputStream inputStream = new ByteBufferInputStream(dataOutput.toByteBuffer());
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputStream.available());
+
+		Map<String, String> renames = new HashMap<>();
+		renames.put("original.enclosing", "transformed.enclosing");
+		renames.put("original.param", "transformed.param");
+		renames.put("original.result", "transformed.result");
+		Action classAction = new ClassActionImpl(logger, false, false, new InputBufferImpl(),
+			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
+			new SignatureRuleImpl(logger, renames, null, null, null, null));
+		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
+
+		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
+
+		assertThat(transformed.this_class).as("transformed class name")
+			.isEqualTo("enclosing/Test");
+
+		assertThat(attribute(EnclosingMethodAttribute.class, transformed)).as("transformed class enclosing method")
+			.get()
+			.isEqualToComparingFieldByField(new EnclosingMethodAttribute("transformed/enclosing/Enclosing", "method",
+				"(Ltransformed/param/Param1;Lpkg/other/Param2;)Ltransformed/result/Result;"));
+
 	}
 
 }
