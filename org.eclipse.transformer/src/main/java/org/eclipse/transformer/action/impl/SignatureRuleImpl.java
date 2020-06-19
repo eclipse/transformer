@@ -306,6 +306,12 @@ public class SignatureRuleImpl implements SignatureRule {
 	/**
 	 * Checks the character before and after a match to verify that the match is
 	 * NOT a subset of a larger package, and thus not really a match.
+	 *
+	 * @param text
+	 * @param matchStart
+	 * @param keyLen
+	 * @param matchSubpackages
+	 * @return true if a package match
 	 */
 	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
 		// System.out.println("isTruePackageMatch:"
@@ -477,6 +483,7 @@ public class SignatureRuleImpl implements SignatureRule {
 	 * changed, a wrapped null.
 	 *
 	 * @param inputName A fully qualified type name which is to be transformed.
+	 * @param allowSimpleSubstitution
 	 * @return The transformed type name, or a wrapped null if no changed was
 	 *         made.
 	 */
