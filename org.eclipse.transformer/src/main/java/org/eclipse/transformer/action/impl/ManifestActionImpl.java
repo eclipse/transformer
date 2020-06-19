@@ -583,6 +583,7 @@ public class ManifestActionImpl extends ActionImpl {
 	 * semi-colon.
 	 *
 	 * @param s string
+	 * @return true if first char is semi colon.
 	 */
 	protected boolean firstCharIsSemicolon(String s) {
 		for (int i = 0; i < s.length(); i++) {
