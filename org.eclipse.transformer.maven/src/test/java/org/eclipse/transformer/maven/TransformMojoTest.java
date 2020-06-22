@@ -11,6 +11,11 @@
 
 package org.eclipse.transformer.maven;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
@@ -28,8 +33,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 public class TransformMojoTest {
 
@@ -46,7 +50,7 @@ public class TransformMojoTest {
 		mojo.setOverwrite(true);
 		mojo.setOutputDirectory(new File("target"));
 
-		Assertions.assertNotNull(mojo);
+		assertNotNull(mojo);
 
 		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");
@@ -60,28 +64,28 @@ public class TransformMojoTest {
 		mojo.setClassifier("transformed");
 
 		final Artifact[] sourceArtifacts = mojo.getSourceArtifacts();
-		Assertions.assertEquals(1, sourceArtifacts.length);
-		Assertions.assertEquals("org.superbiz.rest", sourceArtifacts[0].getGroupId());
-		Assertions.assertEquals("rest-sample", sourceArtifacts[0].getArtifactId());
-		Assertions.assertEquals("1.0-SNAPSHOT", sourceArtifacts[0].getVersion());
-		Assertions.assertEquals("war", sourceArtifacts[0].getType());
-		Assertions.assertNull(sourceArtifacts[0].getClassifier());
+		assertEquals(1, sourceArtifacts.length);
+		assertEquals("org.superbiz.rest", sourceArtifacts[0].getGroupId());
+		assertEquals("rest-sample", sourceArtifacts[0].getArtifactId());
+		assertEquals("1.0-SNAPSHOT", sourceArtifacts[0].getVersion());
+		assertEquals("war", sourceArtifacts[0].getType());
+		assertNull(sourceArtifacts[0].getClassifier());
 
 		final Transformer transformer = mojo.getTransformer();
-		Assertions.assertNotNull(transformer);
+		assertNotNull(transformer);
 
 		mojo.transform(transformer, sourceArtifacts[0]);
 
-		Assertions.assertEquals(1, mavenProject.getAttachedArtifacts()
+		assertEquals(1, mavenProject.getAttachedArtifacts()
 			.size());
 		final Artifact transformedArtifact = mavenProject.getAttachedArtifacts()
 			.get(0);
 
-		Assertions.assertEquals("org.superbiz.rest", transformedArtifact.getGroupId());
-		Assertions.assertEquals("rest-sample", transformedArtifact.getArtifactId());
-		Assertions.assertEquals("1.0-SNAPSHOT", transformedArtifact.getVersion());
-		Assertions.assertEquals("war", transformedArtifact.getType());
-		Assertions.assertEquals("transformed", transformedArtifact.getClassifier());
+		assertEquals("org.superbiz.rest", transformedArtifact.getGroupId());
+		assertEquals("rest-sample", transformedArtifact.getArtifactId());
+		assertEquals("1.0-SNAPSHOT", transformedArtifact.getVersion());
+		assertEquals("war", transformedArtifact.getType());
+		assertEquals("transformed", transformedArtifact.getClassifier());
 	}
 
 	@Test
@@ -90,7 +94,7 @@ public class TransformMojoTest {
 		mojo.setOverwrite(true);
 		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
 
-		Assertions.assertNotNull(mojo);
+		assertNotNull(mojo);
 
 		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");
@@ -110,24 +114,24 @@ public class TransformMojoTest {
 			.attachArtifact(mavenProject, "zip", "test3", createService());
 
 		final Artifact[] sourceArtifacts = mojo.getSourceArtifacts();
-		Assertions.assertEquals(3, sourceArtifacts.length);
+		assertEquals(3, sourceArtifacts.length);
 
 		for (int i = 0; i < 3; i++) {
-			Assertions.assertEquals("org.superbiz.rest", sourceArtifacts[i].getGroupId());
-			Assertions.assertEquals("simple-service", sourceArtifacts[i].getArtifactId());
-			Assertions.assertEquals("1.0-SNAPSHOT", sourceArtifacts[i].getVersion());
-			Assertions.assertEquals("zip", sourceArtifacts[i].getType());
-			Assertions.assertEquals("test" + (i + 1), sourceArtifacts[i].getClassifier());
+			assertEquals("org.superbiz.rest", sourceArtifacts[i].getGroupId());
+			assertEquals("simple-service", sourceArtifacts[i].getArtifactId());
+			assertEquals("1.0-SNAPSHOT", sourceArtifacts[i].getVersion());
+			assertEquals("zip", sourceArtifacts[i].getType());
+			assertEquals("test" + (i + 1), sourceArtifacts[i].getClassifier());
 		}
 
 		final Transformer transformer = mojo.getTransformer();
-		Assertions.assertNotNull(transformer);
+		assertNotNull(transformer);
 
 		for (int i = 0; i < 3; i++) {
 			mojo.transform(transformer, sourceArtifacts[i]);
 		}
 
-		Assertions.assertEquals(6, mavenProject.getAttachedArtifacts()
+		assertEquals(6, mavenProject.getAttachedArtifacts()
 			.size());
 		Set<String> classifiers = mavenProject.getAttachedArtifacts()
 			.stream()
@@ -138,14 +142,14 @@ public class TransformMojoTest {
 			.map(a -> a.getClassifier())
 			.collect(Collectors.toSet());
 
-		Assertions.assertEquals(6, mavenProject.getAttachedArtifacts()
+		assertEquals(6, mavenProject.getAttachedArtifacts()
 			.size());
-		Assertions.assertTrue(classifiers.contains("test1"));
-		Assertions.assertTrue(classifiers.contains("test2"));
-		Assertions.assertTrue(classifiers.contains("test3"));
-		Assertions.assertTrue(classifiers.contains("test1-transformed"));
-		Assertions.assertTrue(classifiers.contains("test2-transformed"));
-		Assertions.assertTrue(classifiers.contains("test3-transformed"));
+		assertTrue(classifiers.contains("test1"));
+		assertTrue(classifiers.contains("test2"));
+		assertTrue(classifiers.contains("test3"));
+		assertTrue(classifiers.contains("test1-transformed"));
+		assertTrue(classifiers.contains("test2-transformed"));
+		assertTrue(classifiers.contains("test3-transformed"));
 	}
 
 	public MavenProject createMavenProject(final File modelDirectory, final File pom, final String packaging,
