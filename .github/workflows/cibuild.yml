@@ -45,6 +45,9 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
+        server-id: ossrh
+        server-username: OSSRH_USERNAME
+        server-password: OSSRH_TOKEN
     - name: Build
       id: build
       continue-on-error: ${{ matrix.experimental }}
