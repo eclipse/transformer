@@ -21,11 +21,8 @@ jobs:
   JDKxx_Matrix:
     strategy:
       matrix:
-        java: [ 8, 11, 14, 15-ea ]
+        java: [ 11, 14, 15-ea ]
         os: [ ubuntu-latest ]
-        exclude:
-        - os: ubuntu-latest
-          java: 8
         include:
         - os: ubuntu-latest
           java: 8
@@ -45,6 +42,9 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: ${{ matrix.java }}
+        server-id: ossrh
+        server-username: OSSRH_USERNAME
+        server-password: OSSRH_TOKEN
     - name: Build
       id: build
       continue-on-error: ${{ matrix.experimental }}
@@ -53,13 +53,13 @@ jobs:
     - name: Import GPG key
       id: import_gpg
       if: (matrix.canonical)
-      continue-on-error: true
-      uses: crazy-max/ghaction-import-gpg@v2
+      uses: mbarbero/ghaction-import-gpg@subkeys
       env:
         GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
     - name: GPG key information
-      if: (steps.import_gpg.conclusion == 'success')
+      if: (steps.import_gpg.outcome == 'success')
       run: |
         echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
         echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"

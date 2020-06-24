@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-./mvnw --version --settings settings.xml
-./mvnw --no-transfer-progress --settings settings.xml install "$@"
+./mvnw --batch-mode --version
+./mvnw --batch-mode --no-transfer-progress install "$@"
