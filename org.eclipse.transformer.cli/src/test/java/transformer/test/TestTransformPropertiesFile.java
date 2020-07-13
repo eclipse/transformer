@@ -37,7 +37,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 
 	public SignatureRuleImpl createSignatureRule(CaptureLoggerImpl useLogger, Map<String, String> packageRename) {
 
-		return new SignatureRuleImpl(useLogger, packageRename, null, null, null, null);
+		return new SignatureRuleImpl(useLogger, packageRename, null, null, null, null, Collections.emptyMap());
 	}
 
 	public static final String	JAKARTA_SERVLET	= "jakarta.servlet";

@@ -294,6 +294,10 @@ public abstract class ActionImpl implements Action {
 		return getSignatureRule().getDirectString(initialValue);
 	}
 
+	public String transformConstantString(String initialValue, String className) {
+		return getSignatureRule().getConstantString(initialValue, className);
+	}
+
 	//
 
 	public abstract String getAcceptExtension();

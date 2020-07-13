@@ -207,7 +207,7 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
-					getPackageRenames(), getPackageVersions(), getBundleUpdates(), null, getDirectStrings()),
+					getPackageRenames(), getPackageVersions(), getBundleUpdates(), null, getDirectStrings(), Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 		return jakartaManifestAction;
@@ -221,7 +221,7 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaFeatureAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null),
+				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, Collections.emptyMap()),
 				ManifestActionImpl.IS_FEATURE);
 		}
 
@@ -238,7 +238,7 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaManifestActionTx = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
-					getPackageRenames(), getPackageVersions(), getBundleUpdatesTx(), null, getDirectStrings()),
+					getPackageRenames(), getPackageVersions(), getBundleUpdatesTx(), null, getDirectStrings(), Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 		return jakartaManifestActionTx;
@@ -633,7 +633,7 @@ public class TestTransformManifest extends CaptureTest {
 
 			manifestAction_test = new ManifestActionImpl_Test(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null),
+				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 

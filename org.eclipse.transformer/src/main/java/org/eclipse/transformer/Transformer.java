@@ -283,7 +283,11 @@ public class Transformer {
 			!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
 		DRYRUN("d", "dryrun", "Dry run", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED,
-			OptionSettings.NO_GROUP);
+			OptionSettings.NO_GROUP),
+		
+		RULES_PER_CLASS_CONSTANT("tp", "per-class-constant", "Transformation per class constant string replacements",
+			OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
+			!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP);
 
 		private AppOption(String shortTag, String longTag, String description, boolean hasArg, boolean hasArgs,
 			boolean isRequired, String groupTag) {
@@ -801,7 +805,7 @@ public class Transformer {
 		public String							outputName;
 		public String							outputPath;
 		public File								outputFile;
-
+		public Map<String, Map<String, String>> perClassConstantStrings;
 		//
 
 		public void setLogging() throws TransformException {
@@ -857,6 +861,7 @@ public class Transformer {
 			UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES);
 			UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT);
 			UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT);
+			UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT);
 
 			invert = hasOption(AppOption.INVERT);
 
@@ -945,6 +950,33 @@ public class Transformer {
 				dual_info("Java direct string updates will not be performed");
 			}
 
+			if (!perClassConstantProperties.isEmpty()) {
+				String masterDirect = getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT, DO_NORMALIZE);
+
+				Map<String, String> substitutionRefs
+						= TransformProperties.convertPropertiesToMap(perClassConstantProperties); // throws IllegalArgumentException
+
+				Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
+				for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
+					String classSelector = substitutionRefEntry.getKey();
+					String substitutionsRef = FileUtils.normalize(substitutionRefEntry.getValue());
+
+					UTF8Properties substitutions = new UTF8Properties();
+					if (masterDirect == null) {
+						substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]", substitutionsRef);
+					}
+					Map<String, String> substitutionsMap
+							= TransformProperties.convertPropertiesToMap(substitutions); // throws IllegalArgumentException
+					masterUpdates.put(classSelector, substitutionsMap);
+				}
+
+				perClassConstantStrings = masterUpdates;
+				dual_info("Per class constant mapping files are enabled");
+
+			} else {
+				perClassConstantStrings = null;
+				dual_info("Per class constant mapping files are not enabled");
+			}
 			return validateRules(packageRenames, packageVersions);
 		}
 
@@ -1093,7 +1125,7 @@ public class Transformer {
 		protected SignatureRuleImpl getSignatureRule() {
 			if (signatureRules == null) {
 				signatureRules = new SignatureRuleImpl(logger, packageRenames, packageVersions, bundleUpdates,
-					masterTextUpdates, directStrings);
+					masterTextUpdates, directStrings, perClassConstantStrings);
 			}
 			return signatureRules;
 		}

@@ -61,8 +61,10 @@ public class CaptureTest {
 	}
 
 	public SignatureRuleImpl createSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
-		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings) {
+		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings, 
+		Map<String, Map<String,String>> perClass) {
 
-		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, bundleData, null, directStrings);
+		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, 
+					bundleData, null, directStrings, perClass);
 	}
 }

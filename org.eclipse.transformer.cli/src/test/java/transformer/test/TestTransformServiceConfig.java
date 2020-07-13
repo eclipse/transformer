@@ -56,7 +56,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 	public SignatureRuleImpl createSignatureRule(CaptureLoggerImpl useLogger, Map<String, String> usePackageRenames,
 		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings) {
 
-		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, bundleData, null, directStrings);
+		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, bundleData, null, directStrings, Collections.emptyMap());
 	}
 
 	//
