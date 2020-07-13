@@ -266,13 +266,11 @@ public class Transformer {
 		RULES_DIRECT("td", "direct", "Transformation direct string replacements", OptionSettings.HAS_ARG,
 			!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-		RULES_MASTER_TEXT("tf", "xml", "Map of filenames to property files", OptionSettings.HAS_ARG,
+		RULES_MASTER_TEXT("tf", "text", "Map of filenames to property files", OptionSettings.HAS_ARG,
 			!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-		// RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property
-		// files",
-		// OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+		// RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files", OptionSettings.HAS_ARG,
+		//    !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
 		INVERT("i", "invert", "Invert transformation rules", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 			!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
@@ -637,18 +635,35 @@ public class Transformer {
 	 *             URI was specified.
 	 */
 	protected UTF8Properties loadProperties(AppOption ruleOption) throws IOException, URISyntaxException {
-		String rulesReference = getOptionValue(ruleOption, DO_NORMALIZE);
+		String[] rulesReferences = getOptionValues(ruleOption, DO_NORMALIZE);
 
-		if (rulesReference == null) {
-			rulesReference = getDefaultReference(ruleOption);
+		if (rulesReferences == null) {
+			String rulesReference = getDefaultReference(ruleOption);
 			if (rulesReference == null) {
 				dual_info("Skipping option [ %s ]", ruleOption);
 				return FileUtils.createProperties();
 			} else {
 				return loadInternalProperties(ruleOption, rulesReference);
 			}
+
+		} else if ( rulesReferences.length == 1 ) {
+			return loadExternalProperties(ruleOption, rulesReferences[0]);
+
 		} else {
-			return loadExternalProperties(ruleOption, rulesReference);
+			UTF8Properties[] properties = new UTF8Properties[ rulesReferences.length ];
+			for ( int referenceNo = 0; referenceNo < rulesReferences.length; referenceNo++ ) {
+				properties[referenceNo] = loadExternalProperties( ruleOption, rulesReferences[referenceNo] );
+			}
+			
+			String baseReference = rulesReferences[0];
+			UTF8Properties mergedProperties = properties[0];
+
+			for ( int referenceNo = 1; referenceNo < rulesReferences.length; referenceNo++ ) {
+				merge( baseReference, mergedProperties,
+					   rulesReferences[referenceNo], properties[referenceNo] );
+			}
+			
+			return mergedProperties;
 		}
 	}
 
@@ -687,14 +702,29 @@ public class Transformer {
 	protected UTF8Properties loadExternalProperties(String referenceName, String externalReference)
 		throws URISyntaxException, IOException {
 
-		// dual_info("Using external [ %s ]: [ %s ]", referenceName,
-		// externalReference);
+		// dual_info("Using external [ %s ]: [ %s ]", referenceName, externalReference);
+
 		URI currentDirectoryUri = IO.work.toURI();
-		URL rulesUrl = URIUtil.resolve(currentDirectoryUri, externalReference)
-			.toURL();
+		URL rulesUrl = URIUtil.resolve(currentDirectoryUri, externalReference).toURL();
 		dual_info("External [ %s ] URL [ %s ]", referenceName, rulesUrl);
 
 		return FileUtils.loadProperties(rulesUrl);
+	}
+
+	protected void merge(String sinkName, UTF8Properties sink, String sourceName, UTF8Properties source) {
+		for ( Map.Entry<Object, Object> sourceEntry : source.entrySet() ) {
+			Object key = sourceEntry.getKey();
+			Object newValue = sourceEntry.getValue();
+			Object oldValue = sink.put(key, newValue);
+
+			// System.out.println("Key [ " + key + " ] Old [ " + oldValue + " ] New [ " + newValue + " ]");
+
+			if ( oldValue != null ) {
+				dual_debug(
+					"Merge of [ %s ] into [ %s ], key [ %s ] replaces value [ %s ] with [ %s ]",
+					sourceName, sinkName, key, oldValue, newValue);
+			}
+		}
 	}
 
 	//
@@ -709,6 +739,14 @@ public class Transformer {
 		getLogger().info(message, parms);
 	}
 
+	public boolean isDebugEnabled() {
+		return getLogger().isDebugEnabled();
+	}
+
+	public void debug(String message, Object... parms) {
+		getLogger().debug(message, parms);
+	}
+	
 	protected void error(String message, Object... parms) {
 		getLogger().error(message, parms);
 	}
@@ -749,6 +787,20 @@ public class Transformer {
 		}
 		info(message);
 	}
+	
+	public void dual_debug(String message, Object... parms) {
+		if ( !isDebugEnabled() ) {
+			return;
+		}
+
+		if (parms.length != 0) {
+			message = String.format(message, parms);
+		}
+		if (!toSysOut && !toSysErr) {
+			systemPrint(getSystemOut(), message);
+		}
+		debug(message);
+	}	
 
 	protected void dual_error(String message, Object... parms) {
 		if (parms.length != 0) {
@@ -786,11 +838,9 @@ public class Transformer {
 		public Map<String, String>				packageRenames;
 		public Map<String, String>				packageVersions;
 		public Map<String, BundleData>			bundleUpdates;
-		public Map<String, Map<String, String>>	masterTextUpdates;	// ( pattern
-																	// -> (
-																	// initial
-																	// -> final
-																	// ) )
+		public Map<String, Map<String, String>>	masterTextUpdates;
+		// ( pattern -> ( initial-> final ) )
+
 		public Map<String, String>				directStrings;
 
 		public CompositeActionImpl				rootAction;
@@ -908,8 +958,8 @@ public class Transformer {
 			if (!textMasterProperties.isEmpty()) {
 				String masterTextRef = getOptionValue(AppOption.RULES_MASTER_TEXT, DO_NORMALIZE);
 
-				Map<String, String> substitutionRefs = TransformProperties.convertPropertiesToMap(textMasterProperties); // throws
-																															// IllegalArgumentException
+				Map<String, String> substitutionRefs = TransformProperties.convertPropertiesToMap(textMasterProperties);
+				// throws IllegalArgumentException
 
 				Map<String, Map<String, String>> masterUpdates = new HashMap<>();
 				for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
@@ -987,37 +1037,45 @@ public class Transformer {
 			}
 
 			if ((renamesMap == null) || renamesMap.isEmpty()) {
-				String renamesRef = getRuleFileName(AppOption.RULES_RENAMES);
-				String versionsRef = getRuleFileName(AppOption.RULES_VERSIONS);
+				String[] renamesRefs = getRuleFileNames(AppOption.RULES_RENAMES);
+				String[] versionsRefs = getRuleFileNames(AppOption.RULES_VERSIONS);
 
-				if (renamesRef == null) {
-					dual_error("Package version updates were specified in [ " + versionsRef + " ]"
-						+ "but no rename rules were specified.");
+				if (renamesRefs == null) {
+					dual_error("Package version updates were specified but no rename rules were specified.");
 				} else {
-					dual_error("Package version updates were specified in [ " + versionsRef + " ]"
-						+ "but no rename rules were specified in [ " + renamesRef + " ]");
+					dual_error("Package version updates were specified but no rename rules were specified.");
 				}
 				return false;
 			}
 
-			for (String entry : versionsMap.keySet()) {
-				if (!renamesMap.containsValue(entry)) {
-					dual_error(
-						"Version rule key [ " + entry + "]" + " from [ " + getRuleFileName(AppOption.RULES_VERSIONS)
-							+ " ]" + " not found in rename rules [ " + getRuleFileName(AppOption.RULES_RENAMES) + " ]");
-					return false;
+			String[] renamesFileNames = getRuleFileNames(AppOption.RULES_RENAMES);
+
+			// TODO:
+			// The overlaying of rename data from multiple properties files can orphan
+			// version property values.  This is medium hard to handle properly, and is
+			// not checked unless there was just one renames properties file.
+
+			if ( (renamesFileNames != null) && (renamesFileNames.length == 1) ) {
+				for (String entry : versionsMap.keySet()) {
+					if (!renamesMap.containsValue(entry)) {
+						dual_error(
+						    "Version rule key [ " + entry + " ]" +
+						    " not found in rename rules [ " + renamesFileNames[0] + " ]");
+						return false;
+					}
 				}
 			}
 
 			return true;
 		}
 
-		protected String getRuleFileName(AppOption ruleOption) {
-			String rulesFileName = getOptionValue(ruleOption, DO_NORMALIZE);
-			if (rulesFileName != null) {
-				return rulesFileName;
+		protected String[] getRuleFileNames(AppOption ruleOption) {
+			String[] rulesFileNames = getOptionValues(ruleOption, DO_NORMALIZE);
+			if (rulesFileNames != null) {
+				return rulesFileNames;
 			} else {
-				return getDefaultReference(ruleOption);
+				String defaultReference = getDefaultReference(ruleOption);
+				return ( (defaultReference == null) ? null : new String[] { defaultReference } );
 			}
 		}
 

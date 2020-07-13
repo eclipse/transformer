@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+DynamicImport-Package: javax.package0;version="0.0.0",javax.package1;v
+ ersion="1.0.0",javax.package2;version="2.0.0",javax.package3;version=
+ "3.0.0",javax.package4;version="4.0.0",javax.package5;version="5.0.0"
+ ,javax.package6;version="6.0.0",javax.package7;version="7.0.0"

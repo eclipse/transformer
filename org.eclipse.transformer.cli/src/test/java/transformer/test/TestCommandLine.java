@@ -93,10 +93,4 @@ class TestCommandLine {
 		options.transform();
 		assertTrue((new File(outputFileName)).exists(), "output file not created");
 	}
-
-	// at
-	// org.eclipse.transformer.Transformer$TransformOptions.transform(Transformer.java:1255)
-	// at transformer.test.TestCommandLine.verifyAction(TestCommandLine.java:88)
-	// at
-	// transformer.test.TestCommandLine.testManifestActionAccepted(TestCommandLine.java:50)
 }
