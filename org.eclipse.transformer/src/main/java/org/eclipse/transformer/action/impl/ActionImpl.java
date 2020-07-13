@@ -99,6 +99,10 @@ public abstract class ActionImpl implements Action {
 		getLogger().debug(message, parms);
 	}
 
+	public boolean isDebugEnabled() {
+		return getLogger().isDebugEnabled();
+	}
+
 	public void info(String message, Object... parms) {
 		getLogger().info(message, parms);
 	}
@@ -515,8 +519,18 @@ public abstract class ActionImpl implements Action {
 		debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 		ByteData inputData = read(inputName, inputStream, inputCount); // throws
 																		// JakartaTransformException
-		debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
-			inputData.data);
+
+		if (isDebugEnabled()) {
+			byte[] altInputData;
+			if (inputData.length < inputData.data.length) {
+				altInputData = new byte[inputData.length];
+				System.arraycopy(inputData.data, 0, altInputData, 0, inputData.length);
+			} else {
+				altInputData = inputData.data;
+			}
+			debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
+				altInputData);
+		}
 
 		ByteData outputData;
 		try {
@@ -531,8 +545,17 @@ public abstract class ActionImpl implements Action {
 			debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			debug("[ {}.{} ]: Active transform [ {} ] [ {} ] [ {} ]", className, methodName, outputData.name,
-				outputData.length, outputData.data);
+			if (isDebugEnabled()) {
+				byte[] altOutputData;
+				if (outputData.length < outputData.data.length) {
+					altOutputData = new byte[outputData.length];
+					System.arraycopy(outputData.data, 0, altOutputData, 0, outputData.length);
+				} else {
+					altOutputData = outputData.data;
+				}
+				debug("[ {}.{} ]: Active transform [ {} ] [ {} ] [ {} ]", className, methodName, outputData.name,
+					outputData.length, altOutputData);
+			}
 		}
 
 		return new InputStreamData(outputData);
