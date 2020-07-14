@@ -31,4 +31,6 @@ public interface BundleData {
 	String updateName(String initialName);
 
 	String updateDescription(String initialDescription);
+
+	String getPrintString();
 }
