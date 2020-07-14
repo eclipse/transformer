@@ -768,17 +768,11 @@ public class Transformer {
 	}
 
 	/**
-	 * Load properties for the specified rule option. Answer an empty collection
-	 * if the rule option was not provided. Options loading tries
-	 * {@link #getOptionValue(AppOption)}, then tries
-	 * {@link #getDefaultReference(AppOption)}. If neither is set, an empty
-	 * collection is returned.
+	 * Fetch all immediate option data from the command line. Organize the data
+	 * into separate objects, one object per specific immediate option on the
+	 * command line.
 	 *
-	 * @param ruleOption The option for which to load properties.
-	 * @return Properties loaded using the reference set for the option.
-	 * @throws IOException Thrown if the load failed.
-	 * @throws URISyntaxException Thrown if the load failed because a non-valid
-	 *             URI was specified.
+	 * @return Grouped immediate option data from the command line.
 	 */
 	protected ImmediateRuleData[] getImmediateData() {
 		if ( !hasOption(AppOption.RULES_IMMEDIATE_DATA) ) {
@@ -789,7 +783,7 @@ public class Transformer {
 
 		if ((immediateArgs.length % 3) != 0) {
 			dual_error(
-				"Incorrect number of argguments to option [ " + AppOption.RULES_IMMEDIATE_DATA.getShortTag() + " ]");
+				"Incorrect number of arguments to option [ " + AppOption.RULES_IMMEDIATE_DATA.getShortTag() + " ]");
 			return null;
 		}
 
