@@ -347,13 +347,15 @@ public class SignatureRuleImpl implements SignatureRule {
 
 	/**
 	 * Checks the character before and after a match to verify that the match is
-	 * NOT a subset of a larger package, and thus not really a match.
+	 * not a subset of a larger package, and thus not really a match.
 	 *
-	 * @param text
-	 * @param matchStart
-	 * @param keyLen
-	 * @param matchSubpackages
-	 * @return true if a package match
+	 * @param text The text to examine for a match.
+	 * @param matchStart Where the match starts in the text.
+	 * @param keyLen The length of the match text.
+	 * @param matchSubpackages Control paramater telling if sub-package matches
+	 *            are allowed.
+	 * @return True or false telling if the match is not a subset of a larger
+	 *         package.
 	 */
 	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
 		// System.out.println("isTruePackageMatch:"
