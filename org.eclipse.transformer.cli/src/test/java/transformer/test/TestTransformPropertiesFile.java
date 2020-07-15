@@ -11,7 +11,6 @@
 package transformer.test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,7 +86,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 	}
 
 	@Test
-	public void testJakartaTransform() throws IOException, TransformException {
+	public void testJakartaTransform() throws TransformException {
 		PropertiesActionImpl propsAction = getJakartaPropertiesAction();
 
 		byte[] content = {};

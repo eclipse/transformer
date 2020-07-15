@@ -18,11 +18,11 @@ import javax.inject.Qualifier;
 import javax.inject.Scope;
 
 public class Sample_InjectAPI_Javax {
-	public static void method2(int intParm) {
+	public static void method2(@SuppressWarnings("unused") int intParm) {
 		// Empty
 	}
 
-	public void method1(int intParm) {
+	public void method1(@SuppressWarnings("unused") int intParm) {
 		// Empty
 	}
 

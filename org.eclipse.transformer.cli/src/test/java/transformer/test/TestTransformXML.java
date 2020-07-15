@@ -152,13 +152,13 @@ public class TestTransformXML extends CaptureTest {
 			initialLines = display(resourceRef, resourceInput);
 		}
 
-		TextActionImpl textAction = getTextAction();
-		System.out.println("Transform [ " + resourceRef + " ] using [ " + textAction.getName() + " ]");
+		TextActionImpl useTextAction = getTextAction();
+		System.out.println("Transform [ " + resourceRef + " ] using [ " + useTextAction.getName() + " ]");
 
 		List<String> finalLines;
 		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) { // throws
 																						// IOException
-			InputStreamData xmlOutput = textAction.apply(resourceRef, resourceInput); // throws
+			InputStreamData xmlOutput = useTextAction.apply(resourceRef, resourceInput); // throws
 																						// JakartaTransformException
 			finalLines = display(resourceRef, xmlOutput.stream);
 		}

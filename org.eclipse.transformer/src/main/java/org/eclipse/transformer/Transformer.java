@@ -1199,7 +1199,7 @@ public class Transformer {
 			}
 		}
 
-		private void addImmediateSelection(String selection, String ignored) {
+		private void addImmediateSelection(String selection, @SuppressWarnings("unused") String ignored) {
 			if (includes == null) {
 				includes = new HashSet<>();
 				excludes = new HashSet<>();
@@ -1297,6 +1297,7 @@ public class Transformer {
 			// throws URISyntaxException, IOException
 
 			String oldSubstitutionsRef = masterSubstitutionRefs.put(simpleNameSelector, substitutionsRef);
+			@SuppressWarnings("unused")
 			Map<String, String> oldSubstitutionMap = masterTextUpdates.put(simpleNameSelector, substitutionsMap);
 
 			if (oldSubstitutionsRef != null) {
@@ -1312,7 +1313,7 @@ public class Transformer {
 
 			if ((renamesMap == null) || renamesMap.isEmpty()) {
 				String[] renamesRefs = getRuleFileNames(AppOption.RULES_RENAMES);
-				String[] versionsRefs = getRuleFileNames(AppOption.RULES_VERSIONS);
+				// String[] versionsRefs = getRuleFileNames(AppOption.RULES_VERSIONS);
 
 				if (renamesRefs == null) {
 					dual_error("Package version updates were specified but no rename rules were specified.");

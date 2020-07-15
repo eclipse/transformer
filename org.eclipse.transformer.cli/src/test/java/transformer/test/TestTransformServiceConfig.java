@@ -224,8 +224,8 @@ public class TestTransformServiceConfig extends CaptureTest {
 		javaArchive.add(new ClassLoaderAsset(JAKARTA_SAMPLE_READER_SERVICE_PATH), "META-INF/services/jakarta.sample.Reader");
 		javaArchive.as(ZipExporter.class).exportTo(inputJarFile, true);
 
-		final JarActionImpl jarJavaxServiceAction = getJarJavaxServiceAction();
-		jarJavaxServiceAction.apply("test.jar", inputJarFile, outputJarFile);
+		final JarActionImpl useJarJavaxServiceAction = getJarJavaxServiceAction();
+		useJarJavaxServiceAction.apply("test.jar", inputJarFile, outputJarFile);
 
 		final String[] expectedLines = new String[] { "# Sample reader", "", "javax.sample.ReaderImpl" };
 
@@ -237,6 +237,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 		ZipEntry inputEntry;
 		while ((inputEntry = zipInputStream.getNextEntry()) != null) {
 			final String inputName = inputEntry.getName();
+			@SuppressWarnings("unused")
 			final long inputLength = inputEntry.getSize();
 
 			if ("META-INF/services/javax.sample.Reader".equals(inputName)) {

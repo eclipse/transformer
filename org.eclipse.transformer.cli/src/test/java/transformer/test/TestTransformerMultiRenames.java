@@ -28,6 +28,7 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 
 	private static final String DATA_DIR = "src/test/data/multi";
 
+	@Override
 	public String getDataDir() {
 		return DATA_DIR;
 	}
@@ -71,7 +72,7 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 	// tier0: jakarta.package0="0.0.1"
 	//        jakarta.package1="1.0.1"
 	//        jakarta.package2="2.0.1"
-	//        jakarta.package3="3.0.1"	
+	//        jakarta.package3="3.0.1"
 	//
 	// tier1: jakarta.package11="1.1.1"
 	//        jakarta.package4="4.1.1"
@@ -81,8 +82,8 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 	//
 	// "Merge of [ %s ] into [ %s], key [ %s] replaces value [ %s] with [ %s ]"
 	//
-	// " key [ " + k + " ] replaces value [ " + v1 + " ] with [ " + v2 + " ]" 	
-	
+	// " key [ " + k + " ] replaces value [ " + v1 + " ] with [ " + v2 + " ]"
+
 	@Test
 	void testMultiRenames() throws Exception {
 		String inputFileName = DATA_DIR + '/' + "MANIFEST.MF";
@@ -100,7 +101,8 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 			"-tv", DATA_DIR + '/' + "tier1.versions.properties",
 			"-tv", DATA_DIR + '/' + "tier2.versions.properties",
 		};
-		
+
+		@SuppressWarnings("unused")
 		byte[] logBytes = runTransformer(
 			inputFileName, outputFileName,
 			args,

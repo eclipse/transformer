@@ -423,7 +423,7 @@ public class TestTransformClass extends CaptureTest {
 		}
 	}
 
-	protected void display(ClassFile classFile) throws IOException {
+	protected void display(ClassFile classFile) {
 		display("Class [ %s ] ", classFile.this_class);
 		display("  Super [ %s ]", classFile.super_class);
 		if (classFile.interfaces != null) {
@@ -556,7 +556,8 @@ public class TestTransformClass extends CaptureTest {
 		}
 	}
 
-	public void verifyRename(Map<String, String> packageRenames, Map<String, String> packagePrefixes, String inputType,
+	public void verifyRename(@SuppressWarnings("unused") Map<String, String> packageRenames,
+		Map<String, String> packagePrefixes, String inputType,
 		String outputType) {
 
 		for (Map.Entry<String, String> prefixEntry : packagePrefixes.entrySet()) {
@@ -575,7 +576,8 @@ public class TestTransformClass extends CaptureTest {
 		}
 	}
 
-	public void validateAnnotationValues(Map<String, String> packageRenames, Map<String, String> packagePrefixes,
+	public void validateAnnotationValues(@SuppressWarnings("unused") Map<String, String> packageRenames,
+		@SuppressWarnings("unused") Map<String, String> packagePrefixes,
 		ElementValueInfo[] inputValues, ElementValueInfo[] outputValues) {
 
 		display("        Values [ %s ] [ %s ]", inputValues.length, outputValues.length);
@@ -644,7 +646,7 @@ public class TestTransformClass extends CaptureTest {
 	public static final Map<String, Map<String, String>> PER_CLASS_CONSTANT_MASTER;
 
 	static {
-		PER_CLASS_CONSTANT_MASTER = new HashMap();
+		PER_CLASS_CONSTANT_MASTER = new HashMap<>();
 		Map<String, String> mapping = new HashMap<>();
 		mapping.put("javax.servlet", "jakarta.servlet");
 		PER_CLASS_CONSTANT_MASTER.put(TEST_DATA_RESOURCE_NAME + '/' + PER_CLASS_RESOURCE_NAME, mapping);

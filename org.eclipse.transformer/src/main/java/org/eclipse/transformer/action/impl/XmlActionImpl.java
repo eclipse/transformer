@@ -320,6 +320,7 @@ public class XmlActionImpl extends ActionImpl {
 			write(nextLine); // throws SAXException
 		}
 
+		@SuppressWarnings("unused")
 		protected void emitLineUTF8(String text) throws SAXException {
 			String nextLine = lineBuilder.toString();
 			lineBuilder.setLength(0);
@@ -345,6 +346,7 @@ public class XmlActionImpl extends ActionImpl {
 		// super.setDocumentLocator(locator);
 		// }
 
+		@SuppressWarnings("unused")
 		@Override
 		public void processingInstruction(String target, String data) throws SAXException {
 			append("<?");
@@ -372,6 +374,7 @@ public class XmlActionImpl extends ActionImpl {
 
 		//
 
+		@SuppressWarnings("unused")
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
@@ -398,6 +401,7 @@ public class XmlActionImpl extends ActionImpl {
 			emit();
 		}
 
+		@SuppressWarnings("unused")
 		@Override
 		public void endElement(String uri, String localName, String qName) throws SAXException {
 			debug("endElement: uri[" + uri + "] localName[" + localName + "] qName[" + qName + "]");
@@ -405,6 +409,7 @@ public class XmlActionImpl extends ActionImpl {
 			append(localName + '>');
 		}
 
+		@SuppressWarnings("unused")
 		@Override
 		public void characters(char[] chars, int start, int length) throws SAXException {
 			String initialText = new String(chars, start, length);
@@ -420,6 +425,7 @@ public class XmlActionImpl extends ActionImpl {
 			append(finalText);
 		}
 
+		@SuppressWarnings("unused")
 		@Override
 		public void ignorableWhitespace(char[] whitespace, int start, int length) throws SAXException {
 			append(whitespace, start, length);

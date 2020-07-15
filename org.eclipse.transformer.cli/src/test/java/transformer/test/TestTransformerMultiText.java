@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 // Initial:
-// The quick brown fox jumps over the lazy dog. 
+// The quick brown fox jumps over the lazy dog.
 // text[x].ext[y] (x==0..7, y=0..7)
 //
 // tier0.master.properties:
@@ -69,6 +69,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	private static final String DATA_DIR = "src/test/data/multi";
 
+	@Override
 	public String getDataDir() {
 		return DATA_DIR;
 	}
@@ -78,12 +79,12 @@ public class TestTransformerMultiText extends TestTransformerBase {
 	public static class TextRulesData {
 		public final String fileName;
 		public final String[] assignments;
-		
+
 		public TextRulesData(String fileName, String... assignments) {
 			this.fileName = fileName;
 			this.assignments = assignments;
 		}
-		
+
 		public void write(String dataDir) throws IOException {
 			try ( OutputStream outputStream = new FileOutputStream(dataDir + '/' + fileName, false) ) { // truncate
 				OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream);
@@ -92,16 +93,16 @@ public class TestTransformerMultiText extends TestTransformerBase {
 					outputWriter.write(assignment);
 					outputWriter.write('\n');
 				}
-				
+
 				outputWriter.flush();
 			}
 		}
 	}
-	
-	public static final String TIER0_MASTER_PROPERTIES = "tier0.master.properties"; 
-	public static final String TIER1_MASTER_PROPERTIES = "tier1.master.properties"; 
-	public static final String TIER2_MASTER_PROPERTIES = "tier2.master.properties"; 
-	
+
+	public static final String TIER0_MASTER_PROPERTIES = "tier0.master.properties";
+	public static final String TIER1_MASTER_PROPERTIES = "tier1.master.properties";
+	public static final String TIER2_MASTER_PROPERTIES = "tier2.master.properties";
+
 	private static final TextRulesData[] RULES_DATA =
 		new TextRulesData[] {
 			new TextRulesData(TIER0_MASTER_PROPERTIES,
@@ -122,8 +123,8 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		};
 
 	public static String[] getLogFragments() {
-		return new String[] { 
-			logReplacementFragment("*.ext1", "ext1.properties", "ext11.properties"), 
+		return new String[] {
+			logReplacementFragment("*.ext1", "ext1.properties", "ext11.properties"),
 			logReplacementFragment("*.ext2", "ext2.properties", "ext22.properties")
 		};
 	}
@@ -138,7 +139,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	public static final String INPUT_TEXT =
 	    "The quick brown fox jumps over the lazy dog.";
-	
+
 	public static final int NUM_FILES = 8;
 	public static final int NUM_EXTS = 8;
 
@@ -174,7 +175,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	static {
 		Map<String, String> outputMap = new HashMap<String, String>();
-		
+
 		outputMap.put(".ext0", "The slow brown fox jumps over the happy dog.");
 		outputMap.put(".ext3", INPUT_TEXT);
 
@@ -186,7 +187,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 		outputMap.put(".ext6", INPUT_TEXT);
 		outputMap.put(".ext7", INPUT_TEXT);
-		
+
 		OUTPUT_TEXT_MAP = outputMap;
 	}
 
@@ -195,29 +196,29 @@ public class TestTransformerMultiText extends TestTransformerBase {
 			BufferedReader inputReader = new BufferedReader( new InputStreamReader(inputStream) );
 			String outputLine = inputReader.readLine(); // throws IOException
 			return outputLine;
-		} // 'close' throws IOException			
+		} // 'close' throws IOException
 	}
 
 	protected List<String> verifyOutputFiles(String outputDir) throws IOException {
 		List<String> errors = new ArrayList<String>();
-		
+
 		for ( int fileNo = 0; fileNo < NUM_FILES; fileNo++ ) {
 			for ( int extNo = 0; extNo < NUM_EXTS; extNo++ ) {
 				String outputName = getInputName(fileNo, extNo);
 				String outputPath = outputDir + '/' + outputName;
 				String outputLine = readOutputFile(outputPath); // throws IOException
-				
+
 				String outputExt = getExtension(extNo);
-				
+
 				String expectedOutput = OUTPUT_TEXT_MAP.get(outputExt);
-				
+
 				if ( !outputLine.equals(expectedOutput) ) {
 					String error = "Incorrect content [ " + outputName + " ]; expected [ " + expectedOutput + " ] got [ " + outputLine + " ]";
 					errors.add(error);
 				}
 			}
 		}
-		
+
 		return errors;
 	}
 
@@ -233,10 +234,10 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		String dataDir = getDataDir();
 
 		String propertiesDir = dataDir + '/' + "properties";
-		
+
 		String inputDir = dataDir + '/' + "input";
 		String outputDir = dataDir + '/' + "output";
-		
+
 		(new File(propertiesDir)).mkdir();
 		writeRulesData(propertiesDir);
 
@@ -249,12 +250,13 @@ public class TestTransformerMultiText extends TestTransformerBase {
 			"-tf", propertiesDir + '/' + TIER2_MASTER_PROPERTIES
 		};
 
+		@SuppressWarnings("unused")
 		byte[] logBytes = runTransformer(
 			inputDir, outputDir,
 			args,
 			DO_DEBUG_LOGGING,
 			getLogFragments() );
-		
-		verifyOutput(outputDir); // throws IOException, 
+
+		verifyOutput(outputDir); // throws IOException,
 	}
 }
