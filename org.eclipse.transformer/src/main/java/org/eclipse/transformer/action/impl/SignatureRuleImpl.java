@@ -527,9 +527,9 @@ public class SignatureRuleImpl implements SignatureRule {
 	 * changed, a wrapped null.
 	 *
 	 * @param inputName A fully qualified type name which is to be transformed.
-	 * @param allowSimpleSubstitution
-	 * @return The transformed type name, or a wrapped null if no changed was
-	 *         made.
+	 * @param allowSimpleSubstitution Control parameter: Should simple
+	 *            substitutions be allowed.
+	 * @return The transformed type name, or null if no changed was made.
 	 */
 	protected String transformBinaryType(String inputName, boolean allowSimpleSubstitution) {
 		// System.out.println("Input type [ " + inputName + " ]");

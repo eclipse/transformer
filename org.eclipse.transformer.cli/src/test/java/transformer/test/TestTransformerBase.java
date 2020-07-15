@@ -113,6 +113,11 @@ public abstract class TestTransformerBase {
 			args[argCount - 1] = "debug";
 		}
 
+		System.out.println("Transformer arguments [ " + argCount + " ]");
+		for (int argNo = 0; argNo < argCount; argNo++) {
+			System.out.println("  [ " + argNo + " ]: [ " + args[argNo] + " ]");
+		}
+
 		Transformer t = new Transformer(sysOutOutput, sysOutOutput);
 
 		t.setArgs(args);
@@ -137,7 +142,7 @@ public abstract class TestTransformerBase {
 		sysOutOutput.close();
 
 		byte[] sysOutBytes = sysOutByteOutput.toByteArray();
-		ByteArrayInputStream sysOutByteInput = new ByteArrayInputStream(sysOutBytes, 0, sysOutBytes.length); 
+		ByteArrayInputStream sysOutByteInput = new ByteArrayInputStream(sysOutBytes, 0, sysOutBytes.length);
 		verifyLog("property option logging", expectedLogFragments, sysOutByteInput);
 		// throws IOException, AssertionFailedError
 
@@ -154,8 +159,8 @@ public abstract class TestTransformerBase {
 	 * @param key The key that was updated.
 	 * @param value1 The initial value.
 	 * @param value2 The final, updated, value.
-	 * 
-	 * @return Update replacement log fragment text. 
+	 *
+	 * @return Update replacement log fragment text.
 	 */
 	public static String logReplacementFragment(String key, String value1, String value2) {
 		return "key [ " + key + " ] replaces value [ " + value1 + " ] with [ " + value2 + " ]";
@@ -165,14 +170,14 @@ public abstract class TestTransformerBase {
 
 	/**
 	 * Verify log text using an array of text fragments.
-	 * 
+	 *
 	 * If verification fails, display the generated validation failure
 	 * messages, and throw an error.
 	 *
-	 * If verification succeeds, display a success message. 
+	 * If verification succeeds, display a success message.
 	 *
 	 * Verification is performed by {@link #verifyLog(String[], InputStream)}.
-	 * 
+	 *
 	 * @param description A description to display with verification results.
 	 * @param expectedFragments Text fragments which are expected in the
 	 *     captured log text.
@@ -193,10 +198,10 @@ public abstract class TestTransformerBase {
 	 * Verify log text using an array of text fragments.
 	 *
 	 * Currently, each fragment must occur exactly once.
-	 * 
+	 *
 	 * Generate an error message for each missing text fragment, and for
 	 * each text fragment which is detected more than once.
-	 * 
+	 *
 	 * @param expectedFragments The text fragments which are expected to be present
 	 *     in the log stream
 	 * @param logStream A stream containing captured log output.
@@ -213,7 +218,7 @@ public abstract class TestTransformerBase {
 
 		int expectedMatches =  expectedFragments.length;
 		boolean[] matches = new boolean[expectedMatches];
-		
+
 		String nextLine;
 		while ( (nextLine = logReader.readLine()) != null ) { // throws IOException
 			// System.out.println("Log [ " + nextLine + " ]");
@@ -223,7 +228,7 @@ public abstract class TestTransformerBase {
 				if ( !nextLine.contains(fragment) ) {
 					continue;
 				}
-				
+
 				if ( matches[fragmentNo] ) {
 					errors.add("Extra occurrence of log text [ " + fragment + " ]");
 				} else {
@@ -232,13 +237,13 @@ public abstract class TestTransformerBase {
 				}
 			}
 		}
-		
+
 		for ( int fragmentNo = 0; fragmentNo < expectedMatches; fragmentNo++ ) {
 			if ( !matches[fragmentNo] ) {
 				errors.add("Missing occurrence of log text [ " + expectedFragments[fragmentNo] + " ]");
 			}
 		}
-		
+
 		return errors;
 	}
 
@@ -260,7 +265,7 @@ public abstract class TestTransformerBase {
 		if ( errors.isEmpty() ) {
 			System.out.println("Correct " + description);
 
-		} else { 
+		} else {
 			description = "Incorrect " + description;
 			System.out.println(description);
 			for ( String error : errors ) {
