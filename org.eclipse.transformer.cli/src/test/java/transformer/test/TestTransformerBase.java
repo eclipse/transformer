@@ -113,10 +113,10 @@ public abstract class TestTransformerBase {
 			args[argCount - 1] = "debug";
 		}
 
-		System.out.println("Transformer arguments [ " + argCount + " ]");
-		for (int argNo = 0; argNo < argCount; argNo++) {
-			System.out.println("  [ " + argNo + " ]: [ " + args[argNo] + " ]");
-		}
+		// System.out.println("Transformer arguments [ " + argCount + " ]");
+		// for (int argNo = 0; argNo < argCount; argNo++) {
+		// System.out.println(" [ " + argNo + " ]: [ " + args[argNo] + " ]");
+		// }
 
 		Transformer t = new Transformer(sysOutOutput, sysOutOutput);
 
