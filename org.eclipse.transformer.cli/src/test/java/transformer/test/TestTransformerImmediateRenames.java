@@ -11,18 +11,10 @@
 
 package transformer.test;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.jar.Manifest;
 
 import org.junit.jupiter.api.Test;
-import org.opentest4j.AssertionFailedError;
 
 public class TestTransformerImmediateRenames extends TestTransformerBase {
 
@@ -71,7 +63,7 @@ public class TestTransformerImmediateRenames extends TestTransformerBase {
 		String inputFileName = DATA_DIR + '/' + "MANIFEST.MF";
 		String outputFileName = DATA_DIR + '/' + "OUTPUT_MANIFEST.MF";
 
-		verifyPackageVersions("initial package versions", inputFileName, initialPackageVersions );
+		TestUtils.verifyPackageVersions("initial package versions", inputFileName, initialPackageVersions, TARGET_ATTRIBUTE_NAME);
 		// throws IOException, AssertionFailedError
 
 		String[] args = new String[] {
@@ -97,7 +89,7 @@ public class TestTransformerImmediateRenames extends TestTransformerBase {
 		// line, but fails in the GIT automation environment. Log capture is
 		// not working the same in the GIT environment, for unknown reasons.
 
-		verifyPackageVersions("final package versions", outputFileName, finalPackageVersions);
+		TestUtils.verifyPackageVersions("final package versions", outputFileName, finalPackageVersions, TARGET_ATTRIBUTE_NAME);
 		// throws IOException, AssertionFailedError
 	}
 
@@ -134,82 +126,4 @@ public class TestTransformerImmediateRenames extends TestTransformerBase {
 	public static final String TARGET_ATTRIBUTE_NAME = "DynamicImport-Package";
 
 	// "javax.package6;version=\"6.0.0\",javax.package7;version=\"7.0.0\""
-
-	public Map<String, String> loadPackageVersions(String description, String manifestPath) throws IOException {
-		Manifest manifest = new Manifest();
-
-		try ( InputStream manifestStream = new FileInputStream(manifestPath) ) { // throws IOException
-			manifest.read(manifestStream); // throws IOException
-		}
-
-		Map<String, String> packageData = new HashMap<String, String>();
-
-		String targetAttribute = manifest.getMainAttributes().getValue(TARGET_ATTRIBUTE_NAME);
-		System.out.println(description + " [ " + manifestPath + " ]:");
-		System.out.println("  [ " + targetAttribute + " ]");
-
-		StringTokenizer tokenizer = new StringTokenizer(targetAttribute, ",", false);
-		while ( tokenizer.hasMoreElements() ) {
-			String nextToken = tokenizer.nextToken();
-
-			int packageEnd = nextToken.indexOf(';');
-			String packageName = nextToken.substring(0, packageEnd);
-
-			int versionStart = nextToken.indexOf("version=\"") + "version=\"".length();
-			int versionEnd = nextToken.length() - 1; // -1 to omit the closing '"'
-
-			String version = nextToken.substring(versionStart, versionEnd);
-
-			System.out.println("  [ " + nextToken + " ]: [ " + packageName + " ] [ " + version + " ]");
-
-			packageData.put(packageName, version);
-		}
-
-		return packageData;
-	}
-
-	public void verifyPackageVersions(String description, String actualFileName, Map<String, String> expected)
-		throws IOException, AssertionFailedError {
-
-		List<String> errors = verifyPackageVersions(
-			loadPackageVersions(description, actualFileName),
-			expected );
-		// 'loadPackageVersions' throws IOException
-
-		processErrors(description, errors); // throws AssertionFailedError
-	}
-
-	public List<String> verifyPackageVersions(Map<String, String> actual, Map<String, String> expected) {
-		List<String> errors = new ArrayList<String>();
-
-		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
-			String actualName = actualEntry.getKey();
-			String actualVersion = actualEntry.getValue();
-
-			String expectedVersion = expected.get(actualName);
-
-			if ( expectedVersion == null ) {
-				errors.add("Extra actual: Package [ " + actualName + " ] version [ " + actualVersion + " ]");
-			} else if ( !actualVersion.equals(expectedVersion) ) {
-				errors.add("Incorrect actual: Package [ " + actualName + " ] version [ " + actualVersion + " ]; expected [ " + expectedVersion + " ]");
-			} else {
-				// OK
-			}
-		}
-
-		for ( Map.Entry<String, String> expectedEntry : expected.entrySet() ) {
-			String expectedName = expectedEntry.getKey();
-			String expectedVersion = expectedEntry.getValue();
-
-			String actualVersion = actual.get(expectedName);
-
-			if ( actualVersion == null ) {
-				errors.add("Missing expected: Package [ " + expectedName + " ] version [ " + expectedVersion + " ]");
-			} else {
-				// OK, or already detected
-			}
-		}
-
-		return errors;
-	}
 }

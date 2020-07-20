@@ -143,30 +143,12 @@ public class TestTransformerMultiText extends TestTransformerBase {
 	public static final int NUM_FILES = 8;
 	public static final int NUM_EXTS = 8;
 
-	protected String getExtension(int extNo) {
+	protected static String getExtension(int extNo) {
 		return ( '.' + "ext" + Integer.toString(extNo) );
 	}
 
-	protected String getInputName(int fileNo, int extNo) {
+	protected static String getInputName(int fileNo, int extNo) {
 		return "text" + Integer.toString(fileNo) + getExtension(extNo);
-	}
-
-	protected void writeInputData(String inputDir) throws IOException {
-		for ( int fileNo = 0; fileNo < NUM_FILES; fileNo++ ) {
-			for ( int extNo = 0; extNo < NUM_EXTS; extNo++ ) {
-				String inputName = getInputName(fileNo, extNo);
-				String inputPath = inputDir + '/' + inputName;
-				writeInputFile(inputPath); // throws IOException
-			}
-		}
-	}
-
-	protected void writeInputFile(String inputPath) throws IOException {
-		try ( OutputStream outputStream = new FileOutputStream(inputPath, true) ) { // throws FileNotFoundException
-			PrintWriter outputWriter = new PrintWriter(outputStream);
-			outputWriter.println(INPUT_TEXT);
-			outputWriter.flush();
-		} // 'close' throws IOException
 	}
 
 	// Output data ...
@@ -191,42 +173,6 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		OUTPUT_TEXT_MAP = outputMap;
 	}
 
-	protected String readOutputFile(String outputPath) throws IOException {
-		try ( InputStream inputStream = new FileInputStream(outputPath) ) { // throws FileNotFoundException
-			BufferedReader inputReader = new BufferedReader( new InputStreamReader(inputStream) );
-			String outputLine = inputReader.readLine(); // throws IOException
-			return outputLine;
-		} // 'close' throws IOException
-	}
-
-	protected List<String> verifyOutputFiles(String outputDir) throws IOException {
-		List<String> errors = new ArrayList<String>();
-
-		for ( int fileNo = 0; fileNo < NUM_FILES; fileNo++ ) {
-			for ( int extNo = 0; extNo < NUM_EXTS; extNo++ ) {
-				String outputName = getInputName(fileNo, extNo);
-				String outputPath = outputDir + '/' + outputName;
-				String outputLine = readOutputFile(outputPath); // throws IOException
-
-				String outputExt = getExtension(extNo);
-
-				String expectedOutput = OUTPUT_TEXT_MAP.get(outputExt);
-
-				if ( !outputLine.equals(expectedOutput) ) {
-					String error = "Incorrect content [ " + outputName + " ]; expected [ " + expectedOutput + " ] got [ " + outputLine + " ]";
-					errors.add(error);
-				}
-			}
-		}
-
-		return errors;
-	}
-
-	protected void verifyOutput(String outputDir) throws IOException, AssertionFailedError {
-		List<String> outputErrors = verifyOutputFiles(outputDir); // throws IOException
-		processErrors("expected output", outputErrors); // throws AssertionFailedError
-	}
-
 	//
 
 	@Test
@@ -242,7 +188,11 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		writeRulesData(propertiesDir);
 
 		(new File(inputDir)).mkdir();
-		writeInputData(inputDir);
+
+		TestUtils.writeInputData(
+			inputDir, NUM_FILES, NUM_EXTS,
+			TestTransformerMultiText::getInputName,
+			INPUT_TEXT); // throws IOException
 
 		String[] args = new String[] {
 			"-tf", propertiesDir + '/' + TIER0_MASTER_PROPERTIES,
@@ -262,6 +212,10 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		// line, but fails in the GIT automation environment. Log capture is
 		// not working the same in the GIT environment, for unknown reasons.
 
-		verifyOutput(outputDir); // throws IOException,
+		TestUtils.verifyOutput(
+			outputDir, NUM_FILES, NUM_EXTS,
+			TestTransformerMultiText::getInputName,
+			TestTransformerMultiText::getExtension,
+			OUTPUT_TEXT_MAP); // throws IOException,
 	}
 }

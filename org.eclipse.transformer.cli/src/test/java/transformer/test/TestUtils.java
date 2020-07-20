@@ -11,16 +11,28 @@
 
 package transformer.test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.jar.Manifest;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.Assertions;
+import org.opentest4j.AssertionFailedError;
 
 public class TestUtils {
 
@@ -136,5 +148,274 @@ public class TestUtils {
 		}
 
 		System.out.println("Transferred [ " + totalBytes + " ] from [ " + streamName + " ]");
+	}
+	
+	//
+	
+	public static Map<String, String> loadPackageVersions(
+		String description, String manifestPath, String attributeName)
+		throws IOException {
+
+		Manifest manifest = new Manifest();
+
+		try ( InputStream manifestStream = new FileInputStream(manifestPath) ) { // throws IOException
+			manifest.read(manifestStream); // throws IOException
+		}
+
+		Map<String, String> packageData = new HashMap<String, String>();
+
+		String targetAttribute = manifest.getMainAttributes().getValue(attributeName);
+		System.out.println(description + " [ " + manifestPath + " ]:");
+		System.out.println("  [ " + targetAttribute + " ]");
+
+		StringTokenizer tokenizer = new StringTokenizer(targetAttribute, ",", false);
+		while ( tokenizer.hasMoreElements() ) {
+			String nextToken = tokenizer.nextToken();
+
+			int packageEnd = nextToken.indexOf(';');
+			String packageName = nextToken.substring(0, packageEnd);
+
+			int versionStart = nextToken.indexOf("version=\"") + "version=\"".length();
+			int versionEnd = nextToken.length() - 1; // -1 to omit the closing '"'
+
+			String version = nextToken.substring(versionStart, versionEnd);
+
+			System.out.println("  [ " + nextToken + " ]: [ " + packageName + " ] [ " + version + " ]");
+
+			packageData.put(packageName, version);
+		}
+
+		return packageData;
+	}
+
+	public static void verifyPackageVersions(
+		String description, String actualFileName, Map<String, String> expected,
+		String attributeName)
+		throws IOException, AssertionFailedError {
+
+		List<String> errors = verifyPackageVersions(
+			loadPackageVersions(description, actualFileName, attributeName),
+			expected );
+		// 'loadPackageVersions' throws IOException
+
+		processErrors(description, errors); // throws AssertionFailedError
+	}
+
+	public static List<String> verifyPackageVersions(Map<String, String> actual, Map<String, String> expected) {
+		List<String> errors = new ArrayList<String>();
+
+		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
+			String actualName = actualEntry.getKey();
+			String actualVersion = actualEntry.getValue();
+
+			String expectedVersion = expected.get(actualName);
+
+			if ( expectedVersion == null ) {
+				errors.add("Extra actual: Package [ " + actualName + " ] version [ " + actualVersion + " ]");
+			} else if ( !actualVersion.equals(expectedVersion) ) {
+				errors.add("Incorrect actual: Package [ " + actualName + " ] version [ " + actualVersion + " ]; expected [ " + expectedVersion + " ]");
+			} else {
+				// OK
+			}
+		}
+
+		for ( Map.Entry<String, String> expectedEntry : expected.entrySet() ) {
+			String expectedName = expectedEntry.getKey();
+			String expectedVersion = expectedEntry.getValue();
+
+			String actualVersion = actual.get(expectedName);
+
+			if ( actualVersion == null ) {
+				errors.add("Missing expected: Package [ " + expectedName + " ] version [ " + expectedVersion + " ]");
+			} else {
+				// OK, or already detected
+			}
+		}
+
+		return errors;
+	}
+	
+	/**
+	 * Verify log text using an array of text fragments.
+	 *
+	 * If verification fails, display the generated validation failure
+	 * messages, and throw an error.
+	 *
+	 * If verification succeeds, display a success message.
+	 *
+	 * Verification is performed by {@link #verifyLog(String[], InputStream)}.
+	 *
+	 * @param description A description to display with verification results.
+	 * @param expectedFragments Text fragments which are expected in the
+	 *     captured log text.
+	 * @param logStream A stream containing the captured log text.
+	 *
+	 * @throws IOException Thrown in case of a failure to read the log stream.
+	 *
+	 * @throws AssertionFailedError Thrown if verification fails.
+	 */
+	public static void verifyLog(String description, String[] expectedFragments, InputStream logStream)
+		throws IOException, AssertionFailedError {
+
+		List<String> errors = verifyLog(expectedFragments, logStream); // throws IOException
+		processErrors(description, errors); // throws AssertionFailedError
+	}
+
+	/**
+	 * Verify log text using an array of text fragments.
+	 *
+	 * Currently, each fragment must occur exactly once.
+	 *
+	 * Generate an error message for each missing text fragment, and for
+	 * each text fragment which is detected more than once.
+	 *
+	 * @param expectedFragments The text fragments which are expected to be present
+	 *     in the log stream
+	 * @param logStream A stream containing captured log output.
+	 *
+	 * @return The list of error obtained whilst searching the log text for
+	 *     the text fragments.
+	 *
+	 * @throws IOException Thrown in case of an error reading the log stream.
+	 */
+	public static List<String> verifyLog(String[] expectedFragments, InputStream logStream) throws IOException {
+		List<String> errors = new ArrayList<String>();
+
+		BufferedReader logReader = new BufferedReader( new InputStreamReader(logStream) );
+
+		int expectedMatches =  expectedFragments.length;
+		boolean[] matches = new boolean[expectedMatches];
+
+		String nextLine;
+		while ( (nextLine = logReader.readLine()) != null ) { // throws IOException
+			// System.out.println("Log [ " + nextLine + " ]");
+
+			for ( int fragmentNo = 0; fragmentNo < expectedMatches; fragmentNo++ ) {
+				String fragment = expectedFragments[fragmentNo];
+				if ( !nextLine.contains(fragment) ) {
+					continue;
+				}
+
+				if ( matches[fragmentNo] ) {
+					errors.add("Extra occurrence of log text [ " + fragment + " ]");
+				} else {
+					System.out.println("Match on log fragment [ " + fragment + " ]");
+					matches[fragmentNo] = true;
+				}
+			}
+		}
+
+		for ( int fragmentNo = 0; fragmentNo < expectedMatches; fragmentNo++ ) {
+			if ( !matches[fragmentNo] ) {
+				errors.add("Missing occurrence of log text [ " + expectedFragments[fragmentNo] + " ]");
+			}
+		}
+
+		return errors;
+	}
+
+	/**
+	 * Examine a collection of errors, and fail with an assertion error
+	 * if any errors are present.  Display the errors to <code>System.out</code>
+	 * before throwing the error.
+	 *
+	 * @param description A description to display with a failure message if
+	 *     errors are detected, and with a success message if no errors are
+	 *     present.
+	 * @param errors The errors which are to be examined.
+	 *
+	 * @throws AssertionFailedError Thrown if any errors are present.
+	 */
+	public static void processErrors(String description, List<String> errors)
+		throws AssertionFailedError {
+
+		if ( errors.isEmpty() ) {
+			System.out.println("Correct " + description);
+
+		} else {
+			description = "Incorrect " + description;
+			System.out.println(description);
+			for ( String error : errors ) {
+				System.out.println(error);
+			}
+			fail(description);
+		}
+	}
+	
+	//
+
+	public static String readOutputFile(String outputPath) throws IOException {
+		try ( InputStream inputStream = new FileInputStream(outputPath) ) { // throws FileNotFoundException
+			BufferedReader inputReader = new BufferedReader( new InputStreamReader(inputStream) );
+			String outputLine = inputReader.readLine(); // throws IOException
+			return outputLine;
+		} // 'close' throws IOException
+	}
+
+	public static List<String> verifyOutputFiles(
+		String outputDir,
+		int numFiles, int numExts,
+		BiFunction<Integer, Integer, String> getInputName,
+		Function<Integer, String> getExtension,
+		Map<String, String> outputMap)
+		throws IOException {
+
+		List<String> errors = new ArrayList<String>();
+
+		for ( int fileNo = 0; fileNo < numFiles; fileNo++ ) {
+			for ( int extNo = 0; extNo < numExts; extNo++ ) {
+				String outputName = getInputName.apply(fileNo, extNo);
+				String outputPath = outputDir + '/' + outputName;
+				String outputLine = readOutputFile(outputPath); // throws IOException
+
+				String outputExt = getExtension.apply(extNo);
+
+				String expectedOutput = outputMap.get(outputExt);
+
+				if ( !outputLine.equals(expectedOutput) ) {
+					String error = "Incorrect content [ " + outputName + " ]; expected [ " + expectedOutput + " ] got [ " + outputLine + " ]";
+					errors.add(error);
+				}
+			}
+		}
+
+		return errors;
+	}
+	
+	public static void verifyOutput(
+		String outputDir,
+		int numFiles, int numExts,
+		BiFunction<Integer, Integer, String> getInputName,
+		Function<Integer, String> getExtension,		
+		Map<String, String> outputMap)
+		throws IOException, AssertionFailedError {
+
+		List<String> outputErrors = verifyOutputFiles(outputDir, numFiles, numExts, getInputName, getExtension, outputMap); // throws IOException
+		processErrors("expected output", outputErrors); // throws AssertionFailedError
+	}
+	
+	//
+
+	public static void writeInputData(
+		String inputDir, int numFiles, int numExts,
+		BiFunction<Integer, Integer, String> getInputName,
+		String text)
+		throws IOException {
+		
+		for ( int fileNo = 0; fileNo < numFiles; fileNo++ ) {
+			for ( int extNo = 0; extNo < numExts; extNo++ ) {
+				String inputName = getInputName.apply(fileNo, extNo);
+				String inputPath = inputDir + '/' + inputName;
+				writeInputFile(inputPath, text); // throws IOException
+			}
+		}
+	}
+
+	public static void writeInputFile(String inputPath, String text) throws IOException {
+		try ( OutputStream outputStream = new FileOutputStream(inputPath, true) ) { // throws FileNotFoundException
+			PrintWriter outputWriter = new PrintWriter(outputStream);
+			outputWriter.println(text);
+			outputWriter.flush();
+		} // 'close' throws IOException
 	}
 }
