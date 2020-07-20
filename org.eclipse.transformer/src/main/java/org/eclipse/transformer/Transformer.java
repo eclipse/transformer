@@ -1,5 +1,5 @@
 /********************************************************************************
-u * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -665,12 +665,14 @@ public class Transformer {
 	 * collection is returned.
 	 *
 	 * @param ruleOption The option for which to load properties.
+	 * @param orphanedValues Values which have been orphaned by merges.
 	 * @return Properties loaded using the reference set for the option.
 	 * @throws IOException Thrown if the load failed.
 	 * @throws URISyntaxException Thrown if the load failed because a non-valid
 	 *             URI was specified.
 	 */
-	protected UTF8Properties loadProperties(AppOption ruleOption) throws IOException, URISyntaxException {
+	protected UTF8Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
+		throws IOException, URISyntaxException {
 		String[] rulesReferences = getOptionValues(ruleOption, DO_NORMALIZE);
 
 		if (rulesReferences == null) {
@@ -696,7 +698,8 @@ public class Transformer {
 
 			for ( int referenceNo = 1; referenceNo < rulesReferences.length; referenceNo++ ) {
 				merge( baseReference, mergedProperties,
-					   rulesReferences[referenceNo], properties[referenceNo] );
+					   rulesReferences[referenceNo], properties[referenceNo],
+					   orphanedValues );
 			}
 
 			return mergedProperties;
@@ -747,16 +750,42 @@ public class Transformer {
 		return FileUtils.loadProperties(rulesUrl);
 	}
 
-	protected void merge(String sinkName, UTF8Properties sink, String sourceName, UTF8Properties source) {
+	protected void merge(
+		String sinkName, UTF8Properties sink,
+		String sourceName, UTF8Properties source,
+		Set<String> orphanedValues) {
+
 		for ( Map.Entry<Object, Object> sourceEntry : source.entrySet() ) {
-			Object key = sourceEntry.getKey();
-			Object newValue = sourceEntry.getValue();
-			Object oldValue = sink.put(key, newValue);
+			String key = (String) sourceEntry.getKey();
+			String newValue = (String) sourceEntry.getValue();
+			String oldValue = (String) sink.put(key, newValue);
+
+			if ( orphanedValues != null ) {
+				processOrphan(sourceName, sinkName, key, oldValue, newValue, orphanedValues);
+			}
 
 			logMerge(sourceName, sinkName, key, oldValue, newValue);
 		}
 	}
 
+	protected void processOrphan(
+		String sourceName, String sinkName,
+		String key, String oldValue, String newValue,
+		Set<String> orphans) {
+
+		if ( oldValue != null ) {
+			dual_debug(
+				"Merge of [ %s ] into [ %s ], key [ %s ] orphans [ %s ]",
+				sourceName, sinkName, key, oldValue);
+			orphans.add(oldValue);
+		}
+		if ( orphans.remove(newValue) ) {
+			dual_debug(
+				"Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]",
+				sourceName, sinkName, key, newValue);
+		}		
+	}
+	
 	protected void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
 		// System.out.println("Key [ " + key + " ] Old [ " + oldValue + " ] New
 		// [ " + newValue + " ]");
@@ -797,7 +826,7 @@ public class Transformer {
 			String key = immediateArgs[baseNo + 1];
 			String value = immediateArgs[baseNo + 2];
 
-			dual_info("Immediate rule data specified; target [ {} ], key [ {} ], value [ {} ]", targetText, key, value);
+			dual_info("Immediate rule data specified; target [ %s ], key [ %s ], value [ %s ]", targetText, key, value);
 
 			AppOption target = getTargetOption(targetText);
 			if (target == null) {
@@ -1026,13 +1055,15 @@ public class Transformer {
 				return false;
 			}
 
-			UTF8Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS);
-			UTF8Properties renameProperties = loadProperties(AppOption.RULES_RENAMES);
-			UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS);
-			UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES);
-			UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT);
-			UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT);
-			UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT);
+			Set<String> orphanedFinalPackages = new HashSet<String>();
+
+			UTF8Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
+			UTF8Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
+			UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
+			UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
+			UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT, null);
+			UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
+			UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT, null);
 
 			invert = hasOption(AppOption.INVERT);
 
@@ -1138,7 +1169,7 @@ public class Transformer {
 				dual_info("Per class constant mapping files are not enabled");
 			}
 
-			processImmediateData(immediateData, masterTextRef);
+			processImmediateData(immediateData, masterTextRef, orphanedFinalPackages);
 
 			// Delay reporting null property sets: These are assigned directly
 			// and by immediate data.
@@ -1165,10 +1196,12 @@ public class Transformer {
 				dual_info("Per class constant mapping files are not enabled");
 			}
 
-			return validateRules(packageRenames, packageVersions);
+			return validateRules(packageRenames, packageVersions, orphanedFinalPackages);
 		}
 
-		protected void processImmediateData(ImmediateRuleData[] immediateData, String masterTextRef)
+		protected void processImmediateData(
+			ImmediateRuleData[] immediateData, String masterTextRef,
+			Set<String> orphanedFinalVersions)
 			throws IOException, URISyntaxException {
 
 			for ( ImmediateRuleData nextData : immediateData ) {
@@ -1177,7 +1210,7 @@ public class Transformer {
 						addImmediateSelection(nextData.key, nextData.value);
 						break;
 					case RULES_RENAMES:
-						addImmediateRename(nextData.key, nextData.value);
+						addImmediateRename(nextData.key, nextData.value, orphanedFinalVersions);
 						break;
 					case RULES_VERSIONS:
 						addImmediateVersion(nextData.key, nextData.value);
@@ -1209,7 +1242,10 @@ public class Transformer {
 			TransformProperties.addSelection(includes, excludes, selection);
 		}
 
-		private void addImmediateRename(String initialPackageName, String finalPackageName) {
+		private void addImmediateRename(
+			String initialPackageName, String finalPackageName,
+			Set<String> orphanedFinalPackages) {
+
 			if ( packageRenames == null ) {
 				packageRenames = new HashMap<String, String>();
 				dual_info("Package renames forced by immediate data.");
@@ -1222,7 +1258,15 @@ public class Transformer {
 			}
 
 			String oldFinalPackageName = packageRenames.put(initialPackageName, finalPackageName);
-			logMerge("immediate rename data", "rename data", initialPackageName, oldFinalPackageName, finalPackageName);
+
+			processOrphan(
+				"immediate rename data", "renameData",
+				initialPackageName, oldFinalPackageName, finalPackageName,
+				orphanedFinalPackages);
+
+			logMerge(
+				"immediate rename data", "rename data",
+				initialPackageName, oldFinalPackageName, finalPackageName);
 		}
 
 		private void addImmediateVersion(String finalPackageName, String versionText) {
@@ -1306,7 +1350,11 @@ public class Transformer {
 			}
 		}
 
-		protected boolean validateRules(Map<String, String> renamesMap, Map<String, String> versionsMap) {
+		protected boolean validateRules(
+			Map<String, String> renamesMap,
+			Map<String, String> versionsMap,
+			Set<String> orphanedFinalPackages) {
+
 			if ((versionsMap == null) || versionsMap.isEmpty()) {
 				return true; // Nothing to validate
 			}
@@ -1323,25 +1371,21 @@ public class Transformer {
 				return false;
 			}
 
-			String[] renamesFileNames = getRuleFileNames(AppOption.RULES_RENAMES);
-
-			// TODO:
-			// The overlaying of rename data from multiple properties files can orphan
-			// version property values.  This is medium hard to handle properly, and is
-			// not checked unless there was just one renames properties file.
-
-			if ( (renamesFileNames != null) && (renamesFileNames.length == 1) ) {
-				for (String entry : versionsMap.keySet()) {
-					if (!renamesMap.containsValue(entry)) {
+			boolean missingFinalPackages = false;
+			for ( String finalPackage : versionsMap.keySet() ) {
+				if ( !renamesMap.containsValue(finalPackage) ) {
+					if ( orphanedFinalPackages.contains(finalPackage) ) {
+						dual_debug("Final package [ " + finalPackage + " ] was orphaned.");
+					} else {
 						dual_error(
-						    "Version rule key [ " + entry + " ]" +
-						    " not found in rename rules [ " + renamesFileNames[0] + " ]");
-						return false;
+							"Version rule package name [ " + finalPackage + " ]" +
+							" was not found as a final package name in the package renames data.");
+						missingFinalPackages = true;
 					}
 				}
 			}
 
-			return true;
+			return !missingFinalPackages;
 		}
 
 		protected String[] getRuleFileNames(AppOption ruleOption) {
