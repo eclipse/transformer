@@ -12,8 +12,3 @@ bin/
 # Maven
 target/
 .flattened-pom.xml
-
-# Test data
-org.eclipse.transformer.cli/src/test/data/multi/input/
-org.eclipse.transformer.cli/src/test/data/multi/output/
-org.eclipse.transformer.cli/src/test/data/multi/properties/
