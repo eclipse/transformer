@@ -31,10 +31,15 @@ public abstract class TestTransformerBase {
 	//       Output data should be written to a build location, which is
 	//       much safer.
 
-	private static final String	DATA_DIR = "src/test/data";
+	private static final String	STATIC_CONTENT_DIR = "src/test/data";
+	private static final String	DYNAMIC_CONTENT_DIR = "target/test/data";
 
-	public String getDataDir() {
-		return DATA_DIR;
+	public String getStaticContentDir() {
+		return STATIC_CONTENT_DIR;
+	}
+	
+	public String getDynamicContentDir() {
+		return DYNAMIC_CONTENT_DIR;
 	}
 
 	private String currentDirectory = ".";
@@ -48,7 +53,25 @@ public abstract class TestTransformerBase {
 	@BeforeEach
 	public void setUp() {
 		currentDirectory = System.getProperty("user.dir");
+		
+		String staticDir = getStaticContentDir();
+		String dynamicDir = getDynamicContentDir();
+		
 		System.out.println("setUp: Current directory is: [" + currentDirectory + "]");
+		
+		if ( staticDir != null ) {
+			System.out.println("setUp: Static content directory is: [" + staticDir + "]");
+		}
+		if ( dynamicDir != null ) {
+			System.out.println("setUp: Dynamic content directory is: [" + dynamicDir + "]");
+		}
+
+		if ( staticDir != null ) {
+			TestUtils.verifyDirectory(staticDir, !TestUtils.DO_CREATE, "static content");
+		}
+		if ( dynamicDir != null ) {
+			TestUtils.verifyDirectory(dynamicDir, TestUtils.DO_CREATE, "dynamic content");
+		}
 	}
 
 	/** Control parameter: Enable debug logging. */

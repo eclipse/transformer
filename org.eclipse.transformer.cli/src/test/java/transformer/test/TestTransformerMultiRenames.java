@@ -18,11 +18,17 @@ import org.junit.jupiter.api.Test;
 
 public class TestTransformerMultiRenames extends TestTransformerBase {
 
-	private static final String DATA_DIR = "src/test/data/multi";
+	private static final String STATIC_CONTENT_DIR = "src/test/data/multi-renames";
+	private static final String DYNAMIC_CONTENT_DIR = "target/test/data/multi-renames";	
 
 	@Override
-	public String getDataDir() {
-		return DATA_DIR;
+	public String getStaticContentDir() {
+		return STATIC_CONTENT_DIR;
+	}
+	
+	@Override
+	public String getDynamicContentDir() {
+		return DYNAMIC_CONTENT_DIR;
 	}
 
 	//
@@ -78,20 +84,23 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 
 	@Test
 	void testMultiRenames() throws Exception {
-		String inputFileName = DATA_DIR + '/' + "MANIFEST.MF";
-		String outputFileName = DATA_DIR + '/' + "OUTPUT_MANIFEST.MF";
+		String inputDir = getStaticContentDir();
+		String outputDir = getDynamicContentDir();
+
+		String inputFileName = inputDir + '/' + "MANIFEST.MF";
+		String outputFileName = outputDir + '/' + "MANIFEST.MF";
 
 		TestUtils.verifyPackageVersions("initial package versions", inputFileName, initialPackageVersions, TARGET_ATTRIBUTE_NAME);
 		// throws IOException, AssertionFailedError
 
 		String[] args = new String[] {
-			"-tr", DATA_DIR + '/' + "tier0.renames.properties",
-			"-tr", DATA_DIR + '/' + "tier1.renames.properties",
-			"-tr", DATA_DIR + '/' + "tier2.renames.properties",
+			"-tr", inputDir + '/' + "tier0.renames.properties",
+			"-tr", inputDir + '/' + "tier1.renames.properties",
+			"-tr", inputDir + '/' + "tier2.renames.properties",
 
-			"-tv", DATA_DIR + '/' + "tier0.versions.properties",
-			"-tv", DATA_DIR + '/' + "tier1.versions.properties",
-			"-tv", DATA_DIR + '/' + "tier2.versions.properties",
+			"-tv", inputDir + '/' + "tier0.versions.properties",
+			"-tv", inputDir + '/' + "tier1.versions.properties",
+			"-tv", inputDir + '/' + "tier2.versions.properties",
 		};
 
 		@SuppressWarnings("unused")

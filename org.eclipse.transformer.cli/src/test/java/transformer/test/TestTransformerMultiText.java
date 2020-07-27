@@ -59,11 +59,16 @@ import org.junit.jupiter.api.Test;
 
 public class TestTransformerMultiText extends TestTransformerBase {
 
-	private static final String DATA_DIR = "src/test/data/multi";
+	private static final String DYNAMIC_CONTENT_DIR = "target/test/data/multi-text";	
 
 	@Override
-	public String getDataDir() {
-		return DATA_DIR;
+	public String getStaticContentDir() {
+		return null;
+	}
+
+	@Override
+	public String getDynamicContentDir() {
+		return DYNAMIC_CONTENT_DIR;
 	}
 
 	// Rules data ...
@@ -77,8 +82,8 @@ public class TestTransformerMultiText extends TestTransformerBase {
 			this.assignments = assignments;
 		}
 
-		public void write(String dataDir) throws IOException {
-			try ( OutputStream outputStream = new FileOutputStream(dataDir + '/' + fileName, false) ) { // truncate
+		public void write(String propertiesDir) throws IOException {
+			try ( OutputStream outputStream = new FileOutputStream(propertiesDir + '/' + fileName, false) ) { // truncate
 				OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream);
 
 				for ( String assignment : assignments ) {
@@ -121,9 +126,9 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		};
 	}
 
-	protected void writeRulesData(String dataDir) throws IOException{
+	protected void writeRulesData(String propertiesDir) throws IOException{
 		for ( TextRulesData rulesData : RULES_DATA ) {
-			rulesData.write(dataDir); // throws IOException
+			rulesData.write(propertiesDir); // throws IOException
 		}
 	}
 
@@ -169,12 +174,12 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	@Test
 	void testMultiText() throws Exception {
-		String dataDir = getDataDir();
+		String dynamicContentDir = getDynamicContentDir();
 
-		String propertiesDir = dataDir + '/' + "properties";
+		String propertiesDir = dynamicContentDir + '/' + "properties";
 
-		String inputDir = dataDir + '/' + "input";
-		String outputDir = dataDir + '/' + "output";
+		String inputDir = dynamicContentDir + '/' + "input";
+		String outputDir = dynamicContentDir + '/' + "output";
 
 		(new File(propertiesDir)).mkdir();
 		writeRulesData(propertiesDir);

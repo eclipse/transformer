@@ -14,6 +14,7 @@ package transformer.test;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,6 +37,30 @@ import org.opentest4j.AssertionFailedError;
 
 public class TestUtils {
 
+	public static final boolean DO_CREATE = true;
+	
+	public static void verifyDirectory(String targetPath, boolean create, String description) {
+		String methodName = "verifyDirectory";
+
+		File targetFile = new File(targetPath);
+		String targetAbsPath = targetFile.getAbsolutePath();
+
+		if ( !targetFile.exists() ) {
+			if ( create ) {
+				System.out.println(methodName + ": Creating " + description + " directory [ " + targetAbsPath + " ]");
+				targetFile.mkdirs();
+			}
+		}
+
+		if (!targetFile.exists() ) {
+			fail(methodName + ": Failure: Could not create " + description + " ] directory [ " + targetAbsPath + " ]");	
+		} else if ( !targetFile.isDirectory() ) {
+			fail(methodName + ": Failure: Location " + description + " is not a directory [ " + targetAbsPath + " ]");				
+		} else {
+			System.out.println(methodName + ": Success: Location " + description + " exists and is a directory [ " + targetAbsPath + " ]");
+		}
+	}
+	
 	public static InputStream getResourceStream(String path) {
 		return TestUtils.class.getClassLoader()
 			.getResourceAsStream(path);
