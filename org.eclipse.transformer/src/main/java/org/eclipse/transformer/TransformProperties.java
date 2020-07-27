@@ -36,15 +36,18 @@ public class TransformProperties {
 
 	//
 
-	public static void setSelections(Set<String> included, Set<String> excluded, UTF8Properties selections) {
-
+	public static void addSelections(Set<String> included, Set<String> excluded, UTF8Properties selections) {
 		for (Map.Entry<Object, Object> selectionEntry : selections.entrySet()) {
 			String selection = (String) selectionEntry.getKey();
-			if (selection.charAt(0) == RESOURCE_EXCLUSION_PREFIX) {
-				excluded.add(selection.substring(1));
-			} else {
-				included.add(selection);
-			}
+			addSelection(included, excluded, selection);
+		}
+	}
+
+	public static void addSelection(Set<String> included, Set<String> excluded, String selection) {
+		if (selection.charAt(0) == RESOURCE_EXCLUSION_PREFIX) {
+			excluded.add(selection.substring(1));
+		} else {
+			included.add(selection);
 		}
 	}
 

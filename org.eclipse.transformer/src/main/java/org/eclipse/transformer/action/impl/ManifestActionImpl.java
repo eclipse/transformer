@@ -630,7 +630,7 @@ public class ManifestActionImpl extends ActionImpl {
 		return false;
 	}
 
-	private boolean hasEvenNumberOfOccurrencesOfChar(String testString, char testChar) {
+	private boolean hasEvenNumberOfOccurrencesOfChar(String testString, @SuppressWarnings("unused") char testChar) {
 		long occurrences = testString.chars()
 			.filter(ch -> ch == '\"')
 			.count();

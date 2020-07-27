@@ -111,6 +111,10 @@ public class TransformerLoggerFactory {
 	}
 
 	protected void nonTerseOutput(String message, Object... parms) {
+		// System.out.println("nonTerseOutput [ " + (settings.isTerse ?
+		// "Blocked" : "Unblocked") + " ] [ " + message + " ] [ " + parms + "
+		// ]");
+
 		if (!settings.isTerse) {
 			transformer.outputPrint(message, parms);
 		}
@@ -166,6 +170,21 @@ public class TransformerLoggerFactory {
 
 			this.logLevel = transformer.getOptionValue(Transformer.AppOption.LOG_LEVEL);
 			this.logFileName = transformer.getOptionValue(Transformer.AppOption.LOG_FILE, Transformer.DO_NORMALIZE);
+
+			// System.out.println("LoggerSettings: isTerse [ " + this.isTerse +
+			// " ]");
+			// System.out.println("LoggerSettings: isVerbose [ " +
+			// this.isVerbose + " ]");
+			// System.out.println("LoggerSettings: properties [ " +
+			// this.properties + " ]");
+			// System.out.println("LoggerSettings: propertyFileName [ " +
+			// this.propertyFileName + " ]");
+			// System.out.println("LoggerSettings: logName [ " + this.logName +
+			// " ]");
+			// System.out.println("LoggerSettings: logLevel [ " + this.logLevel
+			// + " ]");
+			// System.out.println("LoggerSettings: logFileName [ " +
+			// this.logFileName + " ]");
 		}
 	}
 
@@ -178,18 +197,30 @@ public class TransformerLoggerFactory {
 	}
 
 	protected void setLoggingProperties() throws TransformException {
+		String logFilePropertyName = LoggerProperty.LOG_FILE.getPropertyName();
 		if (settings.logFileName != null) {
-			setLoggingProperty(LoggerProperty.LOG_FILE.getPropertyName(), settings.logFileName);
+			setLoggingProperty(logFilePropertyName, settings.logFileName);
 		}
+		// else {
+		// System.out.println("Using preset logging property [ " +
+		// logFilePropertyName + " ] [ " +
+		// System.getProperty(logFilePropertyName) + " ]");
+		// }
 
+		String logLevelPropertyName = LoggerProperty.LOG_LEVEL_ROOT.getPropertyName();
 		if (settings.logLevel != null) {
-			setLoggingProperty(LoggerProperty.LOG_LEVEL_ROOT.getPropertyName(), settings.logLevel);
+			setLoggingProperty(logLevelPropertyName, settings.logLevel);
 		}
+		// else {
+		// System.out.println("Using preset logging property [ " +
+		// logLevelPropertyName + " ] [ "
+		// + System.getProperty(logLevelPropertyName) + " ]");
+		// }
 
 		if (settings.properties != null) {
 			for (String propertyAssignment : settings.properties) {
-				assignLoggingProperty(propertyAssignment); // throws
-															// TransformException
+				assignLoggingProperty(propertyAssignment);
+				// throws TransformException
 			}
 		}
 
@@ -313,7 +344,13 @@ public class TransformerLoggerFactory {
 	}
 
 	protected void setLoggingProperty(String propertyName, String newPropertyValue) {
+		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
+		// " + newPropertyValue + " ] ...");
+
 		String oldPropertyValue = System.getProperty(propertyName);
+
+		// System.out.println("setLoggingProperty Old value [ " +
+		// oldPropertyValue + " ]");
 
 		if (oldPropertyValue != null) {
 			nonTerseOutput("Blocked assignment of logging property [ %s ] to [ %s ] by prior value [ %s ]",
@@ -324,6 +361,13 @@ public class TransformerLoggerFactory {
 
 			nonTerseOutput("Assigning logging property [ %s ] to [ %s ]", propertyName, newPropertyValue);
 		}
+
+		// String assignedPropertyValue = System.getProperty(propertyName);
+		// System.out.println("setLogginProperty Assigned value [ " +
+		// assignedPropertyValue + " ]");
+
+		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
+		// " + newPropertyValue + " ] ... done");
 	}
 
 	public static boolean logToSysOut() {

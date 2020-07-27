@@ -128,6 +128,17 @@ public class BundleDataImpl implements BundleData {
 
 	//
 
+	@Override
+	public String getPrintString() {
+		String useName = (addName ? ('+' + name) : name);
+		String useDescription = (addDescription ? ('+' + description) : description);
+
+		return "Bundle data [ " + symbolicName + " ] version [ " + version + " ] name [ " + useName
+			+ " ] description [ " + useDescription + " ]";
+	}
+
+	//
+
 	private final String	symbolicName;
 	private final String	version;
 

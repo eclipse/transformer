@@ -26,27 +26,33 @@ import org.junit.jupiter.api.Test;
 
 class TestCommandLine {
 
-	private static final String	DATA_DIR			= "src/test/data/";
+	private static final String	STATIC_CONTENT_DIR			= "src/test/data/command-line";
+	private static final String DYNAMIC_CONTENT_DIR          = "target/test/data/command-line";
 
-	private String				currentDirectory	= ".";
+	private String currentDirectory	= ".";
 
 	@BeforeEach
 	public void setUp() {
 		currentDirectory = System.getProperty("user.dir");
 		System.out.println("setUp: Current directory is: [" + currentDirectory + "]");
+		System.out.println("setUp: Static content directory is: [" + STATIC_CONTENT_DIR + "]");
+		System.out.println("setUp: Dynamic content directory is: [" + DYNAMIC_CONTENT_DIR + "]");
+
+		TestUtils.verifyDirectory(STATIC_CONTENT_DIR, !TestUtils.DO_CREATE, "static content");
+		TestUtils.verifyDirectory(DYNAMIC_CONTENT_DIR, TestUtils.DO_CREATE, "dynamic content");
 	}
 
 	@Test
 	void testManifestActionAccepted() throws Exception {
-		String inputFileName = DATA_DIR + "MANIFEST.MF";
-		String outputFileName = DATA_DIR + "output_MANIFEST.MF";
+		String inputFileName = STATIC_CONTENT_DIR + '/' + "MANIFEST.MF";
+		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "MANIFEST.MF";
 		verifyAction(ManifestActionImpl.class.getName(), inputFileName, outputFileName);
 	}
 
 	@Test
 	void testJavaActionAccepted() throws Exception {
-		String inputFileName = DATA_DIR + "A.java";
-		String outputFileName = DATA_DIR + "output_A.java";
+		String inputFileName = STATIC_CONTENT_DIR + '/' + "A.java";
+		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "A.java";
 		verifyAction(JavaActionImpl.class.getName(), inputFileName, outputFileName);
 	}
 
@@ -62,13 +68,12 @@ class TestCommandLine {
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName) throws Exception {
-
 		Transformer t = new Transformer(System.out, System.err);
 
 		t.setOptionDefaults(JakartaTransformer.class, JakartaTransformer.getOptionDefaults());
 
 		String[] args = new String[] {
-			inputFileName, "-o"
+			inputFileName, outputFileName, "-o"
 		};
 
 		t.setArgs(args);
@@ -87,16 +92,9 @@ class TestCommandLine {
 
 		assertTrue(options.setRules(), "options.setRules() failed");
 		assertTrue(options.acceptAction(), "options.acceptAction() failed");
-		assertEquals(actionClassName, options.acceptedAction.getClass()
-			.getName());
+		assertEquals(actionClassName, options.acceptedAction.getClass().getName());
 
 		options.transform();
 		assertTrue((new File(outputFileName)).exists(), "output file not created");
 	}
-
-	// at
-	// org.eclipse.transformer.Transformer$TransformOptions.transform(Transformer.java:1255)
-	// at transformer.test.TestCommandLine.verifyAction(TestCommandLine.java:88)
-	// at
-	// transformer.test.TestCommandLine.testManifestActionAccepted(TestCommandLine.java:50)
 }
