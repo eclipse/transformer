@@ -119,13 +119,35 @@ Update data is specified using property files.  A set of default property files 
 | -tb --bundles       | Bundle identity data         | jakarta-bundles.properties     |
 | -td --direct        | Java class direct updates    | jakarta-direct.properties      |
 
+All property options may be specified zero, one, or multiple times.
+
+When the same property option is specified multiple times, the property file data for that option is read first to last, where later data overwrites earlier data. Overwriting occurs on individual property values.
+
 An additional core property file is used as a master table for text updates:
 
 | Command Line Option | Description                  | Jakarta Example                |
 | ------------------- | ---------------------------- | ------------------------------ |
 | -tf --text          | Text master data             | jakarta-text-master.properties |
 
-The master text properties file maps file selection patterns (for example, "*.xml", or "*.html") to specific text properties files.
+The master text properties file maps file selection patterns (for example, "\*.xml", or "\*.html") to specific text properties files.
+
+A special "immediate" option exists that allows the specification of rules data directly on the command line:
+
+| Command Line Option | Description                  | Jakarta Example                |
+| ------------------- | ---------------------------- | ------------------------------ |
+| -ti --immediate     | Immediate data               | None                           |
+
+The immediate option has the format:
+
+    -ti ( tr | tv | tb | td | tf ) key value
+
+The first parameter is the tag for one of the usual property options, specified without the '-' prefix.
+
+The "key" and "value" values are composed to create a property definition, the equivalent of specifying "key=value" in a properties file.  The property value is taken as new property data according to the tag which was used.
+
+Immediate options are processed after property file options are processed.  Individual property definitions obtained as immediate data are overlaid onto and replace individual property definitions obtained from property files.
+
+Immediate options may be used with or without specifying a corresponding properties file.
 
 ## Artifacts
 
