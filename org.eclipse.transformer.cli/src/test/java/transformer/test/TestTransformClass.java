@@ -56,6 +56,7 @@ import aQute.lib.io.ByteBufferDataInput;
 import transformer.test.data.Sample_InjectAPI_Jakarta;
 import transformer.test.data.Sample_InjectAPI_Javax;
 import transformer.test.data.Sample_Repeat_Target;
+import transformer.test.data.Sample_SecurityAPI_Javax;
 import transformer.test.util.CaptureLoggerImpl;
 import transformer.test.util.ClassData;
 
@@ -64,6 +65,10 @@ public class TestTransformClass extends CaptureTest {
 
 	public static final String	JAVAX_INJECT_PACKAGE_NAME			= "javax.inject";
 	public static final String	JAKARTA_INJECT_PACKAGE_NAME			= "jakarta.inject";
+	
+	// Rename used by the security sample.
+	public static final String JAVAX_SECURITY_AUTH_MESSAGE_CONFIG = "javax.security.auth.message.config";
+	public static final String JAKARTA_SECURITY_AUTH_MESSAGE_CONFIG = "jakarta.security.auth.message.config";
 
 	// Rename used by the repeat annotation sample.
 
@@ -88,6 +93,9 @@ public class TestTransformClass extends CaptureTest {
 	public static final String	REPEAT_TARGET_CLASS_NAME			= Sample_Repeat_Target.class.getName();
 	public static final String	REPEAT_TARGET_RESOURCE_NAME			= "Sample_Repeat_Target.class";
 
+	public static final String	SECURITY_JAVAX_CLASS_NAME			= Sample_SecurityAPI_Javax.class.getName();
+	
+	
 	// The annotated servlet and the mixed servlet classes are provided from
 	// open-liberty.
 
@@ -141,6 +149,15 @@ public class TestTransformClass extends CaptureTest {
 		testData.log(new PrintWriter(System.out, true)); // autoflush
 	}
 
+	@Test
+	public void testjavaxAsJakarta_security() {
+		System.out.println("Test javax.security.auth.message.config.AuthConfigFactory => jakarta.security.auth.message.config.AuthConfigFactory");
+		Class<?> testClass = testLoad(SECURITY_JAVAX_CLASS_NAME, getClassLoader_toJakarta());
+		ClassData testData = new ClassData(testClass);
+		testData.log(new PrintWriter(System.out, true)); // autoflush
+	}
+
+	
 	@Test
 	public void testJakartaAsJavax_inject() {
 		System.out.println("Test jakarta to javax transformation on the injection sample");
@@ -208,6 +225,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaRenames == null) {
 			toJakartaRenames = new HashMap<>();
 			toJakartaRenames.put(JAVAX_INJECT_PACKAGE_NAME, JAKARTA_INJECT_PACKAGE_NAME);
+			toJakartaRenames.put(JAVAX_SECURITY_AUTH_MESSAGE_CONFIG, JAKARTA_SECURITY_AUTH_MESSAGE_CONFIG);
 
 			toJakartaRenames.put(JAVAX_REPEAT_PACKAGE_NAME, JAKARTA_REPEAT_PACKAGE_NAME);
 

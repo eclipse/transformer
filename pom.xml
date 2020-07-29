@@ -405,6 +405,12 @@
 				<version>4.0.1</version>
 				<scope>test</scope>
 			</dependency>
+                        <dependency>
+				<groupId>javax.security.auth.message</groupId>
+				<artifactId>javax.security.auth.message-api</artifactId>
+				<version>1.1.1</version>
+                                <scope>test</scope>
+                        </dependency>
 			<dependency>
 				<groupId>jakarta.annotation</groupId>
 				<artifactId>jakarta.annotation-api</artifactId>
