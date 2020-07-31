@@ -19,6 +19,8 @@ import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -707,20 +709,40 @@ public class Transformer {
 	}
 
 	private String relativize(String relativeRef, String baseRef) {
-		int lastSlash = baseRef.lastIndexOf('/');
-		if (lastSlash == -1) {
-			return relativeRef;
-		} else {
-			return baseRef.substring(0, lastSlash + 1) + relativeRef;
-		}
+		Path basePath = Paths.get(baseRef);
+		Path siblingPath = basePath.resolveSibling(relativeRef);
+		return siblingPath.toString();
 	}
+
+	/*
+		Results of 'relativize':
+
+		Base reference [ c:\dev\rules\textMaster ]
+		Sibling reference [ sibling1 ]
+		Base path [ c:\dev\rules\textMaster ]
+		Sibling path [ c:\dev\rules\sibling1 ]
+
+		Base reference [ c:\textMaster ]
+		Sibling reference [ sibling1 ]
+		Base path [ c:\textMaster ]
+		Sibling path [ c:\sibling1 ]
+
+		Base reference [ \textMaster ]
+		Sibling reference [ sibling1 ]
+		Base path [ \textMaster ]
+		Sibling path [ \sibling1 ]
+
+		Base reference [ textMaster ]
+		Sibling reference [ sibling1 ]
+		Base path [ textMaster ]
+		Sibling path [ sibling1 ]
+	*/
 
 	protected UTF8Properties loadInternalProperties(AppOption ruleOption, String resourceRef) throws IOException {
 		return loadInternalProperties(ruleOption.toString(), resourceRef);
 	}
 
 	protected UTF8Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
-
 		// dual_info("Using internal [ %s ]: [ %s ]", ruleOption, resourceRef);
 		URL rulesUrl = getRuleLoader().getResource(resourceRef);
 		if (rulesUrl == null) {
@@ -732,19 +754,28 @@ public class Transformer {
 		return FileUtils.loadProperties(rulesUrl);
 	}
 
-	protected UTF8Properties loadExternalProperties(AppOption ruleOption, String resourceRef)
+	protected UTF8Properties loadExternalProperties
+	    (AppOption ruleOption, String resourceRef)
 		throws URISyntaxException, IOException {
 
 		return loadExternalProperties(ruleOption.toString(), resourceRef);
 	}
 
-	protected UTF8Properties loadExternalProperties(String referenceName, String externalReference)
+	protected UTF8Properties loadExternalProperties
+	    (String referenceName, String externalReference)
+		throws URISyntaxException, IOException {
+
+		return loadExternalProperties(referenceName, externalReference, IO.work);
+	}
+
+	protected UTF8Properties loadExternalProperties(
+		String referenceName, String externalReference, File relativeHome)
 		throws URISyntaxException, IOException {
 
 		// dual_info("Using external [ %s ]: [ %s ]", referenceName, externalReference);
 
-		URI currentDirectoryUri = IO.work.toURI();
-		URL rulesUrl = URIUtil.resolve(currentDirectoryUri, externalReference).toURL();
+		URI relativeHomeUri = relativeHome.toURI();
+		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference).toURL();
 		dual_info("External [ %s ] URL [ %s ]", referenceName, rulesUrl);
 
 		return FileUtils.loadProperties(rulesUrl);
@@ -1116,8 +1147,8 @@ public class Transformer {
 					String simpleNameSelector = substitutionRefEntry.getKey();
 					String substitutionsRef = FileUtils.normalize(substitutionRefEntry.getValue());
 
-					Map<String, String> substitutionsMap = loadSubstitutions(masterTextRef, simpleNameSelector,
-						substitutionsRef);
+					Map<String, String> substitutionsMap =
+						loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
 					// throws URISyntaxException, IOException
 
 					substitutionRefs.put(simpleNameSelector, substitutionsRef);
@@ -1307,16 +1338,18 @@ public class Transformer {
 			throws IOException, URISyntaxException {
 			UTF8Properties substitutions;
 			if (masterRef == null) {
-				substitutions = loadInternalProperties("Substitions matching [ " + selector + " ]",
-					substitutionsRef); // throws IOException
+				substitutions = loadInternalProperties(
+					"Substitions matching [ " + selector + " ]", substitutionsRef); // throws IOException
 			} else {
 				String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
 				if (!relativeSubstitutionsRef.equals(substitutionsRef)) {
-					dual_info("Adjusted substition reference from [ %s ] to [ %s ]", substitutionsRef,
+					dual_info("Adjusted substition reference from [ %s ] to [ %s ]",
+						substitutionsRef,
 						relativeSubstitutionsRef);
 				}
-				substitutions = loadExternalProperties("Substitions matching [ " + selector + " ]",
-					relativeSubstitutionsRef);
+				
+				substitutions = loadExternalProperties(
+					"Substitions matching [ " + selector + " ]", relativeSubstitutionsRef);
 				// throws URISyntaxException, IOException
 			}
 
