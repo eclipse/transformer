@@ -180,6 +180,7 @@
 					</executions>
 					<configuration>
 						<detectJavaApiLink>false</detectJavaApiLink>
+						<doclint>none</doclint>
 					</configuration>
 				</plugin>
 				<plugin>
