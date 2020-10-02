@@ -25,6 +25,7 @@
 		<revision>0.2.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>8</java.version>
+		<java.release>8</java.release>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<bnd.version>5.1.2</bnd.version>
@@ -118,11 +119,11 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.8.1</version>
 					<configuration>
-						<source>${maven.compiler.source}</source>
-						<target>${maven.compiler.target}</target>
 						<showWarnings>true</showWarnings>
 						<showDeprecation>true</showDeprecation>
-						<compilerArgument>-Xlint:unchecked</compilerArgument>
+						<compilerArgs>
+							<arg>-Xlint:unchecked</arg>
+						</compilerArgs>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -179,6 +180,7 @@
 					</executions>
 					<configuration>
 						<detectJavaApiLink>false</detectJavaApiLink>
+						<doclint>none</doclint>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -399,12 +401,12 @@
 				<version>4.0.1</version>
 				<scope>test</scope>
 			</dependency>
-                        <dependency>
+			<dependency>
 				<groupId>javax.security.auth.message</groupId>
 				<artifactId>javax.security.auth.message-api</artifactId>
 				<version>1.1.1</version>
-                                <scope>test</scope>
-                        </dependency>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>jakarta.annotation</groupId>
 				<artifactId>jakarta.annotation-api</artifactId>
@@ -511,6 +513,15 @@
 	</dependencyManagement>
 
 	<profiles>
+		<profile>
+			<id>java-release</id>
+			<activation>
+				<jdk>[9,)</jdk>
+			</activation>
+			<properties>
+				<maven.compiler.release>${java.release}</maven.compiler.release>
+			</properties>
+		</profile>
 		<profile>
 			<id>ossrh</id>
 			<properties>
