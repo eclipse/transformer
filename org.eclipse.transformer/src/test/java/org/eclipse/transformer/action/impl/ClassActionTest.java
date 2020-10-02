@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.eclipse.transformer.action.Action;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -129,7 +130,10 @@ public class ClassActionTest {
 
 		assertThat(attribute).as("transformed class module name, flags, and version")
 			.get()
-			.isEqualToComparingOnlyGivenFields(originalModule, "module_name", "module_flags", "module_version");
+			.usingRecursiveComparison(RecursiveComparisonConfiguration.builder()
+				.withIgnoredFields("requires", "exports", "opens", "uses", "provides")
+				.build())
+			.isEqualTo(originalModule);
 
 		assertThat(attribute).map(m -> m.requires)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Require[].class))
@@ -262,7 +266,8 @@ public class ClassActionTest {
 
 		assertThat(attribute(EnclosingMethodAttribute.class, transformed)).as("transformed class enclosing method")
 			.get()
-			.isEqualToComparingFieldByField(new EnclosingMethodAttribute("transformed/enclosing/Enclosing", "method",
+			.usingRecursiveComparison()
+			.isEqualTo(new EnclosingMethodAttribute("transformed/enclosing/Enclosing", "method",
 				"(Ltransformed/param/Param1;Lpkg/other/Param2;)Ltransformed/result/Result;"));
 
 	}

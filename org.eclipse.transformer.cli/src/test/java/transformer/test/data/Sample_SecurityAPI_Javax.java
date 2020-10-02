@@ -11,8 +11,6 @@
 
 package transformer.test.data;
 
-import javax.security.auth.message.config.AuthConfigFactory;
-
 public class Sample_SecurityAPI_Javax {
 
 	public javax.security.auth.message.config.AuthConfigFactory getSampleValue() {
