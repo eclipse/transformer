@@ -22,7 +22,7 @@
 	<version>${revision}</version>
 
 	<properties>
-		<revision>0.2.0-SNAPSHOT</revision>
+		<revision>0.2.0</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>8</java.version>
 		<java.release>8</java.release>
