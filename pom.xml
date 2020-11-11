@@ -31,7 +31,7 @@
 		<bnd.version>5.2.0</bnd.version>
 		<junit-jupiter.version>5.7.0</junit-jupiter.version>
 		<junit-platform.version>1.7.0</junit-platform.version>
-		<assertj.version>3.18.0</assertj.version>
+		<assertj.version>3.18.1</assertj.version>
 		<!-- Reproducible build -->
 		<project.build.outputTimestamp>1980-02-01T00:00:00Z</project.build.outputTimestamp>
 		<maven.target.version>3.2.2</maven.target.version>
