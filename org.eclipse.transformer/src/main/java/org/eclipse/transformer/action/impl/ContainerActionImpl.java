@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -177,7 +178,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 
 		String prevName = null;
 		String inputName = null;
-
+		final HashSet<String> processedClassNames = new HashSet();
 		try {
 			byte[] buffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
 
@@ -201,10 +202,11 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 					// TODO: Should more of the entry details be transferred?
 
 					ZipEntry outputEntry = new ZipEntry(inputName);
-					zipOutputStream.putNextEntry(outputEntry); // throws
-																// IOException
-					FileUtils.transfer(zipInputStream, zipOutputStream, buffer); // throws
-																					// IOException
+					if (putNextEntry(processedClassNames, zipOutputStream, outputEntry)) { // throws
+						// IOException
+						FileUtils.transfer(zipInputStream, zipOutputStream, buffer); // throws
+						// IOException
+					}
 					zipOutputStream.closeEntry(); // throws IOException
 
 				} else {
@@ -256,11 +258,11 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 						// transferred?
 
 						ZipEntry outputEntry = new ZipEntry(inputName);
-						zipOutputStream.putNextEntry(outputEntry); // throws
-																	// IOException
-
-						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
-						recordTransform(acceptedAction, inputName);
+						if (putNextEntry(processedClassNames, zipOutputStream, outputEntry)) { // throws
+							// IOException
+							acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
+							recordTransform(acceptedAction, inputName);
+						}
 						zipOutputStream.closeEntry(); // throws IOException
 
 					} else {
@@ -279,10 +281,11 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 
 						ZipEntry outputEntry = new ZipEntry(acceptedAction.getLastActiveChanges()
 							.getOutputResourceName());
-						zipOutputStream.putNextEntry(outputEntry); // throws
-																	// IOException
-						FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws
-																						// IOException
+						if (putNextEntry(processedClassNames, zipOutputStream, outputEntry)) { // throws
+							// IOException
+							FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws
+							// IOException
+						}
 						zipOutputStream.closeEntry(); // throws IOException
 					}
 				}
@@ -303,5 +306,21 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 			}
 			throw new TransformException(message, e);
 		}
+	}
+
+	// By default, always fail if duplicate archive entries are detected
+	static final boolean FAIL_DUPLICATE_ARCHIVE_ENTRIES;
+	static {
+		String value = System.getProperty("FAIL_DUPLICATE_ARCHIVE_ENTRIES", "true");
+		FAIL_DUPLICATE_ARCHIVE_ENTRIES = Boolean.valueOf(value);
+	}
+
+	private boolean putNextEntry(HashSet<String> processedClassNames, ZipOutputStream zipOutputStream, ZipEntry outputEntry) throws IOException{
+		if (FAIL_DUPLICATE_ARCHIVE_ENTRIES || ! processedClassNames.contains(outputEntry.getName())) {
+			zipOutputStream.putNextEntry(outputEntry);
+			processedClassNames.add(outputEntry.getName());
+			return true;
+		}
+		return false; // ignored the duplicate archive entry.
 	}
 }
