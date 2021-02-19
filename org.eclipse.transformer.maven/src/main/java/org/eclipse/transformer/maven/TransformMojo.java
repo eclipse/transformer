@@ -70,6 +70,9 @@ public class TransformMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.build.directory}", required = true)
 	private File				outputDirectory;
 
+	@Parameter(defaultValue = "true", property = "transformer-plugin.attach", required = true)
+	private Boolean				attach;
+
 	@Component
 	private MavenProjectHelper	projectHelper;
 
@@ -124,7 +127,9 @@ public class TransformMojo extends AbstractMojo {
 			throw new MojoFailureException("Transformer failed with an error: " + Transformer.RC_DESCRIPTIONS[rc]);
 		}
 
-		projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
+		if (attach) {
+			projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
+		}
 	}
 
 	/**
@@ -205,4 +210,9 @@ public class TransformMojo extends AbstractMojo {
 	void setOutputDirectory(File outputDirectory) {
 		this.outputDirectory = outputDirectory;
 	}
+
+	void setAttach(Boolean attach) {
+		this.attach = attach;
+	}
+
 }

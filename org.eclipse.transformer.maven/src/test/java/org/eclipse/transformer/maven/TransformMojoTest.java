@@ -152,6 +152,44 @@ public class TransformMojoTest {
 		assertTrue(classifiers.contains("test3-transformed"));
 	}
 
+	@Test
+	public void testProjectArtifactTransformerPluginNoAttach() throws Exception {
+		final TransformMojo mojo = new TransformMojo();
+		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
+		mojo.setOverwrite(true);
+		mojo.setOutputDirectory(new File("target"));
+		mojo.setAttach(false);
+
+		assertNotNull(mojo);
+
+		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
+		final File modelDirectory = new File(targetDirectory, "target/model");
+		final File pom = new File(targetDirectory, "pom.xml");
+
+		final MavenProject mavenProject = createMavenProject(modelDirectory, pom, "war", "rest-sample");
+		mavenProject.getArtifact()
+			.setFile(createService());
+
+		mojo.setProject(mavenProject);
+		mojo.setClassifier("transformed");
+
+		final Artifact[] sourceArtifacts = mojo.getSourceArtifacts();
+		assertEquals(1, sourceArtifacts.length);
+		assertEquals("org.superbiz.rest", sourceArtifacts[0].getGroupId());
+		assertEquals("rest-sample", sourceArtifacts[0].getArtifactId());
+		assertEquals("1.0-SNAPSHOT", sourceArtifacts[0].getVersion());
+		assertEquals("war", sourceArtifacts[0].getType());
+		assertNull(sourceArtifacts[0].getClassifier());
+
+		final Transformer transformer = mojo.getTransformer();
+		assertNotNull(transformer);
+
+		mojo.transform(transformer, sourceArtifacts[0]);
+
+		assertEquals(0, mavenProject.getAttachedArtifacts()
+			.size());
+	}
+
 	public MavenProject createMavenProject(final File modelDirectory, final File pom, final String packaging,
 		final String artfifactId) {
 		final MavenProject mavenProject = new MavenProject();
