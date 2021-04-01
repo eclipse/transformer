@@ -64,8 +64,14 @@ public class TransformMojo extends AbstractMojo {
 	@Parameter(property = "transformer-plugin.xml", defaultValue = "")
 	private String				rulesXmlsUri;
 
-	@Parameter(defaultValue = "transformed")
+	@Parameter(property = "sourceArtifacts", required = false)
+	private SourceArtifact[]	sourceArtifacts;
+
+	@Parameter(property = "classifier", required = false)
 	private String				classifier;
+
+	@Parameter(property = "attach", defaultValue = "true", required = false)
+	private Boolean				attach;
 
 	@Parameter(defaultValue = "${project.build.directory}", required = true)
 	private File				outputDirectory;
@@ -101,12 +107,29 @@ public class TransformMojo extends AbstractMojo {
 	 */
 	public void transform(final Transformer transformer, final Artifact sourceArtifact) throws MojoFailureException {
 
+		final Artifact targetArtifact = this.project.getArtifact();
+		final String artifactId = targetArtifact.getArtifactId();
+		final String version = targetArtifact.getVersion();
+		String targetClassifier = classifier == null || classifier.length() == 0 ? targetArtifact.getClassifier()
+			: classifier;
 		final String sourceClassifier = sourceArtifact.getClassifier();
-		final String targetClassifier = (sourceClassifier == null || sourceClassifier.length() == 0) ? this.classifier
-			: sourceClassifier + "-" + this.classifier;
+		if (sourceClassifier != null && sourceClassifier.length() > 0) {
+			if (targetClassifier == null || targetClassifier.length() == 0) {
+				targetClassifier = sourceClassifier;
+			} else {
+				targetClassifier = sourceClassifier + "-" + targetClassifier;
+			}
+		}
 
-		final File targetFile = new File(outputDirectory, sourceArtifact.getArtifactId() + "-" + targetClassifier + "-"
-			+ sourceArtifact.getVersion() + "." + sourceArtifact.getType());
+		final String type = targetArtifact.getType();
+
+		String targetFilename = artifactId + "-" + version;
+		if (targetClassifier != null && targetClassifier.length() > 0) {
+			targetFilename = targetFilename + "-" + targetClassifier;
+		}
+		targetFilename = targetFilename + "." + type;
+
+		final File targetFile = new File(outputDirectory, targetFilename);
 
 		final List<String> args = new ArrayList<>();
 		args.add(sourceArtifact.getFile()
@@ -124,7 +147,11 @@ public class TransformMojo extends AbstractMojo {
 			throw new MojoFailureException("Transformer failed with an error: " + Transformer.RC_DESCRIPTIONS[rc]);
 		}
 
-		projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
+		if (this.attach) {
+			this.projectHelper.attachArtifact(project, targetFile, targetClassifier);
+		} else {
+			targetArtifact.setFile(targetFile);
+		}
 	}
 
 	/**
@@ -143,21 +170,87 @@ public class TransformMojo extends AbstractMojo {
 	 * Gets the source artifacts that should be transformed
 	 *
 	 * @return an array to artifacts to be transformed
+	 * @throws MojoFailureException
 	 */
-	public Artifact[] getSourceArtifacts() {
+	public Artifact[] getSourceArtifacts() throws MojoFailureException {
 		List<Artifact> artifactList = new ArrayList<>();
-		if (project.getArtifact() != null && project.getArtifact()
-			.getFile() != null) {
-			artifactList.add(project.getArtifact());
+
+		if (this.sourceArtifacts != null && this.sourceArtifacts.length > 0) {
+			for (final SourceArtifact srcArtifact : this.sourceArtifacts) {
+				if (!srcArtifact.isValid()) {
+					throw new MojoFailureException("Invalid Source Artifact " + srcArtifact);
+				}
+				Artifact artifact = findArtifact(srcArtifact);
+				if (artifact == null || artifact.getFile() == null) {
+					throw new MojoFailureException("Source Artifact not found" + srcArtifact);
+				}
+				artifactList.add(artifact);
+			}
 		}
 
-		for (final Artifact attachedArtifact : project.getAttachedArtifacts()) {
-			if (attachedArtifact.getFile() != null) {
-				artifactList.add(attachedArtifact);
+		else {
+			if (project.getArtifact() != null && project.getArtifact()
+				.getFile() != null) {
+				artifactList.add(project.getArtifact());
+			}
+
+			for (final Artifact attachedArtifact : project.getAttachedArtifacts()) {
+				if (attachedArtifact.getFile() != null) {
+					artifactList.add(attachedArtifact);
+				}
 			}
 		}
 
 		return artifactList.toArray(new Artifact[0]);
+	}
+
+	/**
+	 * @param artifact
+	 * @return
+	 */
+	private Artifact findArtifact(SourceArtifact source) {
+		Artifact foundArtifact = null;
+
+		getLog().info("Looking for " + source);
+		String groupId = source.getGroupId();
+		String artifactId = source.getArtifactId();
+		String version = source.getVersion();
+		String classifier = source.getClassifier();
+		String type = source.getType();
+		String scope = source.getScope();
+		for (Artifact artifact : this.project.getDependencyArtifacts()) {
+			getLog().info("Checking " + artifact);
+			if (!groupId.equals(artifact.getGroupId())) {
+				continue;
+			}
+			if (!artifactId.equals(artifact.getArtifactId())) {
+				continue;
+			}
+			if (!version.equals(artifact.getVersion())) {
+				continue;
+			}
+
+			if (classifier != null && classifier.length() > 0) {
+				if (!classifier.equals(artifact.getClassifier())) {
+					continue;
+				}
+			}
+			if (type != null && type.length() > 0) {
+				if (!type.equals(artifact.getType())) {
+					continue;
+				}
+			}
+			if (scope != null && scope.length() > 0) {
+				if (!scope.equals(artifact.getScope())) {
+					continue;
+				}
+			}
+
+			// all match, we have a winner!
+			foundArtifact = artifact;
+			break;
+		}
+		return foundArtifact;
 	}
 
 	private Map<Transformer.AppOption, String> getOptionDefaults() {
