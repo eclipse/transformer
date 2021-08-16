@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -299,6 +299,18 @@ public class Transformer {
 			OptionSettings.HAS_ARG_COUNT, 3,
 			!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
+		// Issue #154: Enable processing of JARs within JARs. See:
+		// https://github.com/eclipse/transformer/issues/154
+		//
+		// By default, archive nesting is restricted to JavaEE active locations.
+		// This may be relaxed to enable JAR and ZIP within JAR, ZIP within ZIP,
+		// and ZIP within EAR, WAR, and RAR.
+		//
+		// See 'getRootAction'.
+
+		WIDEN_ARCHIVE_NESTING("w", "widen", "Widen archive nesting", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
+			!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+
 		// RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files", OptionSettings.HAS_ARG,
 		//    !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
@@ -414,7 +426,7 @@ public class Transformer {
 	//
 
 	private static final String[]	COPYRIGHT_LINES					= {
-		"Copyright (c) 2020 Contributors to the Eclipse Foundation",
+		"Copyright (c) 2020,2021 Contributors to the Eclipse Foundation",
 		"This program and the accompanying materials are made available under the",
 		"terms of the Eclipse Public License 2.0 which is available at",
 		"http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0",
@@ -814,9 +826,9 @@ public class Transformer {
 			dual_debug(
 				"Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]",
 				sourceName, sinkName, key, newValue);
-		}		
+		}
 	}
-	
+
 	protected void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
 		// System.out.println("Key [ " + key + " ] Old [ " + oldValue + " ] New
 		// [ " + newValue + " ]");
@@ -1019,6 +1031,7 @@ public class Transformer {
 
 		public Map<String, String>				directStrings;
 
+		public boolean							widenArchiveNesting;
 		public CompositeActionImpl				rootAction;
 		public ActionImpl						acceptedAction;
 
@@ -1032,6 +1045,7 @@ public class Transformer {
 		public String							outputPath;
 		public File								outputFile;
 		public Map<String, Map<String, String>> perClassConstantStrings;
+
 		//
 
 		public void setLogging() throws TransformException {
@@ -1347,7 +1361,7 @@ public class Transformer {
 						substitutionsRef,
 						relativeSubstitutionsRef);
 				}
-				
+
 				substitutions = loadExternalProperties(
 					"Substitions matching [ " + selector + " ]", relativeSubstitutionsRef);
 				// throws URISyntaxException, IOException
@@ -1654,6 +1668,15 @@ public class Transformer {
 			return true;
 		}
 
+		public void setActions() {
+			if (hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
+				widenArchiveNesting = true;
+				dual_info("Widened action nesting is enabled.");
+			} else {
+				widenArchiveNesting = false;
+			}
+		}
+
 		public CompositeActionImpl getRootAction() {
 			if (rootAction == null) {
 				CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse, isVerbose,
@@ -1696,7 +1719,10 @@ public class Transformer {
 				directoryAction.addAction(rarAction);
 				directoryAction.addAction(earAction);
 				directoryAction.addAction(textAction);
-				directoryAction.addAction(nullAction);
+
+				// Container actions nest per usual JavaEE nesting rules.
+				// That is, EAR can contain JAR, WAR, and RAR,
+				// WAR can container JAR, and RAR can contain JAR.
 
 				jarAction.addAction(classAction);
 				jarAction.addAction(javaAction);
@@ -1705,7 +1731,6 @@ public class Transformer {
 				jarAction.addAction(featureAction);
 				jarAction.addAction(textAction);
 				jarAction.addAction(propertiesAction);
-				jarAction.addAction(nullAction);
 
 				warAction.addAction(classAction);
 				warAction.addAction(javaAction);
@@ -1714,7 +1739,6 @@ public class Transformer {
 				warAction.addAction(featureAction);
 				warAction.addAction(jarAction);
 				warAction.addAction(textAction);
-				warAction.addAction(nullAction);
 
 				rarAction.addAction(classAction);
 				rarAction.addAction(javaAction);
@@ -1723,14 +1747,12 @@ public class Transformer {
 				rarAction.addAction(featureAction);
 				rarAction.addAction(jarAction);
 				rarAction.addAction(textAction);
-				rarAction.addAction(nullAction);
 
 				earAction.addAction(manifestAction);
 				earAction.addAction(jarAction);
 				earAction.addAction(warAction);
 				earAction.addAction(rarAction);
 				earAction.addAction(textAction);
-				earAction.addAction(nullAction);
 
 				zipAction.addAction(classAction);
 				zipAction.addAction(javaAction);
@@ -1742,6 +1764,31 @@ public class Transformer {
 				zipAction.addAction(rarAction);
 				zipAction.addAction(earAction);
 				zipAction.addAction(textAction);
+
+				// On occasion, the JavaEE nesting rules are too
+				// restrictive. Allow a slight widening of the
+				// usual nesting.
+
+				if (widenArchiveNesting) {
+					jarAction.addAction(jarAction);
+					jarAction.addAction(zipAction);
+
+					rarAction.addAction(zipAction);
+					warAction.addAction(zipAction);
+					earAction.addAction(zipAction);
+
+					zipAction.addAction(zipAction);
+				}
+
+				// Null actions must be added last: The null
+				// is always selected, which prevents selection of
+				// any action added after the null action.
+
+				directoryAction.addAction(nullAction);
+				jarAction.addAction(nullAction);
+				warAction.addAction(nullAction);
+				rarAction.addAction(nullAction);
+				earAction.addAction(nullAction);
 				zipAction.addAction(nullAction);
 
 				rootAction = useRootAction;
@@ -1864,6 +1911,8 @@ public class Transformer {
 		if (options.isVerbose) {
 			options.logRules();
 		}
+
+		options.setActions();
 
 		if (!options.acceptAction()) {
 			dual_error("No action selected");
