@@ -441,14 +441,20 @@ public class SignatureRuleImpl implements SignatureRule {
 	public Map<String, String> getTextSubstitutions(String inputFileName) {
 		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
 
-		Map<String, String> specificUpdates = getSpecificTextUpdates().get(simpleFileName);
+		Map<String, Map<String, String>> specificUpdates = getSpecificTextUpdates();
 		if (specificUpdates != null) {
-			return specificUpdates;
+			Map<String, String> updates = specificUpdates.get(simpleFileName);
+			if (updates != null) {
+				return updates;
+			}
 		}
 
-		for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : getWildCardTextUpdates().entrySet()) {
-			if (matches(wildcardEntry.getKey(), simpleFileName)) {
-				return wildcardEntry.getValue();
+		Map<Pattern, Map<String, String>> wildcardUpdates = getWildCardTextUpdates();
+		if (wildcardUpdates != null) {
+			for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : wildcardUpdates.entrySet()) {
+				if (matches(wildcardEntry.getKey(), simpleFileName)) {
+					return wildcardEntry.getValue();
+				}
 			}
 		}
 
