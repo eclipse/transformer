@@ -48,7 +48,7 @@ public class PropertiesActionImpl extends ActionImpl {
 
 	@Override
 	public String getName() {
-		return "Properties file relocate";
+		return "Properties File Action";
 	}
 
 	@Override
