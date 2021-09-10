@@ -138,13 +138,13 @@ public class ClassActionTest {
 		assertThat(attribute).map(m -> m.requires)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Require[].class))
 			.as("transformed class module requires")
-			.usingElementComparatorIgnoringFields()
+			.usingRecursiveFieldByFieldElementComparatorIgnoringFields()
 			.isEqualTo(originalModule.requires);
 
 		assertThat(attribute).map(m -> m.opens)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Open[].class))
 			.as("transformed class module opens flags and to")
-			.usingElementComparatorIgnoringFields("opens")
+			.usingRecursiveFieldByFieldElementComparatorIgnoringFields("opens")
 			.isEqualTo(originalModule.opens);
 		assertThat(attribute).map(m -> m.opens)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Open[].class))
@@ -155,7 +155,7 @@ public class ClassActionTest {
 		assertThat(attribute).map(m -> m.exports)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Export[].class))
 			.as("transformed class module exports flags and to")
-			.usingElementComparatorIgnoringFields("exports")
+			.usingRecursiveFieldByFieldElementComparatorIgnoringFields("exports")
 			.isEqualTo(originalModule.exports);
 		assertThat(attribute).map(m -> m.exports)
 			.get(InstanceOfAssertFactories.array(ModuleAttribute.Export[].class))
