@@ -24,19 +24,19 @@
 	<properties>
 		<revision>0.3.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>8</java.version>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>1.8</java.version>
 		<java.release>8</java.release>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<bnd.version>5.2.0</bnd.version>
-		<junit-jupiter.version>5.7.0</junit-jupiter.version>
-		<junit-platform.version>1.7.0</junit-platform.version>
-		<assertj.version>3.18.1</assertj.version>
+		<bnd.version>5.3.0</bnd.version>
+		<junit-jupiter.version>5.7.2</junit-jupiter.version>
+		<junit-platform.version>1.7.2</junit-platform.version>
+		<assertj.version>3.20.2</assertj.version>
+		<maven.target.version>3.3.9</maven.target.version>
+		<shrinkwrap.version>1.2.6</shrinkwrap.version>
 		<!-- Reproducible build -->
 		<project.build.outputTimestamp>1980-02-01T00:00:00Z</project.build.outputTimestamp>
-		<maven.target.version>3.2.2</maven.target.version>
-		<maven-test-harness.version>3.3.0</maven-test-harness.version>
-		<shrinkwrap.version>1.2.6</shrinkwrap.version>
 	</properties>
 
 	<modules>
@@ -136,6 +136,12 @@
 					<configuration>
 						<archive>
 							<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+							<manifest>
+								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+							</manifest>
+							<manifestEntries>
+								<SPDX-License-Identifier>${project.licenses[0].name}</SPDX-License-Identifier>
+							</manifestEntries>
 						</archive>
 					</configuration>
 				</plugin>
@@ -161,7 +167,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.2.0</version>
+					<version>3.3.1</version>
 					<executions>
 						<execution>
 							<id>attach-javadocs</id>
@@ -189,7 +195,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>1.6</version>
+					<version>3.0.1</version>
 					<executions>
 						<execution>
 							<id>sign-artifacts</id>
@@ -209,7 +215,7 @@
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>flatten-maven-plugin</artifactId>
-					<version>1.2.5</version>
+					<version>1.2.7</version>
 					<configuration>
 						<flattenMode>oss</flattenMode>
 					</configuration>
@@ -259,7 +265,23 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-plugin-plugin</artifactId>
-					<version>3.6.0</version>
+					<version>3.6.1</version>
+					<executions>
+						<execution>
+							<id>default-descriptor</id>
+							<phase>process-classes</phase>
+							<goals>
+								<goal>descriptor</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>default-addPluginArtifactMetadata</id>
+							<phase>package</phase>
+							<goals>
+								<goal>addPluginArtifactMetadata</goal>
+							</goals>
+						</execution>
+					</executions>
 				</plugin>
 			</plugins>
 		</pluginManagement>
@@ -303,7 +325,7 @@
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>osgi.annotation</artifactId>
-			<version>7.0.0</version>
+			<version>8.0.0</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
@@ -475,7 +497,7 @@
 			<dependency>
 				<groupId>org.apache.maven.plugin-testing</groupId>
 				<artifactId>maven-plugin-testing-harness</artifactId>
-				<version>${maven-test-harness.version}</version>
+				<version>3.3.0</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
@@ -516,6 +538,18 @@
 			</properties>
 		</profile>
 		<profile>
+			<id>pinentrymode-loopback</id>
+			<activation>
+				<property>
+					<name>env.GPG_PASSPHRASE</name>
+				</property>
+			</activation>
+			<properties>
+				<!-- Prevent gpg from using pinentry programs -->
+				<gpg.pinentrymode>--pinentry-mode=loopback</gpg.pinentrymode>
+			</properties>
+		</profile>
+		<profile>
 			<id>ossrh</id>
 			<properties>
 				<skipTests>true</skipTests>
@@ -526,6 +560,11 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
+						<configuration>
+							<gpgArguments>
+								<arg>${gpg.pinentrymode}</arg>
+							</gpgArguments>
+						</configuration>
 					</plugin>
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
@@ -547,7 +586,7 @@
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>5.2.0-SNAPSHOT</bnd.version>
+				<bnd.version>6.0.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>
