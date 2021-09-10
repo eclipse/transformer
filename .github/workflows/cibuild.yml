@@ -1,3 +1,14 @@
+#*******************************************************************************
+# Copyright (c) Contributors to the Eclipse Foundation
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
+#*******************************************************************************
+
 name: CI Build
 
 on:
@@ -7,67 +18,65 @@ on:
     paths-ignore:
     - 'docs/**'
     - '.github/**/*docs*'
+    - '.github/*.yml'
   pull_request:
     paths-ignore:
     - 'docs/**'
     - '.github/**/*docs*'
+    - '.github/*.yml'
 
 env:
   LC_ALL: en_US.UTF-8
+  MAVEN_OPTS: >-
+    -Dhttp.keepAlive=false
+    -Dmaven.wagon.http.pool=false
+    -Dmaven.wagon.http.retryHandler.count=3
 
 defaults:
   run:
     shell: bash
 
 jobs:
-  JDKxx_Matrix:
+  build:
     strategy:
       matrix:
-        java: [ 11, 15 ]
-        os: [ ubuntu-latest ]
+        os: [ 'ubuntu-latest' ]
+        java: [ '11', '16' ]
         include:
-        - os: ubuntu-latest
-          java: 8
+        - os: 'ubuntu-latest'
+          java: '8'
           canonical: ${{ (github.repository == 'eclipse/transformer') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
-        - os: ubuntu-latest
-          java: 8
+        - os: 'ubuntu-latest'
+          java: '8'
           experimental: true
-          mavenopts: -Pbnd-snapshot
-        - os: windows-latest
-          java: 8
+          mavenopts: '-Pbnd-snapshot'
+        - os: 'windows-latest'
+          java: '8'
     name: JDK${{ matrix.java }} ${{ matrix.os }} ${{ matrix.mavenopts }}
     runs-on: ${{ matrix.os }}
     steps:
     - name: Git Checkout
       uses: actions/checkout@v2
     - name: Set up Java ${{ matrix.java }}
-      uses: actions/setup-java@v1
+      uses: actions/setup-java@v2
       with:
+        distribution: 'temurin'
         java-version: ${{ matrix.java }}
+        server-id: ossrh
+        server-username: OSSRH_USERNAME
+        server-password: OSSRH_TOKEN
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg-passphrase: GPG_PASSPHRASE
     - name: Build
       id: build
       continue-on-error: ${{ matrix.experimental }}
       run: |
         ./.github/scripts/build.sh ${{ matrix.mavenopts }}
-    - name: Import GPG key
-      id: import_gpg
-      if: (matrix.canonical && (steps.build.outcome == 'success'))
-      uses: mbarbero/ghaction-import-gpg@subkeys
-      env:
-        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-        PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
-    - name: GPG key information
-      if: (steps.import_gpg.outcome == 'success')
-      run: |
-        echo "fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-        echo "keyid:       ${{ steps.import_gpg.outputs.keyid }}"
-        echo "name:        ${{ steps.import_gpg.outputs.name }}"
-        echo "email:       ${{ steps.import_gpg.outputs.email }}"
     - name: Publish
-      if: (matrix.canonical && (steps.build.outcome == 'success'))
+      if: ${{ matrix.canonical && (steps.build.outcome == 'success') }}
       run: |
         ./.github/scripts/publish.sh -Possrh
       env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}

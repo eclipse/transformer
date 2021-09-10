@@ -538,6 +538,18 @@
 			</properties>
 		</profile>
 		<profile>
+			<id>pinentrymode-loopback</id>
+			<activation>
+				<property>
+					<name>env.GPG_PASSPHRASE</name>
+				</property>
+			</activation>
+			<properties>
+				<!-- Prevent gpg from using pinentry programs -->
+				<gpg.pinentrymode>--pinentry-mode=loopback</gpg.pinentrymode>
+			</properties>
+		</profile>
+		<profile>
 			<id>ossrh</id>
 			<properties>
 				<skipTests>true</skipTests>
@@ -548,6 +560,11 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
+						<configuration>
+							<gpgArguments>
+								<arg>${gpg.pinentrymode}</arg>
+							</gpgArguments>
+						</configuration>
 					</plugin>
 					<plugin>
 						<groupId>org.sonatype.plugins</groupId>
