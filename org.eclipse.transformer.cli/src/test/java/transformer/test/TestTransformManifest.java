@@ -433,16 +433,8 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String			TEST_MANIFEST_PATH_WEBCONTAINER	= "transformer/test/data/servlet/META-INF/MANIFEST.MF";
 
 	public static final Occurrences[]	MANIFEST_TO_JAKARTA_DATA		= {
-	    // The test data was trimmed for issue #158.
-
-		// new Occurrences(JAVAX_ANNOTATION, 2, 0, JAKARTA_ANNOTATION, 0, 2),
-		// new Occurrences(JAVAX_ANNOTATION_SECURITY, 1, 0, JAKARTA_ANNOTATION_SECURITY, 0, 1),
-		// new Occurrences(JAVAX_SERVLET, 67, 0, JAKARTA_SERVLET, 0, 67),
 		new Occurrences(JAVAX_SERVLET, 6, 0, JAKARTA_SERVLET, 0, 6),
-		// new Occurrences(JAVAX_SERVLET_DESCRIPTOR, 3, 0, JAKARTA_SERVLET_DESCRIPTOR, 0, 3),
-		// new Occurrences(JAVAX_SERVLET_HTTP, 23, 0, JAKARTA_SERVLET_HTTP, 0, 23),
 		new Occurrences(JAVAX_SERVLET_HTTP, 1, 0, JAKARTA_SERVLET_HTTP, 0, 1),
-		// new Occurrences(JAVAX_SERVLET_RESOURCES, 1, 0, JAKARTA_SERVLET_RESOURCES, 0, 1),
 		new Occurrences(JAVAX_SERVLET_SCI, 1, 0, JAKARTA_SERVLET_SCI, 0, 1)
 	};
 
