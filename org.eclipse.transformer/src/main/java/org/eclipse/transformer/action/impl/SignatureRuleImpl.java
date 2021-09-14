@@ -174,11 +174,11 @@ public class SignatureRuleImpl implements SignatureRule {
 	private final Map<Pattern, Map<String, String>>	wildCardTextUpdates;
 
 	public Map<String, Map<String, String>> getSpecificTextUpdates() {
-		return specificTextUpdates;
+		return ((specificTextUpdates == null) ? Collections.emptyMap() : specificTextUpdates);
 	}
 
 	public Map<Pattern, Map<String, String>> getWildCardTextUpdates() {
-		return wildCardTextUpdates;
+		return ((wildCardTextUpdates == null) ? Collections.emptyMap() : wildCardTextUpdates);
 	}
 
 	//
@@ -442,19 +442,15 @@ public class SignatureRuleImpl implements SignatureRule {
 		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
 
 		Map<String, Map<String, String>> specificUpdates = getSpecificTextUpdates();
-		if (specificUpdates != null) {
-			Map<String, String> updates = specificUpdates.get(simpleFileName);
-			if (updates != null) {
-				return updates;
-			}
+		Map<String, String> updates = specificUpdates.get(simpleFileName);
+		if (updates != null) {
+			return updates;
 		}
 
 		Map<Pattern, Map<String, String>> wildcardUpdates = getWildCardTextUpdates();
-		if (wildcardUpdates != null) {
-			for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : wildcardUpdates.entrySet()) {
-				if (matches(wildcardEntry.getKey(), simpleFileName)) {
-					return wildcardEntry.getValue();
-				}
+		for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : wildcardUpdates.entrySet()) {
+			if (matches(wildcardEntry.getKey(), simpleFileName)) {
+				return wildcardEntry.getValue();
 			}
 		}
 
