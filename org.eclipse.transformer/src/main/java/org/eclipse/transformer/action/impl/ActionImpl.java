@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -521,15 +521,19 @@ public abstract class ActionImpl implements Action {
 																		// JakartaTransformException
 
 		if (isDebugEnabled()) {
-			byte[] altInputData;
-			if (inputData.length < inputData.data.length) {
-				altInputData = new byte[inputData.length];
-				System.arraycopy(inputData.data, 0, altInputData, 0, inputData.length);
-			} else {
-				altInputData = inputData.data;
-			}
-			debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
-				altInputData);
+			// Issue #158: This clogs output.
+
+//			byte[] altInputData;
+//			if (inputData.length < inputData.data.length) {
+//				altInputData = new byte[inputData.length];
+//				System.arraycopy(inputData.data, 0, altInputData, 0, inputData.length);
+//			} else {
+//				altInputData = inputData.data;
+//			}
+//			debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
+//			    altInputData);
+
+			debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
 		}
 
 		ByteData outputData;
@@ -546,15 +550,19 @@ public abstract class ActionImpl implements Action {
 			outputData = inputData;
 		} else {
 			if (isDebugEnabled()) {
-				byte[] altOutputData;
-				if (outputData.length < outputData.data.length) {
-					altOutputData = new byte[outputData.length];
-					System.arraycopy(outputData.data, 0, altOutputData, 0, outputData.length);
-				} else {
-					altOutputData = outputData.data;
-				}
-				debug("[ {}.{} ]: Active transform [ {} ] [ {} ] [ {} ]", className, methodName, outputData.name,
-					outputData.length, altOutputData);
+				// Issue #158: This clogs output.
+
+//				byte[] altOutputData;
+//				if (outputData.length < outputData.data.length) {
+//					altOutputData = new byte[outputData.length];
+//					System.arraycopy(outputData.data, 0, altOutputData, 0, outputData.length);
+//				} else {
+//					altOutputData = outputData.data;
+//				}
+//				debug("[ {}.{} ]: Active transform [ {} ] [ {} ] [ {} ]", className, methodName, outputData.name,
+//						outputData.length, altOutputData);
+				debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
+						outputData.length);
 			}
 		}
 
