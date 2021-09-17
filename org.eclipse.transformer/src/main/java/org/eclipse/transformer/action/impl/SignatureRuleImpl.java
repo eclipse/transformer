@@ -174,11 +174,11 @@ public class SignatureRuleImpl implements SignatureRule {
 	private final Map<Pattern, Map<String, String>>	wildCardTextUpdates;
 
 	public Map<String, Map<String, String>> getSpecificTextUpdates() {
-		return specificTextUpdates;
+		return ((specificTextUpdates == null) ? Collections.emptyMap() : specificTextUpdates);
 	}
 
 	public Map<Pattern, Map<String, String>> getWildCardTextUpdates() {
-		return wildCardTextUpdates;
+		return ((wildCardTextUpdates == null) ? Collections.emptyMap() : wildCardTextUpdates);
 	}
 
 	//
@@ -441,12 +441,14 @@ public class SignatureRuleImpl implements SignatureRule {
 	public Map<String, String> getTextSubstitutions(String inputFileName) {
 		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
 
-		Map<String, String> specificUpdates = getSpecificTextUpdates().get(simpleFileName);
-		if (specificUpdates != null) {
-			return specificUpdates;
+		Map<String, Map<String, String>> specificUpdates = getSpecificTextUpdates();
+		Map<String, String> updates = specificUpdates.get(simpleFileName);
+		if (updates != null) {
+			return updates;
 		}
 
-		for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : getWildCardTextUpdates().entrySet()) {
+		Map<Pattern, Map<String, String>> wildcardUpdates = getWildCardTextUpdates();
+		for (Map.Entry<Pattern, Map<String, String>> wildcardEntry : wildcardUpdates.entrySet()) {
 			if (matches(wildcardEntry.getKey(), simpleFileName)) {
 				return wildcardEntry.getValue();
 			}
