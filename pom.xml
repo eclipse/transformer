@@ -32,7 +32,7 @@
 		<bnd.version>5.3.0</bnd.version>
 		<junit-jupiter.version>5.8.0</junit-jupiter.version>
 		<junit-platform.version>1.8.0</junit-platform.version>
-		<assertj.version>3.20.2</assertj.version>
+		<assertj.version>3.21.0</assertj.version>
 		<maven.target.version>3.3.9</maven.target.version>
 		<shrinkwrap.version>1.2.6</shrinkwrap.version>
 		<!-- Reproducible build -->
