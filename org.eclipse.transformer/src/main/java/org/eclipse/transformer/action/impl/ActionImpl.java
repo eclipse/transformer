@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -42,6 +42,7 @@ import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
+//@formatter:off
 public abstract class ActionImpl implements Action {
 	public ActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
@@ -200,6 +201,43 @@ public abstract class ActionImpl implements Action {
 
 	public Map<String, String> getPackageVersions() {
 		return getSignatureRule().getPackageVersions();
+	}
+
+	public Map<String, Map<String, String>> getSpecificPackageVersions() {
+		return getSignatureRule().getSpecificPackageVersions();
+	}
+
+	public String getReplacementVersion(String attributeName, String packageName, String oldVersion) {
+		Map<String, String> versionsForAttribute = getSpecificPackageVersions().get(attributeName);
+
+		String specificVersion;
+		if ( versionsForAttribute != null ) {
+			specificVersion = versionsForAttribute.get(packageName);
+		} else {
+			specificVersion = null;
+		}
+
+		String genericVersion = getPackageVersions().get(packageName);
+
+		if ( (specificVersion == null) && (genericVersion == null) ) {
+			debug("Manifest attribute {}: Package {} version {} is unchanged",
+				attributeName, packageName, oldVersion);
+			return null;
+		} else if (specificVersion == null) {
+			verbose("Manifest attribute {}: Generic update of package {} version {} to {}",
+				attributeName, packageName, oldVersion, genericVersion);
+			return genericVersion;
+		} else if (genericVersion == null) {
+			verbose("Manifest attribute {}: Specific update of package {} version {} to {}",
+				attributeName, packageName, oldVersion, specificVersion);
+			return specificVersion;
+		} else {
+			verbose(
+				"Manifest attribute {}: Specific update of package {} version {} to {}" +
+					" overrides generic version update {}",
+				attributeName, packageName, oldVersion, specificVersion, genericVersion);
+			return specificVersion;
+		}
 	}
 
 	public String replacePackage(String initialName) {
@@ -619,7 +657,6 @@ public abstract class ActionImpl implements Action {
 
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
-
 		long inputLength = inputFile.length();
 		debug("Input [ {} ] Length [ {} ]", inputName, inputLength);
 
@@ -639,7 +676,6 @@ public abstract class ActionImpl implements Action {
 	//
 
 	protected InputStream openInputStream(File inputFile) throws TransformException {
-
 		try {
 			return IO.stream(inputFile);
 		} catch (IOException e) {
@@ -648,7 +684,6 @@ public abstract class ActionImpl implements Action {
 	}
 
 	protected void closeInputStream(File inputFile, InputStream inputStream) throws TransformException {
-
 		try {
 			inputStream.close();
 		} catch (IOException e) {
@@ -657,7 +692,6 @@ public abstract class ActionImpl implements Action {
 	}
 
 	private OutputStream openOutputStream(File outputFile) throws TransformException {
-
 		try {
 			return IO.outputStream(outputFile);
 		} catch (IOException e) {
@@ -666,7 +700,6 @@ public abstract class ActionImpl implements Action {
 	}
 
 	private void closeOutputStream(File outputFile, OutputStream outputStream) throws TransformException {
-
 		try {
 			outputStream.close();
 		} catch (IOException e) {

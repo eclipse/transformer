@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020, 2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,6 +24,7 @@ import org.eclipse.transformer.action.impl.BundleDataImpl;
 
 import aQute.lib.utf8properties.UTF8Properties;
 
+//@formatter:off
 public class TransformProperties {
 	/** Character used to define a package rename. */
 	public static final char	PACKAGE_RENAME_ASSIGNMENT	= '=';
@@ -116,12 +117,131 @@ public class TransformProperties {
 		return inverseProperties;
 	}
 
-	public static Map<String, String> getPackageVersions(UTF8Properties versionProperties) {
-		Map<String, String> packageVersions = new HashMap<>(versionProperties.size());
-		for (Map.Entry<Object, Object> versionEntry : versionProperties.entrySet()) {
-			packageVersions.put((String) versionEntry.getKey(), (String) versionEntry.getValue());
+	public static void setPackageVersions(
+		UTF8Properties versionProperties,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		for ( Map.Entry<Object, Object> versionEntry : versionProperties.entrySet() ) {
+			setPackageVersions(
+				(String) versionEntry.getKey(), (String) versionEntry.getValue(),
+				packageVersions, specificPackageVersions);
 		}
-		return packageVersions;
+	}
+
+	// packageName=version
+	//
+	// packageName=version;pName=version;...
+	//
+	// Use '\' to escape ';' and '=' special characters:
+	//
+	// Note that this collides with property file character escaping:
+	// When writing property files, the escape character must be doubled.
+	//
+	// Within the property file:
+	//
+	// packageName=vBegin\\;vEnd;pname=Version;...
+	// packageName=vBegin\\;vMiddle\\=vEnd;pName=version;...
+	//
+	// After reading the property file:
+	//
+	// packageName=vBegin\;vEnd;pname=Version;...
+	// packageName=vBegin\;vMiddle\=vEnd;pName=version;...
+
+	protected static void setPackageVersions(
+		String newPackageName, String newVersion,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		// Simple case: No specific assignments are present.
+		if ( (newVersion.indexOf('=') == -1) && (newVersion.indexOf('\\') == -1) ) {
+			setVersion(newPackageName, newVersion, packageVersions);
+			return;
+		}
+
+		// Case with specific version assignments.
+
+		StringBuilder nameBuilder = new StringBuilder();
+		StringBuilder versionBuilder = new StringBuilder();
+
+		int offset = 0;
+		int length = newVersion.length();
+
+		boolean escaped = false;
+		while ( offset < length ) {
+			char nextChar = newVersion.charAt(offset);
+			if ( escaped ) {
+				escaped = false;
+				versionBuilder.append(nextChar); // Might turn out to be a name ...
+			} else if ( nextChar == '\\' ) {
+				escaped = true; // ... which consumes the escape character
+			} else if ( nextChar == '=' ) {
+				if ( versionBuilder == nameBuilder ) {
+					throw new IllegalArgumentException("Package version syntax error: Too many '=' in [ " + newVersion + " ]");
+				} else {
+					// The accumulation is a name, not a version.  Swizzle the builders.
+					StringBuilder currentBuilder = nameBuilder;
+					nameBuilder = versionBuilder;
+					versionBuilder = currentBuilder;
+				}
+			} else if ( nextChar == ';' ) {
+				setVersion(
+					newPackageName, newVersion,
+					nameBuilder, versionBuilder,
+					packageVersions, specificPackageVersions);
+				// Both builders will be empty.  Don't bother to unswizzle them.
+			} else {
+				versionBuilder.append(nextChar); // Might turn out to be a name ...
+			}
+		}
+
+		// Allow processing to end with a ';', in which case both builders will be empty.
+
+		if ( versionBuilder.length() != 0 ) {
+			setVersion(
+				newPackageName, newVersion,
+				nameBuilder, versionBuilder, packageVersions, specificPackageVersions);
+		}
+	}
+
+	public static String setVersion(
+		String newPackageName, String newVersion,
+		Map<String, String> packageVersions) {
+
+		return packageVersions.put(newPackageName, newVersion);
+	}
+
+	public static void setVersion(
+		String newPackageName, String newVersion,
+		StringBuilder nameBuilder, StringBuilder versionBuilder,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		String versionText;
+		if ( versionBuilder.length() == 0 ) {
+			throw new IllegalArgumentException("Package version syntax error: No version in [ " + newVersion + " ]");
+		} else {
+			versionText = versionBuilder.toString();
+			versionBuilder.setLength(0);
+		}
+
+		String propertyName;
+		if ( nameBuilder.length() == 0 ) {
+			propertyName = null;
+		} else {
+			propertyName = nameBuilder.toString();
+			nameBuilder.setLength(0);
+		}
+
+		if ( propertyName == null ) {
+			packageVersions.put(newPackageName, versionText);
+		} else {
+			Map<String, String> versionsForProperty = specificPackageVersions.get(propertyName);
+			if ( versionsForProperty == null ) {
+				specificPackageVersions.put( propertyName, (versionsForProperty = new HashMap<>()) );
+			}
+			versionsForProperty.put(newPackageName, versionText);
+		}
 	}
 
 	public static Map<String, BundleData> getBundleUpdates(UTF8Properties updateProperties) {

@@ -67,6 +67,7 @@ import aQute.lib.io.IO;
 import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
+//@formatter:off
 public class Transformer {
 	// TODO: Make this an enum?
 
@@ -673,15 +674,20 @@ public class Transformer {
 
 	/**
 	 * Load properties for the specified rule option. Answer an empty collection
-	 * if the rule option was not provided. Options loading tries
-	 * {@link #getOptionValue(AppOption)}, then tries
-	 * {@link #getDefaultReference(AppOption)}. If neither is set, an empty
-	 * collection is returned.
+	 * if the rule option was not provided.
+	 *
+	 * Options loading tries {@link #getOptionValue(AppOption)} then tries
+	 * {@link #getDefaultReference(AppOption)}. An empty collection is returned
+	 * when neither is available.
+	 *
+	 * Orphaned values are
 	 *
 	 * @param ruleOption The option for which to load properties.
 	 * @param orphanedValues Values which have been orphaned by merges.
 	 * @return Properties loaded using the reference set for the option.
+	 *
 	 * @throws IOException Thrown if the load failed.
+	 *
 	 * @throws URISyntaxException Thrown if the load failed because a non-valid
 	 *             URI was specified.
 	 */
@@ -811,10 +817,32 @@ public class Transformer {
 		}
 	}
 
+	/**
+	 * Detect orphaned and un-orphaned property assignments.
+	 *
+	 * An orphaned property assignment occurs when a new property
+	 * assignment changes the assigned property value.
+	 *
+	 * An orphaned value become un-orphaned if a property assignment
+	 * has that value.
+	 *
+	 * @param sourceName A name associated with the properties which were added.
+	 *     Used for logging.
+	 * @param sinkName A name associated with the properties into which the source
+	 *     properties were added.  Used for logging.
+	 * @param key The key which was overridden by the source properties.
+	 * @param oldValue The value previously assigned to the key in the sink properties.
+	 * @param newValue The value newly assigned to the key in the sink properties.
+	 * @param orphans Accumulated sink property values which were orphaned.
+	 */
 	protected void processOrphan(
 		String sourceName, String sinkName,
 		String key, String oldValue, String newValue,
 		Set<String> orphans) {
+
+		if ( (oldValue != null) && oldValue.equals(newValue) ) {
+			return; // Nothing to do: The old and new assignments are the same.
+		}
 
 		if ( oldValue != null ) {
 			dual_debug(
@@ -822,6 +850,7 @@ public class Transformer {
 				sourceName, sinkName, key, oldValue);
 			orphans.add(oldValue);
 		}
+
 		if ( orphans.remove(newValue) ) {
 			dual_debug(
 				"Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]",
@@ -829,10 +858,21 @@ public class Transformer {
 		}
 	}
 
-	protected void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
-		// System.out.println("Key [ " + key + " ] Old [ " + oldValue + " ] New
-		// [ " + newValue + " ]");
+	protected void logMerge(String propertyName,
+		String sourceName, String sinkName,
+		Object key, Object oldValue, Object newValue) {
 
+		if (oldValue != null) {
+			dual_debug("Under property [ %s ]:" +
+				" Merge of [ %s ] into [ %s ]," +
+				" key [ %s ] replaces value [ %s ] with [ %s ]",
+				propertyName,
+				sourceName, sinkName,
+				key, oldValue, newValue);
+		}
+	}
+
+	protected void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
 		if (oldValue != null) {
 			dual_debug("Merge of [ %s ] into [ %s ], key [ %s ] replaces value [ %s ] with [ %s ]", sourceName,
 				sinkName, key, oldValue, newValue);
@@ -848,7 +888,9 @@ public class Transformer {
 	 */
 	protected ImmediateRuleData[] getImmediateData() {
 		if ( !hasOption(AppOption.RULES_IMMEDIATE_DATA) ) {
-			return new ImmediateRuleData[] {};
+			return new ImmediateRuleData[] {
+				// EMPTY
+			};
 		}
 
 		String[] immediateArgs = getOptionValues(AppOption.RULES_IMMEDIATE_DATA);
@@ -1024,6 +1066,7 @@ public class Transformer {
 		public boolean							invert;
 		public Map<String, String>				packageRenames;
 		public Map<String, String>				packageVersions;
+		public Map<String, Map<String, String>> specificPackageVersions;
 		public Map<String, BundleData>			bundleUpdates;
 		public Map<String, String>				masterSubstitutionRefs;
 		public Map<String, Map<String, String>>	masterTextUpdates;
@@ -1094,9 +1137,18 @@ public class Transformer {
 			return buffer;
 		}
 
-		public boolean setRules() throws IOException, URISyntaxException, IllegalArgumentException {
+		/**
+		 * Process the rules data.  Load and validate the data.
+		 *
+		 * @return True or false telling if the data was successfully loaded
+		 *     and is usable.
+		 *
+		 * @throws Exception Thrown if an error occurred while loading or
+		 *     validating the data.
+		 */
+		public boolean setRules() throws Exception {
 			ImmediateRuleData[] immediateData = getImmediateData();
-			if (immediateData == null) {
+			if ( immediateData == null ) {
 				return false;
 			}
 
@@ -1112,7 +1164,7 @@ public class Transformer {
 
 			invert = hasOption(AppOption.INVERT);
 
-			if (!selectionProperties.isEmpty()) {
+			if ( !selectionProperties.isEmpty() ) {
 				includes = new HashSet<>();
 				excludes = new HashSet<>();
 				TransformProperties.addSelections(includes, excludes, selectionProperties);
@@ -1122,9 +1174,9 @@ public class Transformer {
 				excludes = null;
 			}
 
-			if (!renameProperties.isEmpty()) {
+			if ( !renameProperties.isEmpty() ) {
 				Map<String, String> renames = TransformProperties.getPackageRenames(renameProperties);
-				if (invert) {
+				if ( invert ) {
 					renames = TransformProperties.invert(renames);
 				}
 				packageRenames = renames;
@@ -1133,14 +1185,17 @@ public class Transformer {
 				packageRenames = null;
 			}
 
-			if (!versionProperties.isEmpty()) {
-				packageVersions = TransformProperties.getPackageVersions(versionProperties);
+			if ( !versionProperties.isEmpty() ) {
+				packageVersions = new HashMap<>( versionProperties.size() );
+				specificPackageVersions = new HashMap<>();
+				TransformProperties.setPackageVersions(versionProperties, packageVersions, specificPackageVersions);
 				dual_info("Package versions will be updated");
 			} else {
 				packageVersions = null;
+				specificPackageVersions = null;
 			}
 
-			if (!updateProperties.isEmpty()) {
+			if ( !updateProperties.isEmpty() ) {
 				bundleUpdates = TransformProperties.getBundleUpdates(updateProperties);
 				// throws IllegalArgumentException
 				dual_info("Bundle identities will be updated");
@@ -1150,10 +1205,11 @@ public class Transformer {
 
 			String masterTextRef;
 
-			if (!textMasterProperties.isEmpty()) {
+			if ( !textMasterProperties.isEmpty() ) {
 				masterTextRef = getOptionValue(AppOption.RULES_MASTER_TEXT, DO_NORMALIZE);
 
-				Map<String, String> substitutionRefs = TransformProperties.convertPropertiesToMap(textMasterProperties);
+				Map<String, String> substitutionRefs =
+					TransformProperties.convertPropertiesToMap(textMasterProperties);
 				// throws IllegalArgumentException
 
 				Map<String, Map<String, String>> masterUpdates = new HashMap<>();
@@ -1178,7 +1234,7 @@ public class Transformer {
 				masterTextUpdates = null;
 			}
 
-			if (!directProperties.isEmpty()) {
+			if ( !directProperties.isEmpty() ) {
 				directStrings = TransformProperties.getDirectStrings(directProperties);
 				dual_info("Java direct string updates will be performed");
 			} else {
@@ -1186,23 +1242,25 @@ public class Transformer {
 				dual_info("Java direct string updates will not be performed");
 			}
 
-			if (!perClassConstantProperties.isEmpty()) {
+			if ( !perClassConstantProperties.isEmpty() ) {
 				String masterDirect = getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT, DO_NORMALIZE);
 
-				Map<String, String> substitutionRefs
-						= TransformProperties.convertPropertiesToMap(perClassConstantProperties); // throws IllegalArgumentException
+				Map<String, String> substitutionRefs =
+					TransformProperties.convertPropertiesToMap(perClassConstantProperties);
+				// throws IllegalArgumentException
 
 				Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
-				for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
+				for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
 					String classSelector = substitutionRefEntry.getKey();
 					String substitutionsRef = FileUtils.normalize(substitutionRefEntry.getValue());
 
 					UTF8Properties substitutions = new UTF8Properties();
-					if (masterDirect == null) {
+					if ( masterDirect == null ) {
 						substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]", substitutionsRef);
 					}
-					Map<String, String> substitutionsMap
-							= TransformProperties.convertPropertiesToMap(substitutions); // throws IllegalArgumentException
+					Map<String, String> substitutionsMap =
+						TransformProperties.convertPropertiesToMap(substitutions);
+					// throws IllegalArgumentException
 					masterUpdates.put(classSelector, substitutionsMap);
 				}
 
@@ -1219,29 +1277,29 @@ public class Transformer {
 			// Delay reporting null property sets: These are assigned directly
 			// and by immediate data.
 
-			if (includes == null) {
+			if ( includes == null ) {
 				dual_info("All resources will be selected");
 			}
-			if (packageRenames == null) {
-				dual_info("No package renames are available");
+			if ( packageRenames == null ) {
+				dual_info("Packages will not be renamed");
 			}
-			if (packageVersions == null) {
+			if ( packageVersions == null ) {
 				dual_info("Package versions will not be updated");
 			}
-			if (bundleUpdates == null) {
+			if ( bundleUpdates == null ) {
 				dual_info("Bundle identities will not be updated");
 			}
-			if (masterTextUpdates == null) {
+			if ( masterTextUpdates == null ) {
 				dual_info("Text files will not be updated");
 			}
-			if (directStrings == null) {
+			if ( directStrings == null ) {
 				dual_info("Java direct string updates will not be performed");
 			}
-			if (perClassConstantStrings == null) {
+			if ( perClassConstantStrings == null ) {
 				dual_info("Per class constant mapping files are not enabled");
 			}
 
-			return validateRules(packageRenames, packageVersions, orphanedFinalPackages);
+			return validateVersionUpdates(orphanedFinalPackages);
 		}
 
 		protected void processImmediateData(
@@ -1272,13 +1330,13 @@ public class Transformer {
 						break;
 
 					default:
-						dual_error("Unrecognized immediate data target [ {} ]", nextData.target);
+						dual_error("Unrecognized immediate data target [ %s ]", nextData.target);
 				}
 			}
 		}
 
 		private void addImmediateSelection(String selection, @SuppressWarnings("unused") String ignored) {
-			if (includes == null) {
+			if ( includes == null ) {
 				includes = new HashSet<>();
 				excludes = new HashSet<>();
 				dual_info("Selection rules use forced by immediate data");
@@ -1296,7 +1354,7 @@ public class Transformer {
 				dual_info("Package renames forced by immediate data.");
 			}
 
-			if (invert) {
+			if ( invert ) {
 				String initialHold = initialPackageName;
 				initialPackageName = finalPackageName;
 				finalPackageName = initialHold;
@@ -1315,17 +1373,16 @@ public class Transformer {
 		}
 
 		private void addImmediateVersion(String finalPackageName, String versionText) {
-			if (packageVersions == null) {
+			if ( packageVersions == null ) {
 				packageVersions = new HashMap<>();
+				specificPackageVersions = new HashMap<>();
 				dual_info("Package version updates forced by immediate data.");
 			}
-			String oldVersionText = packageVersions.put(finalPackageName, versionText);
-			logMerge("immediate package version data", "package version data", finalPackageName, oldVersionText,
-				versionText);
+			TransformProperties.setPackageVersions(finalPackageName, versionText, packageVersions, specificPackageVersions);
 		}
 
 		private void addImmediateBundleData(String bundleId, String value) {
-			if (bundleUpdates == null) {
+			if ( bundleUpdates == null ) {
 				bundleUpdates = new HashMap<>();
 				dual_info("Bundle identity updates forced by immediate data.");
 			}
@@ -1337,13 +1394,13 @@ public class Transformer {
 		}
 
 		private void addImmediateDirect(String initialText, String finalText) {
-			if (directStrings == null) {
+			if ( directStrings == null ) {
 				directStrings = new HashMap<>();
 				dual_info("Java direct string updates forced by immediate data");
 			}
 
 			String oldFinalText = directStrings.put(initialText, finalText);
-			if (oldFinalText != null) {
+			if ( oldFinalText != null ) {
 				logMerge("immediate direct string data", "direct string data", initialText, oldFinalText, finalText);
 			}
 		}
@@ -1351,15 +1408,15 @@ public class Transformer {
 		private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef)
 			throws IOException, URISyntaxException {
 			UTF8Properties substitutions;
-			if (masterRef == null) {
+			if ( masterRef == null ) {
 				substitutions = loadInternalProperties(
-					"Substitions matching [ " + selector + " ]", substitutionsRef); // throws IOException
+					"Substitions matching [ " + selector + " ]", substitutionsRef);
+				// throws IOException
 			} else {
 				String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
-				if (!relativeSubstitutionsRef.equals(substitutionsRef)) {
+				if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
 					dual_info("Adjusted substition reference from [ %s ] to [ %s ]",
-						substitutionsRef,
-						relativeSubstitutionsRef);
+						substitutionsRef, relativeSubstitutionsRef);
 				}
 
 				substitutions = loadExternalProperties(
@@ -1367,72 +1424,143 @@ public class Transformer {
 				// throws URISyntaxException, IOException
 			}
 
-			Map<String, String> substitutionsMap = TransformProperties.convertPropertiesToMap(substitutions);
+			Map<String, String> substitutionsMap =
+				TransformProperties.convertPropertiesToMap(substitutions);
 			// throws IllegalArgumentException
 
 			return substitutionsMap;
 		}
 
-		private void addImmediateMasterText(String masterTextRef, String simpleNameSelector, String substitutionsRef)
+		private void addImmediateMasterText(
+			String masterTextRef, String simpleNameSelector, String substitutionsRef)
 			throws IOException, URISyntaxException {
 
-			if (masterTextUpdates == null) {
+			if ( masterTextUpdates == null ) {
 				masterTextUpdates = new HashMap<>();
 				dual_info("Text files updates forced by immediate data.");
 			}
 
 			substitutionsRef = FileUtils.normalize(substitutionsRef);
 
-			Map<String, String> substitutionsMap = loadSubstitutions(masterTextRef, simpleNameSelector,
-				substitutionsRef);
+			Map<String, String> substitutionsMap =
+				loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
 			// throws URISyntaxException, IOException
 
-			String oldSubstitutionsRef = masterSubstitutionRefs.put(simpleNameSelector, substitutionsRef);
+			String oldSubstitutionsRef =
+				masterSubstitutionRefs.put(simpleNameSelector, substitutionsRef);
 			@SuppressWarnings("unused")
-			Map<String, String> oldSubstitutionMap = masterTextUpdates.put(simpleNameSelector, substitutionsMap);
+			Map<String, String> oldSubstitutionMap =
+				masterTextUpdates.put(simpleNameSelector, substitutionsMap);
 
-			if (oldSubstitutionsRef != null) {
+			if ( oldSubstitutionsRef != null ) {
 				logMerge("immediate master text data", "master text data", simpleNameSelector, oldSubstitutionsRef,
 					substitutionsRef);
 			}
 		}
 
-		protected boolean validateRules(
-			Map<String, String> renamesMap,
-			Map<String, String> versionsMap,
-			Set<String> orphanedFinalPackages) {
-
-			if ((versionsMap == null) || versionsMap.isEmpty()) {
+		/**
+		 * Validate package version updates.  Answer true or false, telling if
+		 * the version updates are valid.
+		 *
+		 * That is, validate the generic and the specific package version updates.
+		 * The version updates are valid if and only if each package version update
+		 * uses a package name which is the final package name of a package rename.
+		 *
+		 * See {@link #validateVersionUpdates(Map, Set)}.
+		 *
+		 * @param orphanedFinalPackages Orphaned final packages.
+		 *
+		 * @return True or false, telling if the package version updates are
+		 *     valid.
+		 */
+		protected boolean validateVersionUpdates(Set<String> orphanedFinalPackages) {
+			if ( ((packageVersions == null) || packageVersions.isEmpty()) &&
+				 ((specificPackageVersions == null) || specificPackageVersions.isEmpty()) ) {
 				return true; // Nothing to validate
 			}
 
-			if ((renamesMap == null) || renamesMap.isEmpty()) {
-				String[] renamesRefs = getRuleFileNames(AppOption.RULES_RENAMES);
-				// String[] versionsRefs = getRuleFileNames(AppOption.RULES_VERSIONS);
+			// Don't bother listing all of the missing package names if no
+			// renames were specified.  A single error message is sufficient.
 
-				if (renamesRefs == null) {
-					dual_error("Package version updates were specified but no rename rules were specified.");
-				} else {
-					dual_error("Package version updates were specified but no rename rules were specified.");
-				}
+			if ( (packageRenames == null) || packageRenames.isEmpty() ) {
+				dual_error("Package version updates were specified but no package renames were specified.");
 				return false;
 			}
 
-			boolean missingFinalPackages = false;
-			for ( String finalPackage : versionsMap.keySet() ) {
-				if ( !renamesMap.containsValue(finalPackage) ) {
-					if ( orphanedFinalPackages.contains(finalPackage) ) {
-						dual_debug("Final package [ " + finalPackage + " ] was orphaned.");
-					} else {
-						dual_error(
-							"Version rule package name [ " + finalPackage + " ]" +
-							" was not found as a final package name in the package renames data.");
-						missingFinalPackages = true;
-					}
+			boolean missingFinalPackages = !validateVersionUpdates(packageVersions, orphanedFinalPackages);
+
+			for ( Map.Entry<String, Map<String, String>> specificEntry : specificPackageVersions.entrySet() ) {
+				String attributeName = specificEntry.getKey();
+				Map<String, String> updatesForAttribute = specificEntry.getValue();
+				if ( !validateVersionUpdates(updatesForAttribute, orphanedFinalPackages) ) {
+					missingFinalPackages = true;
 				}
 			}
 
+			Set<String> ignoredAttributes = null;
+			for ( String attributeName : specificPackageVersions.keySet() ) {
+				if ( !ManifestActionImpl.selectAttribute(attributeName) ) {
+					if ( ignoredAttributes == null ) {
+						ignoredAttributes = new HashSet<>();
+					}
+					ignoredAttributes.add(attributeName);
+				}
+			}
+			if ( ignoredAttributes != null ) {
+				dual_info("Warning: Ignoring unknown attributes " + ignoredAttributes.toString() + " used for specific package version updates.");
+			}
+
 			return !missingFinalPackages;
+		}
+
+		protected boolean validateVersionUpdates(Map<String, String> versionUpdates, Set<String> orphanedFinalPackages) {
+			boolean isValid = true;
+			for ( String finalPackage : versionUpdates.keySet() ) {
+				// Keep looping even after a non-valid update is detected:
+				// Emit error messages for all problem version updates.
+				if ( !validateVersionUpdate(finalPackage, orphanedFinalPackages) ) {
+					isValid = false;
+				}
+			}
+			return isValid;
+		}
+
+		/**
+		 * Validate a package version update against the specified package renames.
+		 * Answer true or false, telling if the update is valid.
+		 *
+		 * There are three cases:
+		 *
+		 * The version update uses a package which is the final package
+		 * in a package rename rule.  The update is valid.
+		 *
+		 * The version update uses a package which has been orphaned by a
+		 * package rename rule.  That is, the version update would be valid
+		 * if the final package was not orphaned.  The update is not valid.
+		 *
+		 * The version update uses a package which was not specified as the
+		 * final package in a package rename rule.  The update is not valid.
+		 *
+		 * @param finalPackage The package which was used as the key to a
+		 *     package version update.  This package must be used as the
+		 *     final package of a package rename.
+		 * @param orphanedFinalPackages Final packages which were orphaned.
+		 *
+		 * @return True or false, telling if the package version update is
+		 *     valid.
+		 */
+		protected boolean validateVersionUpdate(String finalPackage, Set<String> orphanedFinalPackages) {
+			if ( packageRenames.containsValue(finalPackage) ) {
+				return true;
+			}
+
+			if ( orphanedFinalPackages.contains(finalPackage) ) {
+				dual_error("Package [ %s ] has a version update but was orphaned.", finalPackage);
+				return false;
+			}
+
+			dual_error("Package [ %s ] has a version update but was not renamed.", finalPackage);
+			return false;
 		}
 
 		protected String[] getRuleFileNames(AppOption ruleOption) {
@@ -1548,7 +1676,10 @@ public class Transformer {
 
 		protected SignatureRuleImpl getSignatureRule() {
 			if (signatureRules == null) {
-				signatureRules = new SignatureRuleImpl(logger, packageRenames, packageVersions, bundleUpdates,
+				signatureRules = new SignatureRuleImpl(
+					logger,
+					packageRenames, packageVersions, specificPackageVersions,
+					bundleUpdates,
 					masterTextUpdates, directStrings, perClassConstantStrings);
 			}
 			return signatureRules;
@@ -1576,18 +1707,6 @@ public class Transformer {
 		}
 
 		public static final String OUTPUT_PREFIX = "output_";
-
-		// info("Output file not specified.");
-		//
-		// final String OUTPUT_PREFIX = "output_";
-		// String inputFileName = getInputFileName();
-		// int indexOfLastSlash = inputFileName.lastIndexOf('/');
-		// if (indexOfLastSlash == -1 ) {
-		// return OUTPUT_PREFIX + inputFileName;
-		// } else {
-		// return inputFileName.substring(0, indexOfLastSlash+1) + OUTPUT_PREFIX
-		// + inputFileName.substring(indexOfLastSlash+1);
-		// }
 
 		public boolean setOutput() {
 			String useOutputName = getOutputFileNameFromCommandLine();
