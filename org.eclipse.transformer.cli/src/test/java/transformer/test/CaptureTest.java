@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -61,10 +61,10 @@ public class CaptureTest {
 	}
 
 	public SignatureRuleImpl createSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
-		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings, 
+		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings,
 		Map<String, Map<String,String>> perClass) {
 
-		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, 
+		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, null,
 					bundleData, null, directStrings, perClass);
 	}
 }

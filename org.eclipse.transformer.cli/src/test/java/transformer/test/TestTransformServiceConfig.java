@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -56,7 +56,8 @@ public class TestTransformServiceConfig extends CaptureTest {
 	public SignatureRuleImpl createSignatureRule(CaptureLoggerImpl useLogger, Map<String, String> usePackageRenames,
 		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings) {
 
-		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, bundleData, null, directStrings, Collections.emptyMap());
+		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, null, bundleData, null,
+			directStrings, Collections.emptyMap());
 	}
 
 	//

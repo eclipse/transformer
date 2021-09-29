@@ -219,6 +219,10 @@ public abstract class ActionImpl implements Action {
 
 		String genericVersion = getPackageVersions().get(packageName);
 
+		// System.out.println("Attribute [ " + attributeName + " ] Package [ " + packageName + " ]");
+		// System.out.println("  Generic version  [ " + genericVersion + " ]");
+		// System.out.println("  Specific version [ " + specificVersion + " ]");
+
 		if ( (specificVersion == null) && (genericVersion == null) ) {
 			debug("Manifest attribute {}: Package {} version {} is unchanged",
 				attributeName, packageName, oldVersion);

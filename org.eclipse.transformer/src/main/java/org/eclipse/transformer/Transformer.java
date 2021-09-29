@@ -1536,7 +1536,8 @@ public class Transformer {
 		 *
 		 * The version update uses a package which has been orphaned by a
 		 * package rename rule.  That is, the version update would be valid
-		 * if the final package was not orphaned.  The update is not valid.
+		 * if the final package was not orphaned.  The update is considered
+		 * valid.
 		 *
 		 * The version update uses a package which was not specified as the
 		 * final package in a package rename rule.  The update is not valid.
@@ -1554,9 +1555,16 @@ public class Transformer {
 				return true;
 			}
 
+			// This orphaned case is curious:
+			//
+			// False might be returned, because the version update will never be used.
+			//
+			// However, true is returned, since we want to allow overrides which create
+			// orphans.
+
 			if ( orphanedFinalPackages.contains(finalPackage) ) {
-				dual_error("Package [ %s ] has a version update but was orphaned.", finalPackage);
-				return false;
+				dual_info("Package [ %s ] has a version update but was orphaned.", finalPackage);
+				return true;
 			}
 
 			dual_error("Package [ %s ] has a version update but was not renamed.", finalPackage);

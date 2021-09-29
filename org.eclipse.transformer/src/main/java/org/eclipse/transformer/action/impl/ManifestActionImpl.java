@@ -171,8 +171,8 @@ public class ManifestActionImpl extends ActionImpl {
 	static {
 		Set<String> useNames = new HashSet<>();
 		useNames.add("DynamicImport-Package");
-		useNames.add("Export-Package");
 		useNames.add("Import-Package");
+		useNames.add("Export-Package");
 		useNames.add("Subsystem-Content");
 		useNames.add("IBM-API-Package");
 		useNames.add("Provide-Capability");
@@ -426,6 +426,8 @@ public class ManifestActionImpl extends ActionImpl {
 
 		String packageText = getPackageAttributeText(text);
 
+		// System.out.println("Package text [ " + packageText + " ]");
+
 		if (packageText == null) {
 			return text;
 		} else if (packageText.isEmpty()) {
@@ -482,8 +484,7 @@ public class ManifestActionImpl extends ActionImpl {
 			// finished.
 			if (!foundQuotationMark) {
 				if (ch == QUOTE_MARK) {
-					versionBeginIndex = i + 1; // just past the 1st quotation
-												// mark
+					versionBeginIndex = i + 1; // just past the 1st quotation mark
 
 					versionEndIndex = packageText.indexOf('\"', i + 1);
 					if (versionEndIndex == -1) {

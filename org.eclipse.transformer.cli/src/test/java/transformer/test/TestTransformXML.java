@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -90,7 +90,8 @@ public class TestTransformXML extends CaptureTest {
 
 			textAction = new TextActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, null, null, null, getMasterXmlUpdates(), null, Collections.emptyMap()));
+				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
+					Collections.emptyMap()));
 		}
 
 		return textAction;
