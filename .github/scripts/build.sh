@@ -9,5 +9,7 @@
 #
 # SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
 #*******************************************************************************
+set -ev
+
 ./mvnw --batch-mode --version
 ./mvnw --batch-mode --no-transfer-progress install "$@"
