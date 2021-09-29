@@ -261,6 +261,21 @@ public class TestTransformManifest extends CaptureTest {
 		return jakartaManifestActionTx;
 	}
 
+	public ManifestActionImpl specificJakartaManifestAction;
+
+	public ManifestActionImpl getSpecificJakartaManifestAction() {
+		if (specificJakartaManifestAction == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
+
+			specificJakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
+					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
+					null, getDirectStrings(), Collections.emptyMap()),
+				ManifestActionImpl.IS_MANIFEST);
+		}
+		return specificJakartaManifestAction;
+	}
+
 	//
 
 	protected static final class Occurrences {
@@ -330,7 +345,15 @@ public class TestTransformManifest extends CaptureTest {
 		return collapsedLines;
 	}
 
-	public void testTransform(String inputPath, Occurrences[] occurrences, String[][] identityUpdates,
+	public static final String UNUSED_EXPECTED_OUTPUT_PATH = null;
+	public static final Occurrences[] UNUSED_OCCURRENCES = null;
+	public static final String[][] UNUSED_IDENTITY_UPDATES = null;
+
+	public void testTransform(
+		String inputPath,
+		String expectedOutputPath,
+		Occurrences[] occurrences,
+		String[][] identityUpdates,
 		ManifestActionImpl manifestAction) throws TransformException, IOException {
 
 		System.out.println("Transform [ " + inputPath + " ] using [ " + manifestAction.getName() + " ] ...");
@@ -341,9 +364,11 @@ public class TestTransformManifest extends CaptureTest {
 
 		List<String> inputLines = displayManifest(inputPath, manifestInput);
 
-		System.out.println("Verify input [ " + inputPath + " ]");
-		for (Occurrences occurrence : occurrences) {
-			occurrence.verifyInitial(inputLines);
+		if ( occurrences != null ) {
+			System.out.println("Verify input [ " + inputPath + " ]");
+			for (Occurrences occurrence : occurrences) {
+				occurrence.verifyInitial(inputLines);
+			}
 		}
 
 		InputStreamData manifestOutput;
@@ -351,11 +376,41 @@ public class TestTransformManifest extends CaptureTest {
 			manifestOutput = manifestAction.apply(inputPath, input); // throws JakartaTransformException
 		}
 
-		List<String> outputLines = displayManifest(inputPath, manifestOutput.stream);
+		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream);
 
 		System.out.println("Verify output [ " + inputPath + " ]");
-		for (Occurrences occurrence : occurrences) {
-			occurrence.verifyFinal(outputLines);
+
+		if ( expectedOutputPath != null ) {
+			System.out.println("Read expected output [ " + expectedOutputPath + " ]");
+			InputStream expectedInput = TestUtils.getResourceStream(expectedOutputPath);
+			// throws IOException
+
+			List<String> expectedLines = displayManifest(expectedOutputPath, expectedInput);
+
+			System.out.println("Verify input [ " + inputPath + " ] against expected [ " + expectedOutputPath + " ]");
+
+			int numLines = outputLines.size();
+
+			if ( numLines != expectedLines.size() ) {
+				System.out.println("Actual output lines [ " + numLines + " ] Expected [ " + expectedLines.size() + " ]");
+				Assertions.assertEquals(expectedLines.size(), numLines, "Incorrect number of output lines");
+			}
+
+			for ( int lineNo = 0; lineNo < numLines; lineNo++ ) {
+				String actualLine = outputLines.get(lineNo);
+				String expectedLine = expectedLines.get(lineNo);
+
+				if ( !actualLine.equals(expectedLine) ) {
+					System.out.println("Line [ " + lineNo + " ] actual unequal to expected");
+					Assertions.assertEquals(actualLine, expectedLine, "Line [ " + lineNo + " ] mismatch");
+				}
+			}
+		}
+
+		if ( occurrences != null ) {
+			for (Occurrences occurrence : occurrences) {
+				occurrence.verifyFinal(outputLines);
+			}
 		}
 
 		if (identityUpdates != null) {
@@ -473,14 +528,23 @@ public class TestTransformManifest extends CaptureTest {
 
 	@Test
 	public void testTransformManifest_Servlet() throws TransformException, IOException {
-		testTransform(TEST_MANIFEST_PATH_WEBCONTAINER, MANIFEST_TO_JAKARTA_DATA, WEBCONTAINER_BUNDLE_OUTPUT,
+		testTransform(
+			TEST_MANIFEST_PATH_WEBCONTAINER,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			MANIFEST_TO_JAKARTA_DATA,
+			WEBCONTAINER_BUNDLE_OUTPUT,
 			getJakartaManifestAction());
 		// throws JakartaTransformException, IOException
 	}
 
 	@Test
 	public void testTransformFeature_Servlet() throws TransformException, IOException {
-		testTransform(TEST_FEATURE_PATH, FEATURE_TO_JAKARTA_DATA, null, getJakartaFeatureAction());
+		testTransform(
+			TEST_FEATURE_PATH,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			FEATURE_TO_JAKARTA_DATA,
+			UNUSED_IDENTITY_UPDATES,
+			getJakartaFeatureAction());
 		// throws JakartaTransformException, IOException
 	}
 
@@ -503,7 +567,11 @@ public class TestTransformManifest extends CaptureTest {
 
 	@Test
 	public void testTransformManifest_Transaction() throws TransformException, IOException {
-		testTransform(TEST_MANIFEST_PATH_TX, MANIFEST_TO_JAKARTA_DATA_TX, TRANSACTION_BUNDLE_OUTPUT,
+		testTransform(
+			TEST_MANIFEST_PATH_TX,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			MANIFEST_TO_JAKARTA_DATA_TX,
+			TRANSACTION_BUNDLE_OUTPUT,
 			getJakartaManifestActionTx());
 
 		// throws JakartaTransformException, IOException
@@ -900,4 +968,23 @@ public class TestTransformManifest extends CaptureTest {
 		String exportOutput = specificManifestAction.callReplacePackages(EXPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
 		assertEquals(SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT, exportOutput, "'Export-Packages' transform failure");
 	}
+
+	public static final String MANIFEST_PATH_SPECIFIC =
+		"transformer/test/data/specific/META-INF/MANIFEST.MF";
+
+	public static final String MANIFEST_PATH_SPECIFIC_EXPECTED =
+		"transformer/test/data/specific/META-INF/MANIFEST.MF.EXPECTED";
+
+	@Test
+	public void testTransformManifest_Specific() throws TransformException, IOException {
+		testTransform(
+			MANIFEST_PATH_SPECIFIC,
+			MANIFEST_PATH_SPECIFIC_EXPECTED,
+			UNUSED_OCCURRENCES,
+			UNUSED_IDENTITY_UPDATES,
+			getSpecificJakartaManifestAction());
+
+		// throws JakartaTransformException, IOException
+	}
+
 }
