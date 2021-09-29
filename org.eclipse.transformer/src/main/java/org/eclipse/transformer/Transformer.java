@@ -67,7 +67,6 @@ import aQute.lib.io.IO;
 import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
-//@formatter:off
 public class Transformer {
 	// TODO: Make this an enum?
 

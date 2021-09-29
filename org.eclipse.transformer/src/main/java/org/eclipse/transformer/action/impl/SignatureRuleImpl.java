@@ -39,7 +39,6 @@ import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.bnd.signatures.TypeVariableSignature;
 
-//@formatter:off
 public class SignatureRuleImpl implements SignatureRule {
 
 	public SignatureRuleImpl(Logger logger,
@@ -402,10 +401,10 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
 		// System.out.println("isTruePackageMatch:"
-		// + " text[" + text + "]"
-		// + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
-		// + " tail[" + text.substring(matchStart + keyLen)
-		// + " *************");
+		//  + " text[" + text + "]"
+		//  + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
+		//  + " tail[" + text.substring(matchStart + keyLen)
+		//  + " *************");
 
 		int textLength = text.length();
 

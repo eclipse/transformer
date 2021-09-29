@@ -2,11 +2,12 @@ Manifest-Version: 1.0
 Bundle-Name: Specific Jakarta
 Bundle-SymbolicName: specific.jakarta
 DynamicImport-Package: jakarta.servlet;version="[2.6, 6.0)",jakarta.se
- rvlet.annotation;version="[2.6, 6.0)",jakarta.annotation.security;ver
- sion="4.0.0"
+ rvlet.annotation;version="[2.6, 6.0)",jakarta.servlet.http;version="4
+ .0.0",jakarta.annotation.security;version="4.0.0"
 Export-Package: jakarta.servlet;version="[2.6, 6.0)",jakarta.servlet.a
- nnotation;version="[3.0, 6.0)",jakarta.annotation.security;version="4
- .0.0"
+ nnotation;version="[3.0, 6.0)",jakarta.servlet.http;version="4.0.0",j
+ akarta.annotation.security;version="4.0.0"
 Import-Package: jakarta.servlet;version="5.0",jakarta.servlet.annotati
- on;version="[2.6, 6.0)",jakarta.annotation.security;version="4.0.0"
+ on;version="[2.6, 6.0)",jakarta.servlet.http;version="6.0",jakarta.an
+ notation.security;version="4.0.0"
 

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020, 2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -32,7 +32,6 @@ import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
 import aQute.lib.io.ByteBufferOutputStream;
 
-//@formatter:off
 public class ManifestActionImpl extends ActionImpl {
 	public static final String	META_INF				= "META-INF/";
 	public static final String	MANIFEST_MF				= "MANIFEST.MF";
@@ -317,7 +316,6 @@ public class ManifestActionImpl extends ActionImpl {
 	 *         replacements were performed.
 	 */
 	protected String replacePackages(String attributeName, String text) {
-
 		// System.out.println("Initial text [ " + text + " ]");
 
 		String initialText = text;
@@ -332,6 +330,7 @@ public class ManifestActionImpl extends ActionImpl {
 			}
 
 			// System.out.println("Next target [ " + key + " ]");
+			// System.out.println("Text [ " + text + " ]");
 
 			int textLimit = text.length() - keyLen;
 
@@ -343,9 +342,11 @@ public class ManifestActionImpl extends ActionImpl {
 				}
 
 				if ( !SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
+					// System.out.println("Near match at [ " + matchStart + " ]");
 					lastMatchEnd = matchStart + keyLen;
 					continue;
 				}
+				// System.out.println("Actual match at [ " + matchStart + " ]");
 
 				String value = renameEntry.getValue();
 				int valueLen = value.length();

@@ -24,17 +24,20 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import aQute.lib.utf8properties.UTF8Properties;
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
@@ -74,10 +77,15 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_SERVLET_VERSION				= "[2.6, 6.0)";
 	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION	= "[2.6, 6.0)";
 	public static final String	JAKARTA_SERVLET_DESCRIPTOR_VERSION	= "[2.6, 6.0)";
-	public static final String	JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
+
+	// Leave out "jakarta.servlet.http": That gives us a slot to test having
+	// a specific version update where there is no generic version update.
+	// public static final String	JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
+
 	public static final String	JAKARTA_SERVLET_RESOURCES_VERSION	= "[2.6, 6.0)";
 
 	public static final String	JAKARTA_SERVLET_VERSION_IMPORT				= "5.0";
+	public static final String	JAKARTA_SERVLET_HTTP_VERSION_IMPORT         = "6.0";
 	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION_EXPORT	= "[3.0, 6.0)";
 
 	public Set<String> getIncludes() {
@@ -120,7 +128,9 @@ public class TestTransformManifest extends CaptureTest {
 			packageVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION);
 			packageVersions.put(JAKARTA_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION);
 			packageVersions.put(JAKARTA_SERVLET_DESCRIPTOR, JAKARTA_SERVLET_DESCRIPTOR_VERSION);
-			packageVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION);
+			// Leave out "jakarta.servlet.http": That gives us a slot to test having
+			// a specific version update where there is no generic version update.
+			// packageVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION);
 			packageVersions.put(JAKARTA_SERVLET_RESOURCES, JAKARTA_SERVLET_RESOURCES_VERSION);
 		}
 		return packageVersions;
@@ -143,6 +153,8 @@ public class TestTransformManifest extends CaptureTest {
 
 			Map<String, String> importVersions = new HashMap<>(1);
 			importVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION_IMPORT);
+			// Note that 'jakarta.servlet.http' does NOT have a generic update.
+			importVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION_IMPORT);
 			specificPackageVersions.put("Import-Package", importVersions);
 
 			Map<String, String> exportVersions = new HashMap<>(1);
@@ -926,34 +938,35 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String SPECIFIC_ATTRIBUTE_INPUT =
 		"javax.servlet;version=\"4.0.0\"" +
 		",javax.servlet.annotation;version=\"4.0.0\"" +
+		",javax.servlet.http;version=\"4.0.0\"" +
 		",javax.annotation.security;version=\"4.0.0\"";
 
 	// Generic:                    "[2.6, 6.0)"
+	//   (does not include servlet.http)
 	// Import (servlet):           "5.0"
+	// Import (servlet.http)       "6.0"
 	// Export (servlet.annotation) "[3.0, 6.0)"
 
 	// No overrides.  All use the generic version update.
 	public static final String SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT =
 		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
 		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.http;version=\"4.0.0\"" +
 		",jakarta.annotation.security;version=\"4.0.0\"";
 
 	// "jakarta.servlet" is overridden.
 	public static final String SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT =
 		"jakarta.servlet;version=\"5.0\"" +
 		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.http;version=\"6.0\"" +
 		",jakarta.annotation.security;version=\"4.0.0\"";
 
 	// "jakarta.servlet.annotation" is overridden.
 	public static final String SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT =
 		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
 		",jakarta.servlet.annotation;version=\"[3.0, 6.0)\"" +
+		",jakarta.servlet.http;version=\"4.0.0\"" +
 		",jakarta.annotation.security;version=\"4.0.0\"";
-
-	//	org.opentest4j.AssertionFailedError:
-	// 'DynamicImport-Package' transform failure ==>
-	// expected: <jakarta.servlet;version=[2.6, 6.0),jakarta.servlet.annotation;version=[2.6, 6.0),jakarta.annotation.security;version=[2.6, 6.0)>
-	// but was: <jakarta.servlet;version=4.0.0,jakarta.servlet.annotation;version=4.0.0,jakarta.annotation.security;version=4.0.0>
 
 	@Test
 	public void testSpecificAttributes() {
@@ -987,4 +1000,124 @@ public class TestTransformManifest extends CaptureTest {
 		// throws JakartaTransformException, IOException
 	}
 
+	public UTF8Properties loadProperties(String path) throws IOException {
+		try ( InputStream inputStream = TestUtils.getResourceStream(path) ) {
+			return FileUtils.loadProperties(inputStream);
+		}
+	}
+
+	public static final String SPECIFIC_VERSION_PROPERTIES_PATH =
+		"transformer/test/data/specific/version.properties";
+
+	@Test
+	public void testSpecificProperties() throws Exception {
+		Map<String, String> expectedGeneric = getPackageVersions();
+		Map<String, Map<String, String>> expectedSpecific = getSpecificPackageVersions();
+
+		Map<String, String> loadedGeneric = new HashMap<>();
+		Map<String, Map<String, String>> loadedSpecific = new HashMap<>();
+		UTF8Properties properties = loadProperties(SPECIFIC_VERSION_PROPERTIES_PATH);
+		TransformProperties.setPackageVersions(properties, loadedGeneric, loadedSpecific);
+
+		validateMap("Generic version updates", loadedGeneric, expectedGeneric);
+		validateMap("Specific version updates", loadedGeneric, expectedGeneric);
+	}
+
+	public void validateSize(String tag, Map<?, ?> actual, Map<?, ?> expected) {
+		int actualSize = actual.keySet().size();
+		int expectedSize = expected.keySet().size();
+
+		String prefix = "Properties [ " + tag + " ]";
+		if ( actualSize != expectedSize ) {
+			String msg = prefix + ": Wrong size";
+			System.out.println(msg +
+				": Expected [ " + expectedSize + " ]" +
+				": Actual [ " + actualSize + " ]");
+			Assertions.assertEquals(expectedSize, actualSize, msg);
+		} else {
+			System.out.println(prefix + ": Size [ " + actualSize + " ]");
+		}
+	}
+
+	public void validateMaps(String tag,
+		Map<String, Map<String, String>> actual,
+		Map<String, Map<String, String>> expected) {
+
+		System.out.println("Validating [ " + tag + " ] properties");
+
+		String prefix = "Properties [ " + tag + " ]";
+
+		validateSize(tag, actual, expected);
+
+		for ( String actualKey : actual.keySet() ) {
+			boolean expectKey = expected.containsKey(actualKey);
+
+			if ( !expectKey ) {
+				String msg = prefix + ": Extra key [ " + actualKey + " ]";
+				System.out.println(msg);
+				Assertions.assertTrue(expectKey, msg);
+			}
+		}
+
+		for ( String expectedKey : expected.keySet() ) {
+			boolean foundKey = actual.containsKey(expectedKey);
+
+			if ( !foundKey) {
+				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
+				System.out.println(msg);
+				Assertions.assertTrue(foundKey, msg);
+			}
+		}
+
+		for ( String actualKey : actual.keySet() ) {
+			validateMap(tag + " [ " + actualKey + " ]", actual.get(actualKey), expected.get(actualKey));
+		}
+	}
+
+	public void validateMap(String tag,
+		Map<String, String> actual,
+		Map<String, String> expected) {
+
+		System.out.println("Validating [ " + tag + " ] properties");
+
+		String prefix = "Properties [ " + tag + " ]";
+
+		validateSize(tag, actual, expected);
+
+		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
+			String actualKey = actualEntry.getKey();
+			String actualValue = actualEntry.getValue();
+
+			String expectedValue = expected.get(actualKey);
+
+			if ( expectedValue == null ) {
+				String msg = prefix + ": Extra key [ " + actualKey + " ]";
+				System.out.println(msg);
+				Assertions.assertNotNull(expectedValue, msg);
+			}
+
+			if ( !actualValue.equals(expectedValue) ) {
+				String msg = prefix + ": Incorrect value for [ " + actualKey + " ]";
+				System.out.println(msg +
+					": Actual value [ " + actualValue + " ]" +
+					": expected value [ " + expectedValue + " ]");
+				Assertions.assertEquals(expectedValue, actualValue, msg);
+			}
+		}
+
+		for ( Map.Entry<String, String> expectedEntry : expected.entrySet() ) {
+			String expectedKey = expectedEntry.getKey();
+			String expectedValue = expectedEntry.getValue();
+
+			String actualValue = actual.get(expectedKey);
+
+			if ( actualValue == null ) {
+				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
+				System.out.println(msg);
+				Assertions.assertNotNull(actualValue, msg);
+			}
+
+			// The values were checked in the first loop.
+		}
+	}
 }

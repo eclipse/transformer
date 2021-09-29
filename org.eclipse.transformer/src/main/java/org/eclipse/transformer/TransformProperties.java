@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020, 2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,7 +24,6 @@ import org.eclipse.transformer.action.impl.BundleDataImpl;
 
 import aQute.lib.utf8properties.UTF8Properties;
 
-//@formatter:off
 public class TransformProperties {
 	/** Character used to define a package rename. */
 	public static final char	PACKAGE_RENAME_ASSIGNMENT	= '=';
@@ -131,7 +130,7 @@ public class TransformProperties {
 
 	// packageName=version
 	//
-	// packageName=version;pName=version;...
+	// packageName=version,pName=version,...
 	//
 	// Use '\' to escape ';' and '=' special characters:
 	//
@@ -153,54 +152,89 @@ public class TransformProperties {
 		Map<String, String> packageVersions,
 		Map<String, Map<String, String>> specificPackageVersions) {
 
-		// Simple case: No specific assignments are present.
-		if ( (newVersion.indexOf('=') == -1) && (newVersion.indexOf('\\') == -1) ) {
+		// Simple case: Neither special character is present.
+		// No parsing is needed.  However, escapes must be removed.
+		//
+		// The case of a new version having only escaped special
+		// characters are not handled by this check.
+
+		if ( (newVersion.indexOf('=') == -1) && (newVersion.indexOf(';') == -1) ) {
+			newVersion = newVersion.replace("\\", "");
 			setVersion(newPackageName, newVersion, packageVersions);
 			return;
 		}
 
 		// Case with specific version assignments.
 
-		StringBuilder nameBuilder = new StringBuilder();
-		StringBuilder versionBuilder = new StringBuilder();
-
-		int offset = 0;
 		int length = newVersion.length();
 
 		boolean escaped = false;
-		while ( offset < length ) {
+
+		StringBuilder nameBuilder = new StringBuilder();
+		StringBuilder versionBuilder = new StringBuilder();
+
+		for ( int offset = 0; offset < length; offset++ ) {
 			char nextChar = newVersion.charAt(offset);
+
 			if ( escaped ) {
 				escaped = false;
-				versionBuilder.append(nextChar); // Might turn out to be a name ...
+				versionBuilder.append(nextChar);
+
 			} else if ( nextChar == '\\' ) {
 				escaped = true; // ... which consumes the escape character
+
 			} else if ( nextChar == '=' ) {
 				if ( versionBuilder == nameBuilder ) {
 					throw new IllegalArgumentException("Package version syntax error: Too many '=' in [ " + newVersion + " ]");
 				} else {
-					// The accumulation is a name, not a version.  Swizzle the builders.
+					// Accumulate first expecting a version.
+					// When an '=' is encountered, the accumulation is known
+					// to be an attribute name, not a version.
 					StringBuilder currentBuilder = nameBuilder;
 					nameBuilder = versionBuilder;
 					versionBuilder = currentBuilder;
 				}
+
 			} else if ( nextChar == ';' ) {
-				setVersion(
-					newPackageName, newVersion,
-					nameBuilder, versionBuilder,
-					packageVersions, specificPackageVersions);
-				// Both builders will be empty.  Don't bother to unswizzle them.
+				// The length test guards against 'p=v;a1=v1;;a2=v2'
+				if ( versionBuilder.length() != 0 ) {
+					setVersion(
+						newPackageName, newVersion,
+						nameBuilder, versionBuilder,
+						packageVersions, specificPackageVersions);
+					// Both builders will be empty.  They don't need to be unswizzled.
+				} else {
+					// Have to be careful:
+					// 'p=v;a1=;a2=v2' will leave the version builder
+					// while leaving the name builder non-empty.
+					//
+					// TODO: We might want to skip an update in a specific
+					//       case.  A blank/empty update might be used to
+					//       encode this.
+					if ( nameBuilder.length() != 0 ) {
+						throw new IllegalArgumentException("Package version syntax error: Version missing for package [ " + newPackageName + " ] and attribute [ " + nameBuilder.toString() + " ]");
+					}
+				}
+
 			} else {
-				versionBuilder.append(nextChar); // Might turn out to be a name ...
+				versionBuilder.append(nextChar);
 			}
 		}
 
-		// Allow processing to end with a ';', in which case both builders will be empty.
+		// If the version builder is not empty, all new version
+		// characters were processed.  There will usually be
+		// characters left in the accumulators, which need to
+		// be added to the tables.
+		//
+		// The length check is to make sure the new version did not
+		// end with a ';', in which case the builders will be empty,
+		// and there is no update to be done.
 
 		if ( versionBuilder.length() != 0 ) {
 			setVersion(
 				newPackageName, newVersion,
-				nameBuilder, versionBuilder, packageVersions, specificPackageVersions);
+				nameBuilder, versionBuilder,
+				packageVersions, specificPackageVersions);
 		}
 	}
 
