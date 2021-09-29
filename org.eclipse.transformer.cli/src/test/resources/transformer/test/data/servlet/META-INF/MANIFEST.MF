@@ -89,3 +89,4 @@ Service-Component: OSGI-INF/com.ibm.ws.webcontainer.vhostmgr.xml,OSGI-
  GI-INF/com.ibm.ws.webcontainer.osgi.session.SessionHelper.xml,OSGI-IN
  F/com.ibm.ws.webcontainer.osgi.webapp.WebAppInjectionClassListAdapter
  .xml
+ 
