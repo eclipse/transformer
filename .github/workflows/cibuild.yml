@@ -42,7 +42,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest' ]
-        java: [ '11', '16' ]
+        java: [ '11', '17' ]
         include:
         - os: 'ubuntu-latest'
           java: '8'
