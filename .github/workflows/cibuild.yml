@@ -59,7 +59,7 @@ jobs:
     - name: Git Checkout
       uses: actions/checkout@v2
     - name: Set up Java ${{ matrix.java }}
-      uses: bjhargrave/setup-java@only-subkey-signing # actions/setup-java@v2
+      uses: actions/setup-java@v2
       with:
         distribution: 'temurin'
         java-version: ${{ matrix.java }}
