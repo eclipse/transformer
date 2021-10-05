@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -42,7 +42,9 @@ import aQute.bnd.signatures.TypeVariableSignature;
 public class SignatureRuleImpl implements SignatureRule {
 
 	public SignatureRuleImpl(Logger logger,
-		Map<String, String> renames, Map<String, String> versions, Map<String, BundleData> bundleUpdates,
+		Map<String, String> renames,
+		Map<String, String> versions, Map<String, Map<String, String>> specificVersions,
+		Map<String, BundleData> bundleUpdates,
 		Map<String, Map<String, String>> masterTextUpdates, Map<String, String> directStrings,
 		Map<String, Map<String, String>> perClassConstant) {
 
@@ -85,6 +87,24 @@ public class SignatureRuleImpl implements SignatureRule {
 			useVersions = Collections.emptyMap();
 		}
 		this.packageVersions = useVersions;
+
+		Map<String, Map<String, String>> useSpecificVersions = null;
+		if ( (specificVersions != null) && !specificVersions.isEmpty() ) {
+			for ( Map.Entry<String, Map<String, String>> versionEntry : specificVersions.entrySet() ) {
+				String propertyName = versionEntry.getKey();
+				Map<String, String> versionsForProperty = versionEntry.getValue();
+				if ( useSpecificVersions == null ) {
+					useSpecificVersions = new HashMap<>();
+				}
+				if ( (versionsForProperty != null) && !versionsForProperty.isEmpty() ) {
+					useSpecificVersions.put(propertyName, new HashMap<>(versionsForProperty));
+				}
+			}
+		}
+		if ( useSpecificVersions == null ) {
+			useSpecificVersions = new HashMap<>();
+		}
+		this.specificPackageVersions = useSpecificVersions;
 
 		Map<String, BundleData> useBundleUpdates;
 		if ((bundleUpdates != null) && !bundleUpdates.isEmpty()) {
@@ -203,7 +223,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		// Do we have a direct mapping?
 		String full = m.get(initialValue);
 		if (full != null) {
-			debug("Per class direct replacement:[%s], %s=> %s", clazz, initialValue, full);
+			debug("Per class direct replacement:[{}], {}=> {}", clazz, initialValue, full);
 			return full;
 		}
 		String transformedString = initialValue;
@@ -213,12 +233,12 @@ public class SignatureRuleImpl implements SignatureRule {
 			//  The 'contains' test might be changed to use regular expressions in the future
 			if (transformedString.contains(k)) {
 				transformedString = transformedString.replace(k, m.get(k));
-				debug("Per class token replacement:[%s], key=%s, initialValue=%s", clazz, k, initialValue);
+				debug("Per class token replacement:[{}], key={}, initialValue={}", clazz, k, initialValue);
 				transformed = true;
 			}
 		}
 		if (transformed) {
-			debug("Per class token replacement, done:[%s] %s", clazz, transformedString);
+			debug("Per class token replacement, done:[{}] {}", clazz, transformedString);
 			return transformedString;
 		}
 		return null;
@@ -240,11 +260,33 @@ public class SignatureRuleImpl implements SignatureRule {
 
 	//
 
+	/**
+	 * Package version updates for all occurrences which are not otherwise
+	 * specialized by {@link #specificPackageVersions}.
+	 */
 	protected final Map<String, String> packageVersions;
 
 	@Override
 	public Map<String, String> getPackageVersions() {
 		return packageVersions;
+	}
+
+	/**
+	 * Package version updates for specific occurrences. Overrides
+	 * {@link #packageVersions}.
+	 */
+	protected final Map<String, Map<String, String>> specificPackageVersions;
+
+	public Map<String, Map<String, String>> getSpecificPackageVersions() {
+		return specificPackageVersions;
+	}
+
+	public Map<String, String> getSpecificPackageVersions(String propertyName) {
+		return getSpecificPackageVersions().get(propertyName);
+	}
+
+	public Set<String> getSpecificPackageVersionProperties() {
+		return getSpecificPackageVersions().keySet();
 	}
 
 	/**
@@ -359,10 +401,10 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
 		// System.out.println("isTruePackageMatch:"
-		// + " text[" + text + "]"
-		// + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
-		// + " tail[" + text.substring(matchStart + keyLen)
-		// + " *************");
+		//  + " text[" + text + "]"
+		//  + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
+		//  + " tail[" + text.substring(matchStart + keyLen)
+		//  + " *************");
 
 		int textLength = text.length();
 

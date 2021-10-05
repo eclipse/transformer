@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -170,8 +170,8 @@ public class ManifestActionImpl extends ActionImpl {
 	static {
 		Set<String> useNames = new HashSet<>();
 		useNames.add("DynamicImport-Package");
-		useNames.add("Export-Package");
 		useNames.add("Import-Package");
+		useNames.add("Export-Package");
 		useNames.add("Subsystem-Content");
 		useNames.add("IBM-API-Package");
 		useNames.add("Provide-Capability");
@@ -179,7 +179,11 @@ public class ManifestActionImpl extends ActionImpl {
 		SELECT_ATTRIBUTES = useNames;
 	}
 
-	protected boolean selectAttribute(String name) {
+	public static Set<String> getSelectedAttributes() {
+		return SELECT_ATTRIBUTES;
+	}
+
+	public static boolean selectAttribute(String name) {
 		return SELECT_ATTRIBUTES.contains(name);
 	}
 
@@ -198,7 +202,7 @@ public class ManifestActionImpl extends ActionImpl {
 			String finalValue = null;
 
 			if (selectAttribute(typedName)) {
-				finalValue = replacePackages(initialValue);
+				finalValue = replacePackages(typedName, initialValue);
 			}
 
 			if (finalValue == null) {
@@ -302,42 +306,47 @@ public class ManifestActionImpl extends ActionImpl {
 
 	/**
 	 * Replace all embedded packages of specified text with replacement
-	 * packages.
+	 * packages. Use the attribute name to select attribute specific version
+	 * text.
 	 *
+	 * @param attributeName The attribute which is being processed.
 	 * @param text Text embedding zero, one, or more package names.
+	 *
 	 * @return The text with all embedded package names replaced. Null if no
 	 *         replacements were performed.
 	 */
-	protected String replacePackages(String text) {
-
+	protected String replacePackages(String attributeName, String text) {
 		// System.out.println("Initial text [ " + text + " ]");
 
 		String initialText = text;
 
-		for (Map.Entry<String, String> renameEntry : getPackageRenames().entrySet()) {
-			String key = renameEntry.getKey();
+		for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
+			String key = renameEntry.getKey(); // Package name match data.
 			int keyLen = key.length();
 
 			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
-			if (matchSubpackages) {
+			if ( matchSubpackages ) {
 				key = SignatureRuleImpl.stripWildcard(key);
 			}
 
 			// System.out.println("Next target [ " + key + " ]");
+			// System.out.println("Text [ " + text + " ]");
 
 			int textLimit = text.length() - keyLen;
 
 			int lastMatchEnd = 0;
-			while (lastMatchEnd <= textLimit) {
+			while ( lastMatchEnd <= textLimit ) {
 				int matchStart = text.indexOf(key, lastMatchEnd);
-				if (matchStart == -1) {
+				if ( matchStart == -1 ) {
 					break;
 				}
 
-				if (!SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
+				if ( !SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
+					// System.out.println("Near match at [ " + matchStart + " ]");
 					lastMatchEnd = matchStart + keyLen;
 					continue;
 				}
+				// System.out.println("Actual match at [ " + matchStart + " ]");
 
 				String value = renameEntry.getValue();
 				int valueLen = value.length();
@@ -347,11 +356,10 @@ public class ManifestActionImpl extends ActionImpl {
 
 				int tailLenBeforeReplaceVersion = tail.length();
 
-				String newVersion = getPackageVersions().get(value);
-				if (newVersion != null) {
+				// Logging in 'getReplacementVersion'.
+				String newVersion = getReplacementVersion(attributeName, value, tail);
+				if ( newVersion != null ) {
 					tail = replacePackageVersion(tail, newVersion);
-				} else {
-					debug("replacePackages [ {} ]: [ {} -> {} ]; leaving version", initialText, key, value);
 				}
 
 				text = head + value + tail;
@@ -419,6 +427,8 @@ public class ManifestActionImpl extends ActionImpl {
 
 		String packageText = getPackageAttributeText(text);
 
+		// System.out.println("Package text [ " + packageText + " ]");
+
 		if (packageText == null) {
 			return text;
 		} else if (packageText.isEmpty()) {
@@ -475,8 +485,7 @@ public class ManifestActionImpl extends ActionImpl {
 			// finished.
 			if (!foundQuotationMark) {
 				if (ch == QUOTE_MARK) {
-					versionBeginIndex = i + 1; // just past the 1st quotation
-												// mark
+					versionBeginIndex = i + 1; // just past the 1st quotation mark
 
 					versionEndIndex = packageText.indexOf('\"', i + 1);
 					if (versionEndIndex == -1) {

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2021 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -24,17 +24,20 @@ import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
+import aQute.lib.utf8properties.UTF8Properties;
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
@@ -74,8 +77,16 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_SERVLET_VERSION				= "[2.6, 6.0)";
 	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION	= "[2.6, 6.0)";
 	public static final String	JAKARTA_SERVLET_DESCRIPTOR_VERSION	= "[2.6, 6.0)";
-	public static final String	JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
+
+	// Leave out "jakarta.servlet.http": That gives us a slot to test having
+	// a specific version update where there is no generic version update.
+	// public static final String	JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
+
 	public static final String	JAKARTA_SERVLET_RESOURCES_VERSION	= "[2.6, 6.0)";
+
+	public static final String	JAKARTA_SERVLET_VERSION_IMPORT				= "5.0";
+	public static final String	JAKARTA_SERVLET_HTTP_VERSION_IMPORT         = "6.0";
+	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION_EXPORT	= "[3.0, 6.0)";
 
 	public Set<String> getIncludes() {
 		return Collections.emptySet();
@@ -114,13 +125,44 @@ public class TestTransformManifest extends CaptureTest {
 	public Map<String, String> getPackageVersions() {
 		if (packageVersions == null) {
 			packageVersions = new HashMap<>();
-			packageVersions.put(JAVAX_SERVLET, JAKARTA_SERVLET_VERSION);
-			packageVersions.put(JAVAX_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION);
-			packageVersions.put(JAVAX_SERVLET_DESCRIPTOR, JAKARTA_SERVLET_DESCRIPTOR_VERSION);
-			packageVersions.put(JAVAX_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION);
-			packageVersions.put(JAVAX_SERVLET_RESOURCES, JAKARTA_SERVLET_RESOURCES_VERSION);
+			packageVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION);
+			packageVersions.put(JAKARTA_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION);
+			packageVersions.put(JAKARTA_SERVLET_DESCRIPTOR, JAKARTA_SERVLET_DESCRIPTOR_VERSION);
+			// Leave out "jakarta.servlet.http": That gives us a slot to test having
+			// a specific version update where there is no generic version update.
+			// packageVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION);
+			packageVersions.put(JAKARTA_SERVLET_RESOURCES, JAKARTA_SERVLET_RESOURCES_VERSION);
 		}
 		return packageVersions;
+	}
+
+	// ManifestActionImpl supports these attributes for version updates:
+	// "DynamicImport-Package"
+	// "Import-Package"
+	// "Export-Package"
+	// "Subsystem-Content"
+	// "IBM-API-Package"
+	// "Provide-Capability"
+	// "Require-Capability"
+
+	protected Map<String, Map<String, String>> specificPackageVersions;
+
+	public Map<String, Map<String, String>> getSpecificPackageVersions() {
+		if ( specificPackageVersions == null ) {
+			specificPackageVersions = new HashMap<>();
+
+			Map<String, String> importVersions = new HashMap<>(1);
+			importVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION_IMPORT);
+			// Note that 'jakarta.servlet.http' does NOT have a generic update.
+			importVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION_IMPORT);
+			specificPackageVersions.put("Import-Package", importVersions);
+
+			Map<String, String> exportVersions = new HashMap<>(1);
+			exportVersions.put(JAKARTA_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION_EXPORT);
+			specificPackageVersions.put("Export-Package", exportVersions);
+		}
+
+		return specificPackageVersions;
 	}
 
 	//
@@ -129,40 +171,24 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String			WEBCONTAINER_BUNDLE_TEXT	= "com.ibm.ws.webcontainer.jakarta,2.0,+\" Jakarta\",+\"; Jakarta Enabled\"";
 
 	public static final String[][]		WEBCONTAINER_BUNDLE_OUTPUT	= new String[][] {
-		{
-			"Bundle-SymbolicName: ", "com.ibm.ws.webcontainer.jakarta"
-		}, {
-			"Bundle-Version: ", "2.0"
-		}, {
-			"Bundle-Name: ", "WAS WebContainer Jakarta"
-		}, {
-			"Bundle-Description: ", "WAS WebContainer 8.0 with Servlet 3.0 support; Jakarta Enabled"
-		}
+		{ "Bundle-SymbolicName: ", "com.ibm.ws.webcontainer.jakarta" },
+		{ "Bundle-Version: ", "2.0" },
+		{ "Bundle-Name: ", "WAS WebContainer Jakarta" },
+		{ "Bundle-Description: ", "WAS WebContainer 8.0 with Servlet 3.0 support; Jakarta Enabled" }
 	};
 
 	//
 
 	public static final String			TRANSACTION_SYMBOLIC_NAME	= "com.ibm.ws.transaction";
-
 	public static final String			WILDCARD_SYMBOLIC_NAME		= "*";
-
 	public static final String			WILDCARD_BUNDLE_TEXT		= "*.jakarta,2.0,+\" Jakarta\",+\"; Jakarta Enabled\"";
 
 	public static final String[][]		TRANSACTION_BUNDLE_OUTPUT	= new String[][] {
-		{
-			"Bundle-SymbolicName: ", "com.ibm.ws.transaction.jakarta"
-		},
-
+		{ "Bundle-SymbolicName: ", "com.ibm.ws.transaction.jakarta" },
 		// Not changed: Wildcard identity updates to not update the version
-		{
-			"Bundle-Version: ", "1.0.40.202005041216"
-		},
-
-		{
-			"Bundle-Name: ", "Transaction Jakarta"
-		}, {
-			"Bundle-Description: ", "Transaction support, version 1.0; Jakarta Enabled"
-		}
+		{ "Bundle-Version: ", "1.0.40.202005041216" },
+		{ "Bundle-Name: ", "Transaction Jakarta" },
+		{ "Bundle-Description: ", "Transaction support, version 1.0; Jakarta Enabled" }
 	};
 
 	//
@@ -207,7 +233,8 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
-					getPackageRenames(), getPackageVersions(), getBundleUpdates(), null, getDirectStrings(), Collections.emptyMap()),
+					getPackageRenames(), getPackageVersions(), null, getBundleUpdates(), null, getDirectStrings(),
+					Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 		return jakartaManifestAction;
@@ -221,7 +248,8 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaFeatureAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, Collections.emptyMap()),
+				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
+					Collections.emptyMap()),
 				ManifestActionImpl.IS_FEATURE);
 		}
 
@@ -238,10 +266,26 @@ public class TestTransformManifest extends CaptureTest {
 
 			jakartaManifestActionTx = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
-					getPackageRenames(), getPackageVersions(), getBundleUpdatesTx(), null, getDirectStrings(), Collections.emptyMap()),
+					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
+					Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 		return jakartaManifestActionTx;
+	}
+
+	public ManifestActionImpl specificJakartaManifestAction;
+
+	public ManifestActionImpl getSpecificJakartaManifestAction() {
+		if (specificJakartaManifestAction == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
+
+			specificJakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
+					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
+					null, getDirectStrings(), Collections.emptyMap()),
+				ManifestActionImpl.IS_MANIFEST);
+		}
+		return specificJakartaManifestAction;
 	}
 
 	//
@@ -269,25 +313,29 @@ public class TestTransformManifest extends CaptureTest {
 
 		public void verifyInitial(List<String> lines) {
 			int actualInitialTagInitial = TestUtils.occurrences(lines, initialTag);
-			System.out.println("Tag [ " + initialTag + " ] Expected [ " + initialTagInitialCount + " ] Actual [ "
-				+ actualInitialTagInitial + " ]");
+			System.out.println("Tag [ " + initialTag + " ]" +
+				" Expected [ " + initialTagInitialCount + " ]" +
+				" Actual [ " + actualInitialTagInitial + " ]");
 			Assertions.assertEquals(initialTagInitialCount, actualInitialTagInitial, initialTag);
 
 			int actualFinalTagInitial = TestUtils.occurrences(lines, finalTag);
-			System.out.println("Tag [ " + finalTag + " ] Expected [ " + finalTagInitialCount + " ] Actual [ "
-				+ actualFinalTagInitial + " ]");
+			System.out.println("Tag [ " + finalTag + " ]" +
+				" Expected [ " + finalTagInitialCount + " ]" +
+				" Actual [ " + actualFinalTagInitial + " ]");
 			Assertions.assertEquals(finalTagInitialCount, actualFinalTagInitial, initialTag);
 		}
 
 		public void verifyFinal(List<String> lines) {
 			int actualInitialTagFinal = TestUtils.occurrences(lines, initialTag);
-			System.out.println("Tag [ " + initialTag + " ] Expected [ " + initialTagFinalCount + " ] Actual [ "
-				+ actualInitialTagFinal + " ]");
+			System.out.println("Tag [ " + initialTag + " ]" +
+				" Expected [ " + initialTagFinalCount + " ]" +
+				" Actual [ " + actualInitialTagFinal + " ]");
 			Assertions.assertEquals(initialTagFinalCount, actualInitialTagFinal, initialTag);
 
 			int actualFinalTagFinal = TestUtils.occurrences(lines, finalTag);
-			System.out.println("Tag [ " + finalTag + " ] Expected [ " + finalTagFinalCount + " ] Actual [ "
-				+ actualFinalTagFinal + " ]");
+			System.out.println("Tag [ " + finalTag + " ]" +
+				" Expected [ " + finalTagFinalCount + " ]" +
+				" Actual [ " + actualFinalTagFinal + " ]");
 			Assertions.assertEquals(finalTagFinalCount, actualFinalTagFinal, initialTag);
 		}
 	}
@@ -296,8 +344,8 @@ public class TestTransformManifest extends CaptureTest {
 
 	public List<String> displayManifest(String manifestPath, InputStream manifestStream) throws IOException {
 		System.out.println("Manifest [ " + manifestPath + " ]");
-		List<String> manifestLines = TestUtils.loadLines(manifestStream); // throws
-																			// IOException
+		List<String> manifestLines = TestUtils.loadLines(manifestStream);
+		// throws IOException
 
 		List<String> collapsedLines = TestUtils.manifestCollapse(manifestLines);
 
@@ -309,34 +357,72 @@ public class TestTransformManifest extends CaptureTest {
 		return collapsedLines;
 	}
 
-	public void testTransform(String inputPath, Occurrences[] occurrences, String[][] identityUpdates,
+	public static final String UNUSED_EXPECTED_OUTPUT_PATH = null;
+	public static final Occurrences[] UNUSED_OCCURRENCES = null;
+	public static final String[][] UNUSED_IDENTITY_UPDATES = null;
+
+	public void testTransform(
+		String inputPath,
+		String expectedOutputPath,
+		Occurrences[] occurrences,
+		String[][] identityUpdates,
 		ManifestActionImpl manifestAction) throws TransformException, IOException {
 
 		System.out.println("Transform [ " + inputPath + " ] using [ " + manifestAction.getName() + " ] ...");
 
 		System.out.println("Read [ " + inputPath + " ]");
-		InputStream manifestInput = TestUtils.getResourceStream(inputPath); // throws
-																			// IOException
+		InputStream manifestInput = TestUtils.getResourceStream(inputPath);
+		// throws IOException
 
 		List<String> inputLines = displayManifest(inputPath, manifestInput);
 
-		System.out.println("Verify input [ " + inputPath + " ]");
-		for (Occurrences occurrence : occurrences) {
-			occurrence.verifyInitial(inputLines);
+		if ( occurrences != null ) {
+			System.out.println("Verify input [ " + inputPath + " ]");
+			for (Occurrences occurrence : occurrences) {
+				occurrence.verifyInitial(inputLines);
+			}
 		}
 
 		InputStreamData manifestOutput;
-		try (InputStream input = TestUtils.getResourceStream(inputPath)) { // throws
-																			// IOException
-			manifestOutput = manifestAction.apply(inputPath, input); // throws
-																		// JakartaTransformException
+		try (InputStream input = TestUtils.getResourceStream(inputPath)) { // throws IOException
+			manifestOutput = manifestAction.apply(inputPath, input); // throws JakartaTransformException
 		}
 
-		List<String> outputLines = displayManifest(inputPath, manifestOutput.stream);
+		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream);
 
 		System.out.println("Verify output [ " + inputPath + " ]");
-		for (Occurrences occurrence : occurrences) {
-			occurrence.verifyFinal(outputLines);
+
+		if ( expectedOutputPath != null ) {
+			System.out.println("Read expected output [ " + expectedOutputPath + " ]");
+			InputStream expectedInput = TestUtils.getResourceStream(expectedOutputPath);
+			// throws IOException
+
+			List<String> expectedLines = displayManifest(expectedOutputPath, expectedInput);
+
+			System.out.println("Verify input [ " + inputPath + " ] against expected [ " + expectedOutputPath + " ]");
+
+			int numLines = outputLines.size();
+
+			if ( numLines != expectedLines.size() ) {
+				System.out.println("Actual output lines [ " + numLines + " ] Expected [ " + expectedLines.size() + " ]");
+				Assertions.assertEquals(expectedLines.size(), numLines, "Incorrect number of output lines");
+			}
+
+			for ( int lineNo = 0; lineNo < numLines; lineNo++ ) {
+				String actualLine = outputLines.get(lineNo);
+				String expectedLine = expectedLines.get(lineNo);
+
+				if ( !actualLine.equals(expectedLine) ) {
+					System.out.println("Line [ " + lineNo + " ] actual unequal to expected");
+					Assertions.assertEquals(actualLine, expectedLine, "Line [ " + lineNo + " ] mismatch");
+				}
+			}
+		}
+
+		if ( occurrences != null ) {
+			for (Occurrences occurrence : occurrences) {
+				occurrence.verifyFinal(outputLines);
+			}
 		}
 
 		if (identityUpdates != null) {
@@ -430,17 +516,19 @@ public class TestTransformManifest extends CaptureTest {
 
 	//
 
-	public static final String			TEST_MANIFEST_PATH_WEBCONTAINER	= "transformer/test/data/servlet/META-INF/MANIFEST.MF";
+	public static final String			TEST_MANIFEST_PATH_WEBCONTAINER	=
+		"transformer/test/data/servlet/META-INF/MANIFEST.MF";
 
 	public static final Occurrences[]	MANIFEST_TO_JAKARTA_DATA		= {
-		new Occurrences(JAVAX_SERVLET, 6, 0, JAKARTA_SERVLET, 0, 6),
+		new Occurrences(JAVAX_SERVLET,      6, 0, JAKARTA_SERVLET,      0, 6),
 		new Occurrences(JAVAX_SERVLET_HTTP, 1, 0, JAKARTA_SERVLET_HTTP, 0, 1),
-		new Occurrences(JAVAX_SERVLET_SCI, 1, 0, JAKARTA_SERVLET_SCI, 0, 1)
+		new Occurrences(JAVAX_SERVLET_SCI,  1, 0, JAKARTA_SERVLET_SCI,  0, 1)
 	};
 
 	//
 
-	public static final String			TEST_FEATURE_PATH				= "transformer/test/data/servlet/META-INF/servlet-4.0.mf";
+	public static final String			TEST_FEATURE_PATH				=
+		"transformer/test/data/servlet/META-INF/servlet-4.0.mf";
 
 	public static final Occurrences[]	FEATURE_TO_JAKARTA_DATA			= {
 		// EMPTY
@@ -450,14 +538,23 @@ public class TestTransformManifest extends CaptureTest {
 
 	@Test
 	public void testTransformManifest_Servlet() throws TransformException, IOException {
-		testTransform(TEST_MANIFEST_PATH_WEBCONTAINER, MANIFEST_TO_JAKARTA_DATA, WEBCONTAINER_BUNDLE_OUTPUT,
+		testTransform(
+			TEST_MANIFEST_PATH_WEBCONTAINER,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			MANIFEST_TO_JAKARTA_DATA,
+			WEBCONTAINER_BUNDLE_OUTPUT,
 			getJakartaManifestAction());
 		// throws JakartaTransformException, IOException
 	}
 
 	@Test
 	public void testTransformFeature_Servlet() throws TransformException, IOException {
-		testTransform(TEST_FEATURE_PATH, FEATURE_TO_JAKARTA_DATA, null, getJakartaFeatureAction());
+		testTransform(
+			TEST_FEATURE_PATH,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			FEATURE_TO_JAKARTA_DATA,
+			UNUSED_IDENTITY_UPDATES,
+			getJakartaFeatureAction());
 		// throws JakartaTransformException, IOException
 	}
 
@@ -466,132 +563,94 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String			TEST_MANIFEST_PATH_TX		= "transformer/test/data/transaction/META-INF/MANIFEST.MF";
 
 	public static final Occurrences[]	MANIFEST_TO_JAKARTA_DATA_TX	= {
-		new Occurrences(JAVAX_ANNOTATION, 1, 0, JAKARTA_ANNOTATION, 0, 1),
-		new Occurrences(JAVAX_ANNOTATION_SECURITY, 0, 0, JAKARTA_ANNOTATION_SECURITY, 0, 0),
-
-		new Occurrences(JAVAX_SERVLET, 4, 0, JAKARTA_SERVLET, 0, 4),
-		new Occurrences(JAVAX_SERVLET_HTTP, 2, 0, JAKARTA_SERVLET_HTTP, 0, 2),
-
-		new Occurrences(JAVAX_TRANSACTION, 9, 2, JAKARTA_TRANSACTION, 0, 7),													// The
-																																// two
-																																// '.xa'
-																																// are
-																																// not
-																																// transformed.
-		new Occurrences(JAVAX_TRANSACTION_XA, 2, 2, JAKARTA_TRANSACTION_XA, 0, 0),
-		new Occurrences(JAVAX_TRANSACTION_UT, 1, 0, JAKARTA_TRANSACTION_UT, 0, 1),
-		new Occurrences(JAVAX_TRANSACTION_TM, 1, 0, JAKARTA_TRANSACTION_TM, 0, 1),
-		new Occurrences(JAVAX_TRANSACTION_TSR, 1, 0, JAKARTA_TRANSACTION_TSR, 0, 1)
+		new Occurrences(JAVAX_ANNOTATION,           1, 0,  JAKARTA_ANNOTATION,           0, 1),
+		new Occurrences(JAVAX_ANNOTATION_SECURITY,  0, 0,  JAKARTA_ANNOTATION_SECURITY,  0, 0),
+		new Occurrences(JAVAX_SERVLET,              4, 0,  JAKARTA_SERVLET,              0, 4),
+		new Occurrences(JAVAX_SERVLET_HTTP,         2, 0,  JAKARTA_SERVLET_HTTP,         0, 2),
+		new Occurrences(JAVAX_TRANSACTION,          9, 2,  JAKARTA_TRANSACTION,          0, 7),
+		// The two '.xa' are not transformed.
+		new Occurrences(JAVAX_TRANSACTION_XA,       2, 2,  JAKARTA_TRANSACTION_XA,       0, 0),
+		new Occurrences(JAVAX_TRANSACTION_UT,       1, 0,  JAKARTA_TRANSACTION_UT,       0, 1),
+		new Occurrences(JAVAX_TRANSACTION_TM,       1, 0,  JAKARTA_TRANSACTION_TM,       0, 1),
+		new Occurrences(JAVAX_TRANSACTION_TSR,      1, 0,  JAKARTA_TRANSACTION_TSR,      0, 1)
 	};
 
 	@Test
 	public void testTransformManifest_Transaction() throws TransformException, IOException {
-		testTransform(TEST_MANIFEST_PATH_TX, MANIFEST_TO_JAKARTA_DATA_TX, TRANSACTION_BUNDLE_OUTPUT,
+		testTransform(
+			TEST_MANIFEST_PATH_TX,
+			UNUSED_EXPECTED_OUTPUT_PATH,
+			MANIFEST_TO_JAKARTA_DATA_TX,
+			TRANSACTION_BUNDLE_OUTPUT,
 			getJakartaManifestActionTx());
 
 		// throws JakartaTransformException, IOException
 	}
 
-	String	newVersion							= "[4.0,5)";
+	public static final String	newVersion							= "[4.0,5)";
 
 	// Embedding text is the input for each test
-	String	embeddingText0						= "; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\"[1.0.0,1.0.200)\"";
-	String	embeddingText1						= ";version=\"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText2						= ";version= \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText3						= ";version =\"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText4						= ";version = \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText5						= ";version = \"[2.6,3)\";resolution:=\"optional\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText6						= ";resolution:=\"optional\";version = \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	embeddingText7						= ";version=\"[2.6,3)\"";
-	String	embeddingText8						= "";
-	String	embeddingText9						= ",";
-	String	embeddingText10						= ";resolution:=\"optional\"";																									// no
-																																												// version
-	String	embeddingText11						= ",javax.servlet.annotation;version=\"[2.6,3)\"";																				// leading
-																																												// comma
-	String	embeddingText12						= ";version=\"[2.6,3),javax.servlet.annotation;version=\"[2.6,3)\"";															// missing
-																																												// quote
-																																												// after
-																																												// version
-	String	embeddingText13						= "\",com.ibm.ws.webcontainer.core;version=\"1.1.0\"";																			// first
-																																												// char
-																																												// is
-																																												// a
-																																												// quote
-																																												// (no
-																																												// package
-																																												// attributes)
+
+	public static final String[] ATTRIBUTE_TEXT = new String[] {
+		"; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\"[1.0.0,1.0.200)\"",
+		";version=\"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version= \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version =\"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version = \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version = \"[2.6,3)\";resolution:=\"optional\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";resolution:=\"optional\";version = \"[2.6,3)\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version=\"[2.6,3)\"",
+		"",
+		",",
+		";resolution:=\"optional\"", // no version
+		",javax.servlet.annotation;version=\"[2.6,3)\"", // leading comma
+		";version=\"[2.6,3),javax.servlet.annotation;version=\"[2.6,3)\"", // missing quote after version
+		"\",com.ibm.ws.webcontainer.core;version=\"1.1.0\"" // first char is a quote (no package attributes)
+	};
 
 	// Expected results: When replacing the version, the expected result is the
-	// entire
-	// embedding text with the version of the first package replaced with the
-	// new version.
-	String	expectedResultText0_ReplaceVersion	= "; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\""
-		+ newVersion + "\"";
-	String	expectedResultText1_ReplaceVersion	= ";version=\"" + newVersion
-		+ "\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText2_ReplaceVersion	= ";version= \"" + newVersion
-		+ "\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText3_ReplaceVersion	= ";version =\"" + newVersion
-		+ "\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText4_ReplaceVersion	= ";version = \"" + newVersion
-		+ "\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText5_ReplaceVersion	= ";version = \"" + newVersion
-		+ "\";resolution:=\"optional\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText6_ReplaceVersion	= ";resolution:=\"optional\";version = \"" + newVersion
-		+ "\",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText7_ReplaceVersion	= ";version=\"" + newVersion + "\"";
-	String	expectedResultText8_ReplaceVersion	= "";
-	String	expectedResultText9_ReplaceVersion	= ",";
-	String	expectedResultText10_ReplaceVersion	= ";resolution:=\"optional\"";
-	String	expectedResultText11_ReplaceVersion	= ",javax.servlet.annotation;version=\"[2.6,3)\"";
-	String	expectedResultText12_ReplaceVersion	= ";version=\"[2.6,3),javax.servlet.annotation;version=\"[2.6,3)\"";															// missing
-																																												// quote
-																																												// (no
-																																												// version
-																																												// replacement)
-	String	expectedResultText13_ReplaceVersion	= "\",com.ibm.ws.webcontainer.core;version=\"1.1.0\"";
+	// entire embedding text with the version of the first package replaced with
+	// the new version.
+
+	public static final String[] UPDATED_ATTRIBUTE_TEXT = new String[] {
+		"; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\"" + newVersion + "\"",
+		";version=\"" + newVersion + "\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version= \"" + newVersion + "\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version =\"" + newVersion + "\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version = \"" + newVersion + "\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version = \"" + newVersion + "\";resolution:=\"optional\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";resolution:=\"optional\";version = \"" + newVersion + "\",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version=\"" + newVersion + "\"",
+		"",
+		",",
+		";resolution:=\"optional\"",
+		",javax.servlet.annotation;version=\"[2.6,3)\"",
+		";version=\"[2.6,3),javax.servlet.annotation;version=\"[2.6,3)\"", // missing quote (no version replacement)
+		"\",com.ibm.ws.webcontainer.core;version=\"1.1.0\""
+	};
 
 	// Expected results: When getting package attributes, expected result is
 	// just the package attribute text which is at the beginning of the
 	// embedding text
-	String	expectedResultText1_GetPackageText	= ";version=\"[2.6,3)\",";
-	String	expectedResultText2_GetPackageText	= ";version= \"[2.6,3)\",";
-	String	expectedResultText3_GetPackageText	= ";version =\"[2.6,3)\",";
-	String	expectedResultText4_GetPackageText	= ";version = \"[2.6,3)\",";
-	String	expectedResultText5_GetPackageText	= ";version = \"[2.6,3)\";resolution:=\"optional\",";
-	String	expectedResultText6_GetPackageText	= ";resolution:=\"optional\";version = \"[2.6,3)\",";
-	String	expectedResultText7_GetPackageText	= ";version=\"[2.6,3)\"";
-	String	expectedResultText8_GetPackageText	= "";																															// empty
-																																												// string
-																																												// produces
-																																												// empty
-																																												// string
-	String	expectedResultText9_GetPackageText	= "";																															// comma
-																																												// produces
-																																												// empty
-																																												// string
-	String	expectedResultText10_GetPackageText	= ";resolution:=\"optional\"";
-	String	expectedResultText11_GetPackageText	= "";																															// leading
-																																												// comma
-																																												// followed
-																																												// by
-																																												// package
-																																												// is
-																																												// empty
-																																												// string
-	String	expectedResultText12_GetPackageText	= ";version=\"[2.6,3),";																										// missing
-																																												// quote
-																																												// (no
-																																												// version
-																																												// replacement)
-	String	expectedResultText13_GetPackageText	= "";																															// Not
-																																												// starting
-																																												// with
-																																												// ';'
-																																												// produces
-																																												// empty
-																																												// string
+
+	// "; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\"[1.0.0,1.0.200)\"";
+
+	public static final String[] HEAD_ATTRIBUTE_TEXT = new String[] {
+		"; location:=\"dev/api/spec/,lib/\"; mavenCoordinates=\"javax.servlet:javax.servlet-api:4.0.1\"; version=\"[1.0.0,1.0.200)\"",
+		";version=\"[2.6,3)\",",
+		";version= \"[2.6,3)\",",
+		";version =\"[2.6,3)\",",
+		";version = \"[2.6,3)\",",
+		";version = \"[2.6,3)\";resolution:=\"optional\",",
+		";resolution:=\"optional\";version = \"[2.6,3)\",",
+		";version=\"[2.6,3)\"",
+		"", // empty string produces empty string
+		"", // comma produces empty string
+		";resolution:=\"optional\"",
+		"", // leading comma followed by package is empty string
+		";version=\"[2.6,3),", // missing quote (no version replacement)
+		"" // Not starting with ';' produces empty string
+	};
 
 	/**
 	 * Subclass which allows us to call protected methods of ManifestActionImpl
@@ -607,8 +666,8 @@ public class TestTransformManifest extends CaptureTest {
 			return SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, false);
 		}
 
-		public String callReplacePackages(String text) {
-			return replacePackages(text);
+		public String callReplacePackages(String attributeName, String text) {
+			return replacePackages(attributeName, text);
 		}
 
 		public String callReplacePackageVersion(String embeddingText, String newPackageVersion) {
@@ -628,11 +687,29 @@ public class TestTransformManifest extends CaptureTest {
 
 			manifestAction_test = new ManifestActionImpl_Test(useLogger, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, Collections.emptyMap()),
+				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
+					Collections.emptyMap()),
 				ManifestActionImpl.IS_MANIFEST);
 		}
 
 		return manifestAction_test;
+	}
+
+	private ManifestActionImpl_Test specificManifestAction_test;
+
+	protected ManifestActionImpl_Test getSpecificManifestAction() {
+		if (specificManifestAction_test == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
+
+			specificManifestAction_test = new ManifestActionImpl_Test(useLogger, false, false, new InputBufferImpl(),
+				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
+				new SignatureRuleImpl(useLogger,
+					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),
+					null, null, null, Collections.emptyMap()),
+				ManifestActionImpl.IS_MANIFEST);
+		}
+
+		return specificManifestAction_test;
 	}
 
 	/**
@@ -752,102 +829,35 @@ public class TestTransformManifest extends CaptureTest {
 	}
 
 	@Test
-	public void testReplacePackageVersionInEmbeddingText() {
+	public void testUpdatePackageVersion() {
 		ManifestActionImpl_Test manifestAction = getManifestAction();
 
 		String failureText = "Package version transformation failure";
-		String result;
 
-		result = manifestAction.callReplacePackageVersion(embeddingText0, newVersion);
-		assertEquals(expectedResultText0_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText1, newVersion);
-		assertEquals(expectedResultText1_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText2, newVersion);
-		assertEquals(expectedResultText2_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText3, newVersion);
-		assertEquals(expectedResultText3_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText4, newVersion);
-		assertEquals(expectedResultText4_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText5, newVersion);
-		assertEquals(expectedResultText5_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText6, newVersion);
-		assertEquals(expectedResultText6_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText7, newVersion);
-		assertEquals(expectedResultText7_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText9, newVersion);
-		assertEquals(expectedResultText9_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText10, newVersion);
-		assertEquals(expectedResultText10_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText11, newVersion);
-		assertEquals(expectedResultText11_ReplaceVersion, result, failureText);
-
-		// Check syntax error in Manifest (Case of no closing quotes)
-		result = manifestAction.callReplacePackageVersion(embeddingText12, newVersion);
-		assertEquals(expectedResultText12_ReplaceVersion, result, failureText);
-
-		result = manifestAction.callReplacePackageVersion(embeddingText13, newVersion);
-		assertEquals(expectedResultText13_ReplaceVersion, result, failureText);
+		for ( int testNo = 0; testNo < ATTRIBUTE_TEXT.length; testNo++ ) {
+			String result = manifestAction.callReplacePackageVersion(ATTRIBUTE_TEXT[testNo], newVersion);
+			assertEquals(UPDATED_ATTRIBUTE_TEXT[testNo], result, failureText);
+		}
 	}
 
 	@Test
-	public void testGetPackageAttributeText() {
+	public void testGetPackageAttribute() {
 		ManifestActionImpl_Test manifestAction = getManifestAction();
 
-		String failureText = "Package attribute transformation failure";
+		String failureText = "Get package attribute failure";
 
-		String result;
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText1);
-		assertEquals(expectedResultText1_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText2);
-		assertEquals(expectedResultText2_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText3);
-		assertEquals(expectedResultText3_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText4);
-		assertEquals(expectedResultText4_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText5);
-		assertEquals(expectedResultText5_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText7);
-		assertEquals(expectedResultText7_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText8);
-		assertEquals(expectedResultText8_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText9);
-		assertEquals(expectedResultText9_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText10);
-		assertEquals(expectedResultText10_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText11);
-		assertEquals(expectedResultText11_GetPackageText, result, failureText);
-
-		// Check syntax error in Manifest (Case of no closing quotes)
-		result = manifestAction.callGetPackageAttributeText(embeddingText12);
-		assertEquals(expectedResultText12_GetPackageText, result, failureText);
-
-		result = manifestAction.callGetPackageAttributeText(embeddingText13);
-		assertEquals(expectedResultText13_GetPackageText, result, failureText);
+		for ( int testNo = 0; testNo < ATTRIBUTE_TEXT.length; testNo++ ) {
+			String result = manifestAction.callGetPackageAttributeText(ATTRIBUTE_TEXT[testNo]);
+			assertEquals(HEAD_ATTRIBUTE_TEXT[testNo], result, failureText);
+		}
 	}
 
 	//
 
-	public static final String	TX_PROVIDE_TEXT_INPUT	= "Provide-Capability: osgi.service;objectClass:List<String>=\"com.ibm.tx."
+	public static final String  TX_PROVIDE_ATTRIBUTE_NAME = "Provide-Capability";
+
+	public static final String	TX_PROVIDE_TEXT_INPUT	=
+		"osgi.service;objectClass:List<String>=\"com.ibm.tx."
 		+ "jta.TransactionInflowManager\";uses:=\"com.ibm.tx.jta\",osgi.service;obj"
 		+ "ectClass:List<String>=\"com.ibm.tx.remote.RemoteTransactionController\""
 		+ ";uses:=\"com.ibm.tx.remote\",osgi.service;objectClass:List<String>=\"com"
@@ -861,9 +871,11 @@ public class TestTransformManifest extends CaptureTest {
 		+ "onengine.ObjectFactoryInfo\";uses:=\"com.ibm.wsspi.injectionengine\",osg"
 		+ "i.service;objectClass:List<String>=\"com.ibm.wsspi.uow.UOWManager\";use"
 		+ "s:=\"com.ibm.wsspi.uow\",osgi.service;objectClass:List<String>=\"javax.t"
-		+ "ransaction.TransactionSynchronizationRegistry\";uses:=\"javax.transacti" + "on\"";
+		+ "ransaction.TransactionSynchronizationRegistry\";uses:=\"javax.transacti"
+		+ "on\"";
 
-	public static final String	TX_PROVIDE_TEXT_OUTPUT	= "Provide-Capability: osgi.service;objectClass:List<String>=\"com.ibm.tx."
+	public static final String	TX_PROVIDE_TEXT_OUTPUT	=
+		"osgi.service;objectClass:List<String>=\"com.ibm.tx."
 		+ "jta.TransactionInflowManager\";uses:=\"com.ibm.tx.jta\",osgi.service;obj"
 		+ "ectClass:List<String>=\"com.ibm.tx.remote.RemoteTransactionController\""
 		+ ";uses:=\"com.ibm.tx.remote\",osgi.service;objectClass:List<String>=\"com"
@@ -877,9 +889,12 @@ public class TestTransformManifest extends CaptureTest {
 		+ "onengine.ObjectFactoryInfo\";uses:=\"com.ibm.wsspi.injectionengine\",osg"
 		+ "i.service;objectClass:List<String>=\"com.ibm.wsspi.uow.UOWManager\";use"
 		+ "s:=\"com.ibm.wsspi.uow\",osgi.service;objectClass:List<String>=\"jakarta.t"
-		+ "ransaction.TransactionSynchronizationRegistry\";uses:=\"jakarta.transacti" + "on\"";
+		+ "ransaction.TransactionSynchronizationRegistry\";uses:=\"jakarta.transacti"
+		+ "on\"";
 
-	public static final String	TX_REQUIRE_TEXT_INPUT	= "Require-Capability: osgi.ee;filter:=\"(&(osgi.ee=JavaSE)(version=1.8))\""
+	public static final String  TX_REQUIRE_ATTRIBUTE_NAME = "Require-Capability";
+
+	public static final String	TX_REQUIRE_TEXT_INPUT	= "osgi.ee;filter:=\"(&(osgi.ee=JavaSE)(version=1.8))\""
 		+ ",osgi.service;filter:=\"(objectClass=com.ibm.tx.util.TMService)\";effec"
 		+ "tive:=active,osgi.service;filter:=\"(objectClass=com.ibm.ws.Transactio"
 		+ "n.UOWCurrent)\";effective:=active,osgi.service;filter:=\"(objectClass=c"
@@ -888,7 +903,7 @@ public class TestTransformManifest extends CaptureTest {
 		+ "tionManager)\";effective:=active,osgi.extender;filter:=\"(&(osgi.extend"
 		+ "er=osgi.component)(version>=1.4.0)(!(version>=2.0.0)))\"";
 
-	public static final String	TX_REQUIRE_TEXT_OUTPUT	= "Require-Capability: osgi.ee;filter:=\"(&(osgi.ee=JavaSE)(version=1.8))\""
+	public static final String	TX_REQUIRE_TEXT_OUTPUT	= "osgi.ee;filter:=\"(&(osgi.ee=JavaSE)(version=1.8))\""
 		+ ",osgi.service;filter:=\"(objectClass=com.ibm.tx.util.TMService)\";effec"
 		+ "tive:=active,osgi.service;filter:=\"(objectClass=com.ibm.ws.Transactio"
 		+ "n.UOWCurrent)\";effective:=active,osgi.service;filter:=\"(objectClass=c"
@@ -901,15 +916,206 @@ public class TestTransformManifest extends CaptureTest {
 	public void testTransactionAttributes() {
 		// Use the common manifest action; this test doesn't care about
 		// bundle identity updates, which is all that different about the
-		// transaction
-		// manifest action.
+		// transaction manifest action.
 
 		ManifestActionImpl_Test manifestAction = getManifestAction();
 
-		String txProvideOutput = manifestAction.callReplacePackages(TX_PROVIDE_TEXT_INPUT);
+		String txProvideOutput = manifestAction.callReplacePackages(TX_PROVIDE_ATTRIBUTE_NAME, TX_PROVIDE_TEXT_INPUT);
 		assertEquals(TX_PROVIDE_TEXT_OUTPUT, txProvideOutput, "'Provide-Capability' transform failure");
 
-		String txRequireOutput = manifestAction.callReplacePackages(TX_REQUIRE_TEXT_INPUT);
+		String txRequireOutput = manifestAction.callReplacePackages(TX_REQUIRE_ATTRIBUTE_NAME, TX_REQUIRE_TEXT_INPUT);
 		assertEquals(TX_REQUIRE_TEXT_OUTPUT, txRequireOutput, "'Require-Capability' transform failure");
+	}
+
+	//
+
+	public static final String DYNAMIC_IMPORT_PACKAGE = "DynamicImport-Package";
+	public static final String IMPORT_PACKAGE = "Import-Package";
+	public static final String EXPORT_PACKAGE = "Export-Package";
+
+	public static final String SPECIFIC_ATTRIBUTE_INPUT =
+		"javax.servlet;version=\"4.0.0\"" +
+		",javax.servlet.annotation;version=\"4.0.0\"" +
+		",javax.servlet.http;version=\"4.0.0\"" +
+		",javax.annotation.security;version=\"4.0.0\"";
+
+	// Generic:                    "[2.6, 6.0)"
+	//   (does not include servlet.http)
+	// Import (servlet):           "5.0"
+	// Import (servlet.http)       "6.0"
+	// Export (servlet.annotation) "[3.0, 6.0)"
+
+	// No overrides.  All use the generic version update.
+	public static final String SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT =
+		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.http;version=\"4.0.0\"" +
+		",jakarta.annotation.security;version=\"4.0.0\"";
+
+	// "jakarta.servlet" is overridden.
+	public static final String SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT =
+		"jakarta.servlet;version=\"5.0\"" +
+		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.http;version=\"6.0\"" +
+		",jakarta.annotation.security;version=\"4.0.0\"";
+
+	// "jakarta.servlet.annotation" is overridden.
+	public static final String SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT =
+		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.annotation;version=\"[3.0, 6.0)\"" +
+		",jakarta.servlet.http;version=\"4.0.0\"" +
+		",jakarta.annotation.security;version=\"4.0.0\"";
+
+	@Test
+	public void testSpecificAttributes() {
+		ManifestActionImpl_Test specificManifestAction = getSpecificManifestAction();
+
+		String dynamicOutput = specificManifestAction.callReplacePackages(DYNAMIC_IMPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
+		assertEquals(SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT, dynamicOutput, "'DynamicImport-Package' transform failure");
+
+		String importOutput = specificManifestAction.callReplacePackages(IMPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
+		assertEquals(SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT, importOutput, "'Import-Packages' transform failure");
+
+		String exportOutput = specificManifestAction.callReplacePackages(EXPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
+		assertEquals(SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT, exportOutput, "'Export-Packages' transform failure");
+	}
+
+	public static final String MANIFEST_PATH_SPECIFIC =
+		"transformer/test/data/specific/META-INF/MANIFEST.MF";
+
+	public static final String MANIFEST_PATH_SPECIFIC_EXPECTED =
+		"transformer/test/data/specific/META-INF/MANIFEST.MF.EXPECTED";
+
+	@Test
+	public void testTransformManifest_Specific() throws TransformException, IOException {
+		testTransform(
+			MANIFEST_PATH_SPECIFIC,
+			MANIFEST_PATH_SPECIFIC_EXPECTED,
+			UNUSED_OCCURRENCES,
+			UNUSED_IDENTITY_UPDATES,
+			getSpecificJakartaManifestAction());
+
+		// throws JakartaTransformException, IOException
+	}
+
+	public UTF8Properties loadProperties(String path) throws IOException {
+		try ( InputStream inputStream = TestUtils.getResourceStream(path) ) {
+			return FileUtils.loadProperties(inputStream);
+		}
+	}
+
+	public static final String SPECIFIC_VERSION_PROPERTIES_PATH =
+		"transformer/test/data/specific/version.properties";
+
+	@Test
+	public void testSpecificProperties() throws Exception {
+		Map<String, String> expectedGeneric = getPackageVersions();
+		Map<String, Map<String, String>> expectedSpecific = getSpecificPackageVersions();
+
+		Map<String, String> loadedGeneric = new HashMap<>();
+		Map<String, Map<String, String>> loadedSpecific = new HashMap<>();
+		UTF8Properties properties = loadProperties(SPECIFIC_VERSION_PROPERTIES_PATH);
+		TransformProperties.setPackageVersions(properties, loadedGeneric, loadedSpecific);
+
+		validateMap("Generic version updates", loadedGeneric, expectedGeneric);
+		validateMap("Specific version updates", loadedGeneric, expectedGeneric);
+	}
+
+	public void validateSize(String tag, Map<?, ?> actual, Map<?, ?> expected) {
+		int actualSize = actual.keySet().size();
+		int expectedSize = expected.keySet().size();
+
+		String prefix = "Properties [ " + tag + " ]";
+		if ( actualSize != expectedSize ) {
+			String msg = prefix + ": Wrong size";
+			System.out.println(msg +
+				": Expected [ " + expectedSize + " ]" +
+				": Actual [ " + actualSize + " ]");
+			Assertions.assertEquals(expectedSize, actualSize, msg);
+		} else {
+			System.out.println(prefix + ": Size [ " + actualSize + " ]");
+		}
+	}
+
+	public void validateMaps(String tag,
+		Map<String, Map<String, String>> actual,
+		Map<String, Map<String, String>> expected) {
+
+		System.out.println("Validating [ " + tag + " ] properties");
+
+		String prefix = "Properties [ " + tag + " ]";
+
+		validateSize(tag, actual, expected);
+
+		for ( String actualKey : actual.keySet() ) {
+			boolean expectKey = expected.containsKey(actualKey);
+
+			if ( !expectKey ) {
+				String msg = prefix + ": Extra key [ " + actualKey + " ]";
+				System.out.println(msg);
+				Assertions.assertTrue(expectKey, msg);
+			}
+		}
+
+		for ( String expectedKey : expected.keySet() ) {
+			boolean foundKey = actual.containsKey(expectedKey);
+
+			if ( !foundKey) {
+				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
+				System.out.println(msg);
+				Assertions.assertTrue(foundKey, msg);
+			}
+		}
+
+		for ( String actualKey : actual.keySet() ) {
+			validateMap(tag + " [ " + actualKey + " ]", actual.get(actualKey), expected.get(actualKey));
+		}
+	}
+
+	public void validateMap(String tag,
+		Map<String, String> actual,
+		Map<String, String> expected) {
+
+		System.out.println("Validating [ " + tag + " ] properties");
+
+		String prefix = "Properties [ " + tag + " ]";
+
+		validateSize(tag, actual, expected);
+
+		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
+			String actualKey = actualEntry.getKey();
+			String actualValue = actualEntry.getValue();
+
+			String expectedValue = expected.get(actualKey);
+
+			if ( expectedValue == null ) {
+				String msg = prefix + ": Extra key [ " + actualKey + " ]";
+				System.out.println(msg);
+				Assertions.assertNotNull(expectedValue, msg);
+			}
+
+			if ( !actualValue.equals(expectedValue) ) {
+				String msg = prefix + ": Incorrect value for [ " + actualKey + " ]";
+				System.out.println(msg +
+					": Actual value [ " + actualValue + " ]" +
+					": expected value [ " + expectedValue + " ]");
+				Assertions.assertEquals(expectedValue, actualValue, msg);
+			}
+		}
+
+		for ( Map.Entry<String, String> expectedEntry : expected.entrySet() ) {
+			String expectedKey = expectedEntry.getKey();
+			String expectedValue = expectedEntry.getValue();
+
+			String actualValue = actual.get(expectedKey);
+
+			if ( actualValue == null ) {
+				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
+				System.out.println(msg);
+				Assertions.assertNotNull(actualValue, msg);
+			}
+
+			// The values were checked in the first loop.
+		}
 	}
 }

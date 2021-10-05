@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2020 Contributors to the Eclipse Foundation
+ * Copyright (c) 2020,2021 Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -116,12 +116,166 @@ public class TransformProperties {
 		return inverseProperties;
 	}
 
-	public static Map<String, String> getPackageVersions(UTF8Properties versionProperties) {
-		Map<String, String> packageVersions = new HashMap<>(versionProperties.size());
-		for (Map.Entry<Object, Object> versionEntry : versionProperties.entrySet()) {
-			packageVersions.put((String) versionEntry.getKey(), (String) versionEntry.getValue());
+	public static void setPackageVersions(
+		UTF8Properties versionProperties,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		for ( Map.Entry<Object, Object> versionEntry : versionProperties.entrySet() ) {
+			setPackageVersions(
+				(String) versionEntry.getKey(), (String) versionEntry.getValue(),
+				packageVersions, specificPackageVersions);
 		}
-		return packageVersions;
+	}
+
+	// packageName=version
+	//
+	// packageName=version,pName=version,...
+	//
+	// Use '\' to escape ';' and '=' special characters:
+	//
+	// Note that this collides with property file character escaping:
+	// When writing property files, the escape character must be doubled.
+	//
+	// Within the property file:
+	//
+	// packageName=vBegin\\;vEnd;pname=Version;...
+	// packageName=vBegin\\;vMiddle\\=vEnd;pName=version;...
+	//
+	// After reading the property file:
+	//
+	// packageName=vBegin\;vEnd;pname=Version;...
+	// packageName=vBegin\;vMiddle\=vEnd;pName=version;...
+
+	protected static void setPackageVersions(
+		String newPackageName, String newVersion,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		// Simple case: Neither special character is present.
+		// No parsing is needed.  However, escapes must be removed.
+		//
+		// The case of a new version having only escaped special
+		// characters are not handled by this check.
+
+		if ( (newVersion.indexOf('=') == -1) && (newVersion.indexOf(';') == -1) ) {
+			newVersion = newVersion.replace("\\", "");
+			setVersion(newPackageName, newVersion, packageVersions);
+			return;
+		}
+
+		// Case with specific version assignments.
+
+		int length = newVersion.length();
+
+		boolean escaped = false;
+
+		StringBuilder nameBuilder = new StringBuilder();
+		StringBuilder versionBuilder = new StringBuilder();
+
+		for ( int offset = 0; offset < length; offset++ ) {
+			char nextChar = newVersion.charAt(offset);
+
+			if ( escaped ) {
+				escaped = false;
+				versionBuilder.append(nextChar);
+
+			} else if ( nextChar == '\\' ) {
+				escaped = true; // ... which consumes the escape character
+
+			} else if ( nextChar == '=' ) {
+				if ( versionBuilder == nameBuilder ) {
+					throw new IllegalArgumentException("Package version syntax error: Too many '=' in [ " + newVersion + " ]");
+				} else {
+					// Accumulate first expecting a version.
+					// When an '=' is encountered, the accumulation is known
+					// to be an attribute name, not a version.
+					StringBuilder currentBuilder = nameBuilder;
+					nameBuilder = versionBuilder;
+					versionBuilder = currentBuilder;
+				}
+
+			} else if ( nextChar == ';' ) {
+				// The length test guards against 'p=v;a1=v1;;a2=v2'
+				if ( versionBuilder.length() != 0 ) {
+					setVersion(
+						newPackageName, newVersion,
+						nameBuilder, versionBuilder,
+						packageVersions, specificPackageVersions);
+					// Both builders will be empty.  They don't need to be unswizzled.
+				} else {
+					// Have to be careful:
+					// 'p=v;a1=;a2=v2' will leave the version builder
+					// while leaving the name builder non-empty.
+					//
+					// TODO: We might want to skip an update in a specific
+					//       case.  A blank/empty update might be used to
+					//       encode this.
+					if ( nameBuilder.length() != 0 ) {
+						throw new IllegalArgumentException("Package version syntax error: Version missing for package [ " + newPackageName + " ] and attribute [ " + nameBuilder.toString() + " ]");
+					}
+				}
+
+			} else {
+				versionBuilder.append(nextChar);
+			}
+		}
+
+		// If the version builder is not empty, all new version
+		// characters were processed.  There will usually be
+		// characters left in the accumulators, which need to
+		// be added to the tables.
+		//
+		// The length check is to make sure the new version did not
+		// end with a ';', in which case the builders will be empty,
+		// and there is no update to be done.
+
+		if ( versionBuilder.length() != 0 ) {
+			setVersion(
+				newPackageName, newVersion,
+				nameBuilder, versionBuilder,
+				packageVersions, specificPackageVersions);
+		}
+	}
+
+	public static String setVersion(
+		String newPackageName, String newVersion,
+		Map<String, String> packageVersions) {
+
+		return packageVersions.put(newPackageName, newVersion);
+	}
+
+	public static void setVersion(
+		String newPackageName, String newVersion,
+		StringBuilder nameBuilder, StringBuilder versionBuilder,
+		Map<String, String> packageVersions,
+		Map<String, Map<String, String>> specificPackageVersions) {
+
+		String versionText;
+		if ( versionBuilder.length() == 0 ) {
+			throw new IllegalArgumentException("Package version syntax error: No version in [ " + newVersion + " ]");
+		} else {
+			versionText = versionBuilder.toString();
+			versionBuilder.setLength(0);
+		}
+
+		String propertyName;
+		if ( nameBuilder.length() == 0 ) {
+			propertyName = null;
+		} else {
+			propertyName = nameBuilder.toString();
+			nameBuilder.setLength(0);
+		}
+
+		if ( propertyName == null ) {
+			packageVersions.put(newPackageName, versionText);
+		} else {
+			Map<String, String> versionsForProperty = specificPackageVersions.get(propertyName);
+			if ( versionsForProperty == null ) {
+				specificPackageVersions.put( propertyName, (versionsForProperty = new HashMap<>()) );
+			}
+			versionsForProperty.put(newPackageName, versionText);
+		}
 	}
 
 	public static Map<String, BundleData> getBundleUpdates(UTF8Properties updateProperties) {

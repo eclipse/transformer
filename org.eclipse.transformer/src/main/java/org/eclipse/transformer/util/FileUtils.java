@@ -207,10 +207,14 @@ public class FileUtils {
 
 	public static UTF8Properties loadProperties(URL url) throws IOException {
 		try (InputStream stream = url.openStream()) {
-			UTF8Properties properties = createProperties();
-			properties.load(stream);
-			return properties;
+			return loadProperties(stream);
 		}
+	}
+
+	public static UTF8Properties loadProperties(InputStream inputStream) throws IOException {
+		UTF8Properties properties = createProperties();
+		properties.load(inputStream);
+		return properties;
 	}
 
 	public static UTF8Properties createProperties() {
