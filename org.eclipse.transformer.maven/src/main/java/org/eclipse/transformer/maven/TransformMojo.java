@@ -27,6 +27,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.jakarta.JakartaTransformer;
 
@@ -160,19 +161,19 @@ public class TransformMojo extends AbstractMojo {
 		return artifactList.toArray(new Artifact[0]);
 	}
 
-	private Map<Transformer.AppOption, String> getOptionDefaults() {
-		Map<Transformer.AppOption, String> optionDefaults = new HashMap<>();
-		optionDefaults.put(Transformer.AppOption.RULES_RENAMES,
+	private Map<AppOption, String> getOptionDefaults() {
+		Map<AppOption, String> optionDefaults = new HashMap<>();
+		optionDefaults.put(AppOption.RULES_RENAMES,
 			isEmpty(rulesRenamesUri) ? "jakarta-renames.properties" : rulesRenamesUri);
-		optionDefaults.put(Transformer.AppOption.RULES_VERSIONS,
+		optionDefaults.put(AppOption.RULES_VERSIONS,
 			isEmpty(rulesVersionUri) ? "jakarta-versions.properties" : rulesVersionUri);
-		optionDefaults.put(Transformer.AppOption.RULES_BUNDLES,
+		optionDefaults.put(AppOption.RULES_BUNDLES,
 			isEmpty(rulesBundlesUri) ? "jakarta-bundles.properties" : rulesBundlesUri);
-		optionDefaults.put(Transformer.AppOption.RULES_DIRECT,
+		optionDefaults.put(AppOption.RULES_DIRECT,
 			isEmpty(rulesDirectUri) ? "jakarta-direct.properties" : rulesDirectUri);
-		optionDefaults.put(Transformer.AppOption.RULES_MASTER_TEXT,
+		optionDefaults.put(AppOption.RULES_MASTER_TEXT,
 			isEmpty(rulesXmlsUri) ? "jakarta-text-master.properties" : rulesXmlsUri);
-		optionDefaults.put(Transformer.AppOption.RULES_PER_CLASS_CONSTANT,
+		optionDefaults.put(AppOption.RULES_PER_CLASS_CONSTANT,
 			isEmpty(rulesPerClassConstantUri) ? "jakarta-per-class-constant-master.properties" : rulesPerClassConstantUri);
 		return optionDefaults;
 	}

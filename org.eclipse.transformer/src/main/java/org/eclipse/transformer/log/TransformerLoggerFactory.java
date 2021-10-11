@@ -9,10 +9,12 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-package org.eclipse.transformer;
+package org.eclipse.transformer.log;
 
 import java.util.Map.Entry;
 
+import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.Transformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,46 +149,7 @@ public class TransformerLoggerFactory {
 	// OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-	public static class LoggerSettings {
-		public final boolean	isTerse;
-		public final boolean	isVerbose;
-
-		public final String[]	properties;
-		public final String		propertyFileName;
-
-		public final String		logName;
-		public final String		logLevel;
-		public final String		logFileName;
-
-		public LoggerSettings(Transformer transformer) {
-			this.isTerse = transformer.hasOption(Transformer.AppOption.LOG_TERSE);
-			this.isVerbose = transformer.hasOption(Transformer.AppOption.LOG_VERBOSE);
-
-			this.properties = transformer.getOptionValues(Transformer.AppOption.LOG_PROPERTY);
-			this.propertyFileName = transformer.getOptionValue(Transformer.AppOption.LOG_PROPERTY_FILE,
-				Transformer.DO_NORMALIZE);
-
-			this.logName = transformer.getOptionValue(Transformer.AppOption.LOG_NAME);
-
-			this.logLevel = transformer.getOptionValue(Transformer.AppOption.LOG_LEVEL);
-			this.logFileName = transformer.getOptionValue(Transformer.AppOption.LOG_FILE, Transformer.DO_NORMALIZE);
-
-			// System.out.println("LoggerSettings: isTerse [ " + this.isTerse +
-			// " ]");
-			// System.out.println("LoggerSettings: isVerbose [ " +
-			// this.isVerbose + " ]");
-			// System.out.println("LoggerSettings: properties [ " +
-			// this.properties + " ]");
-			// System.out.println("LoggerSettings: propertyFileName [ " +
-			// this.propertyFileName + " ]");
-			// System.out.println("LoggerSettings: logName [ " + this.logName +
-			// " ]");
-			// System.out.println("LoggerSettings: logLevel [ " + this.logLevel
-			// + " ]");
-			// System.out.println("LoggerSettings: logFileName [ " +
-			// this.logFileName + " ]");
-		}
-	}
+	
 
 	//
 
@@ -315,32 +278,6 @@ public class TransformerLoggerFactory {
 		}
 
 		setLoggingProperty(completedPropertyName, propertyValue);
-	}
-
-	public enum LoggerProperty {
-		LOG_FILE("org.slf4j.simpleLogger.logFile"),
-		LOG_CACHE_OUTPUT("org.slf4j.simpleLogger.cacheOutputStream"),
-
-		LOG_LEVEL_ROOT("org.slf4j.simpleLogger.defaultLogLevel"),
-		LOG_LEVEL_CHILD("org.slf4j.simpleLogger.log.a.b.c"),
-		LOG_LEVEL_IN_BRACkETS("org.slf4j.simpleLogger.levelInBrackets"),
-
-		LOG_SHOW_DATE_TIME("org.slf4j.simpleLogger.showDateTime"),
-		LOG_DATE_TIME_FORMAT("org.slf4j.simpleLogger.dateTimeFormat"),
-		LOG_SHOW_THREAD_NAME("org.slf4j.simpleLogger.showThreadName"),
-		LOG_SHOW_LOG_NAME("org.slf4j.simpleLogger.showLogName"),
-		LOG_SHOW_SHORT_LOG_NAME("org.slf4j.simpleLogger.showShortLogName"),
-		LOG_WARN_STRING("org.slf4j.simpleLogger.warnLevelString");
-
-		private LoggerProperty(String propertyName) {
-			this.propertyName = propertyName;
-		}
-
-		private final String propertyName;
-
-		public String getPropertyName() {
-			return propertyName;
-		}
 	}
 
 	protected void setLoggingProperty(String propertyName, String newPropertyValue) {
