@@ -16,8 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 
+import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.Transformer.TransformOptions;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.jakarta.JakartaTransformer;

@@ -19,8 +19,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 
+import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.Transformer.TransformOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
