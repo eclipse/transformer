@@ -26,6 +26,10 @@
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://projects.eclipse.org/projects/technology.transformer</url>
 
+	<prerequisites>
+		<maven>${maven.target.version}</maven>
+	</prerequisites>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.eclipse.transformer</groupId>
