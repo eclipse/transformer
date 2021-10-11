@@ -590,6 +590,14 @@
 			</properties>
 			<repositories>
 				<repository>
+					<id>bnd-releases</id>
+					<url>https://bndtools.jfrog.io/bndtools/libs-release/</url>
+					<layout>default</layout>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
 					<id>bnd-snapshots</id>
 					<url>https://bndtools.jfrog.io/bndtools/libs-snapshot/</url>
 					<layout>default</layout>
@@ -599,6 +607,14 @@
 				</repository>
 			</repositories>
 			<pluginRepositories>
+				<pluginRepository>
+					<id>bnd-releases</id>
+					<url>https://bndtools.jfrog.io/bndtools/libs-release/</url>
+					<layout>default</layout>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</pluginRepository>
 				<pluginRepository>
 					<id>bnd-snapshots</id>
 					<url>https://bndtools.jfrog.io/bndtools/libs-snapshot/</url>
