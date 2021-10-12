@@ -953,7 +953,7 @@ public class ClassActionImpl extends ActionImpl {
 					outputString = transformDirectString(inputString);
 					if (outputString == null) {
 						transformCase = "direct per class";
-						outputString = transformConstantString(inputString, inputName);
+						outputString = transformDirectString(inputString, inputName);
 					}
 				}
 			}
@@ -1124,7 +1124,7 @@ public class ClassActionImpl extends ActionImpl {
 			String inputString = (String) inputValue;
 			String outputString = transformDirectString(inputString);
 			if (outputString == null) {
-				outputString = transformConstantString(inputString, inputName);
+				outputString = transformDirectString(inputString, inputName);
 			}
 			return outputString;
 
@@ -1254,20 +1254,30 @@ public class ClassActionImpl extends ActionImpl {
 						transformCase = null; // Unused
 						outputUtf8 = null;
 					} else {
-						transformCase = "constant"; // dotted package format
-						outputUtf8 = transformConstantAsDescriptor(inputUtf8, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
+						transformCase = "Direct per class";
+						outputUtf8 = transformDirectString(inputUtf8, inputName);
+
 						if (outputUtf8 == null) {
-							transformCase = "resource"; // url format (slashes)
+							transformCase = "Direct";
+							outputUtf8 = transformDirectString(inputUtf8);
+						}
+
+						if (outputUtf8 == null) {
+							// Descriptor format;
+							// includes function, method, and class descriptors;
+							// includes simple dotted class names
+							transformCase = "dotted";
+							outputUtf8 = transformConstantAsDescriptor(inputUtf8,
+								SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
+						}
+
+						if (outputUtf8 == null) {
+							// Signature format;
+							// includes function, method, and class signatures
+							// includes simple slash class resources
+							transformCase = "slash";
 							outputUtf8 = transformConstantAsBinaryType(inputUtf8,
 								SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-							if (outputUtf8 == null) {
-								transformCase = "Direct";
-								outputUtf8 = transformDirectString(inputUtf8);
-								if (outputUtf8 == null) {
-									transformCase = "Direct per class";
-									outputUtf8 = transformConstantString(inputUtf8, inputName);
-								}
-							}
 						}
 					}
 
@@ -1297,7 +1307,7 @@ public class ClassActionImpl extends ActionImpl {
 							outputString = transformDirectString(inputString);
 							if (outputString == null) {
 								transformCase = "Direct per class";
-								outputString = transformConstantString(inputString, inputName);
+								outputString = transformDirectString(inputString, inputName);
 							}
 						}
 					}

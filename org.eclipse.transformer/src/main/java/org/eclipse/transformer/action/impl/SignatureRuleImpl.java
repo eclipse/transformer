@@ -46,7 +46,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		Map<String, String> versions, Map<String, Map<String, String>> specificVersions,
 		Map<String, BundleData> bundleUpdates,
 		Map<String, Map<String, String>> masterTextUpdates, Map<String, String> directStrings,
-		Map<String, Map<String, String>> perClassConstant) {
+		Map<String, Map<String, String>> perClassDirectStrings) {
 
 		this.logger = logger;
 
@@ -158,13 +158,19 @@ public class SignatureRuleImpl implements SignatureRule {
 		this.unchangedDescriptors = new HashSet<>();
 		this.changedDescriptors = new HashMap<>();
 
-		Map<String, Map<String, String>> perClass;
-		if ((perClassConstant == null) || perClassConstant.isEmpty()) {
-			perClass = Collections.emptyMap();
+		Map<String, Map<String, String>> localPerClassDirectStrings;
+		if ((perClassDirectStrings == null) || perClassDirectStrings.isEmpty()) {
+			localPerClassDirectStrings = Collections.emptyMap();
 		} else {
-			perClass = new HashMap<>(perClassConstant);
+			localPerClassDirectStrings = new HashMap<>(perClassDirectStrings.size());
+			for (Map.Entry<String, Map<String, String>> perClassEntry : perClassDirectStrings.entrySet()) {
+				String key = perClassEntry.getKey();
+				Map<String, String> value = perClassEntry.getValue();
+				Map<String, String> localValue = new HashMap<>(value);
+				localPerClassDirectStrings.put(key, localValue);
+			}
 		}
-		this.perClassConstantStrings = perClass;
+		this.perClassDirectStrings = localPerClassDirectStrings;
 	}
 
 	//
@@ -210,38 +216,62 @@ public class SignatureRuleImpl implements SignatureRule {
 		return directStrings.get(initialValue);
 	}
 
-	private final Map<String, Map<String, String>> perClassConstantStrings;
+	private final Map<String, Map<String, String>> perClassDirectStrings;
 
+	/**
+	 * Perform per-class substitutions on a initial UTF8 value obtained as a
+	 * string constant. Answer null if no updates were made. Otherwise, answer
+	 * the updated UF8 value. Per-class substitutions are performed on all
+	 * occurrences of the per-class key values. This is in contract to
+	 * substitutions which are made on all values, which are of entire strings.
+	 *
+	 * @param initialValue An initial UTF8 string constant value.
+	 * @param className The name of the class in which the string constant
+	 *            appears.
+	 * @return Null if no updates were made. Otherwise, the updated value.
+	 */
 	@Override
-	public String getConstantString(String initialValue, String clazz) {
-		Map<String, String> m = perClassConstantStrings.get(clazz);
+	public String getDirectString(String initialValue, String className) {
+		// There is nothing to do if no table was specified
+		// for the class which is being updated.
 
-		if (m == null) {
+		Map<String, String> directStringsForClass = perClassDirectStrings.get(className);
+		if (directStringsForClass == null) {
 			return null;
 		}
 
-		// Do we have a direct mapping?
-		String full = m.get(initialValue);
+		// If the table has a simple, full substitution, use it.
+		// This is an optimization of the token substitution case.
+
+		String full = directStringsForClass.get(initialValue);
 		if (full != null) {
-			debug("Per class direct replacement:[{}], {}=> {}", clazz, initialValue, full);
+			debug("Per class direct replacement:[{}], {} => {}", className, initialValue, full);
 			return full;
 		}
+
+		// Perform all possible substitutions, in order.
+		//
+		// Match using a simple 'contains' test. Later,
+		// a regular expression might be used.
+
 		String transformedString = initialValue;
 		boolean transformed = false;
-		// Transform all tokens possibly present in the inputValue
-		for (String k : m.keySet()) {
-			//  The 'contains' test might be changed to use regular expressions in the future
-			if (transformedString.contains(k)) {
-				transformedString = transformedString.replace(k, m.get(k));
-				debug("Per class token replacement:[{}], key={}, initialValue={}", clazz, k, initialValue);
+		for (String initialSubstring : directStringsForClass.keySet()) {
+			if (transformedString.contains(initialSubstring)) {
+				String finalSubstring = directStringsForClass.get(initialSubstring);
+				transformedString = transformedString.replace(initialSubstring, finalSubstring);
+				debug("Per class token replacement:[{}], {} => {}", className, initialSubstring,
+					finalSubstring);
 				transformed = true;
 			}
 		}
+
 		if (transformed) {
-			debug("Per class token replacement, done:[{}] {}", clazz, transformedString);
+			debug("Per class token replacement: [{}] {} => {}", className, initialValue, transformedString);
 			return transformedString;
+		} else {
+			return null;
 		}
-		return null;
 	}
 
 	//
@@ -394,8 +424,8 @@ public class SignatureRuleImpl implements SignatureRule {
 	 * @param text The text to examine for a match.
 	 * @param matchStart Where the match starts in the text.
 	 * @param keyLen The length of the match text.
-	 * @param matchSubpackages Control paramater telling if sub-package matches
-	 *            are allowed.
+	 * @param matchSubpackages Control parameter: Are sub-package matches
+	 *            allowed.
 	 * @return True or false telling if the match is not a subset of a larger
 	 *         package.
 	 */
