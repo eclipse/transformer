@@ -170,6 +170,40 @@ public class CaptureLoggerImpl implements Logger {
 			return printString;
 		}
 
+		public String toStringFormatted() {
+			boolean isFirst = true;
+
+			StringBuilder builder = new StringBuilder();
+
+			boolean didAdd = append(level, isFirst, builder);
+			if (didAdd) {
+				isFirst = false;
+			}
+			didAdd = append(marker, isFirst, builder);
+			if (didAdd) {
+				isFirst = false;
+			}
+			didAdd = append(threadName, isFirst, builder);
+			if (didAdd) {
+				isFirst = false;
+			}
+			append(Long.valueOf(timeStamp), isFirst, builder);
+			isFirst = false;
+
+			String useMessage;
+			if ((parms == null) || (parms.length == 0)) {
+				useMessage = message;
+			} else {
+				useMessage = message.replace("{}", "%s");
+				useMessage = String.format(useMessage, (Object[]) parms);
+			}
+
+			append(useMessage, isFirst, builder);
+			append(thrownMessage, isFirst, builder);
+
+			return builder.toString();
+		}
+
 		public LogEvent(Level level, Marker marker, Throwable th, String message, Object... rawParms) {
 			this.level = level;
 			this.marker = marker;

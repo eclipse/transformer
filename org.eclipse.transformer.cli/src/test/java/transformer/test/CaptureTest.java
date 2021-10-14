@@ -28,7 +28,8 @@ public class CaptureTest {
 	public CaptureLoggerImpl captureLogger;
 
 	public CaptureLoggerImpl createLogger() {
-		return new CaptureLoggerImpl("Test");
+		// Toggle 'CAPTURE_INACTIVE' to enable debug logging.
+		return new CaptureLoggerImpl("Test", !CaptureLoggerImpl.CAPTURE_INACTIVE);
 	}
 
 	public CaptureLoggerImpl getCaptureLogger() {
@@ -49,6 +50,14 @@ public class CaptureTest {
 		}
 	}
 
+	public void displayCapturedEvents() {
+		List<? extends CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
+
+		for (CaptureLoggerImpl.LogEvent event : capturedEvents) {
+			System.out.printf("Captured Event [ %s ]\n", event.toStringFormatted());
+		}
+	}
+
 	public InputBufferImpl createBuffer() {
 		return new InputBufferImpl();
 	}
@@ -56,13 +65,12 @@ public class CaptureTest {
 	//
 
 	public SelectionRuleImpl createSelectionRule(Logger useLogger, Set<String> useIncludes, Set<String> useExcludes) {
-
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
 
 	public SignatureRuleImpl createSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
 		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings,
-		Map<String, Map<String,String>> perClass) {
+		Map<String, Map<String, String>> perClass) {
 
 		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, null,
 					bundleData, null, directStrings, perClass);
