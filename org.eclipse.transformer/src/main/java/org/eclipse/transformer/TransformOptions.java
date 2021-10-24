@@ -13,6 +13,7 @@ package org.eclipse.transformer;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,17 +48,102 @@ import org.slf4j.Logger;
 import aQute.lib.utf8properties.UTF8Properties;
 
 public class TransformOptions {
-	/**
-	 *
-	 */
-	private final Transformer transformer;
-
-	/**
-	 * @param transformer
-	 */
 	TransformOptions(Transformer transformer) {
 		this.transformer = transformer;
 	}
+
+	//
+
+	private final Transformer				transformer;
+
+	protected void setLogger(Logger logger) {
+		transformer.setLogger(logger);
+	}
+
+	protected Logger getLogger() {
+		return transformer.getLogger();
+	}
+
+	protected boolean isLogDirect() {
+		return transformer.isLogDirect();
+	}
+
+	protected PrintStream getSystemOut() {
+		return transformer.getSystemOut();
+	}
+
+	protected PrintStream getSystemErr() {
+		return transformer.getSystemErr();
+	}
+
+	protected void info(String message, Object... parms) {
+		transformer.info(message, parms);
+	}
+
+	protected void dual_info(String message, Object... parms) {
+		transformer.dual_info(message, parms);
+	}
+
+	protected void error(String message, Object... parms) {
+		transformer.error(message, parms);
+	}
+
+	protected void dual_error(String message, Object... parms) {
+		transformer.dual_error(message, parms);
+	}
+
+	protected void error(String message, Throwable th, Object... parms) {
+		transformer.error(message, th, parms);
+	}
+
+	protected boolean hasOption(AppOption appOption) {
+		return transformer.hasOption(appOption);
+	}
+
+	protected String getOptionValue(AppOption appOption) {
+		return transformer.getOptionValue(appOption);
+	}
+
+	protected static final boolean DO_NORMALIZE = Transformer.DO_NORMALIZE;
+
+	protected String getOptionValue(AppOption appOption, boolean doNormalize) {
+		return transformer.getOptionValue(appOption, doNormalize);
+	}
+
+	protected String[] getOptionValues(AppOption appOption, boolean doNormalize) {
+		return transformer.getOptionValues(appOption, doNormalize);
+	}
+
+	protected UTF8Properties loadProperties(AppOption appOption, Set<String> orphanedValues)
+		throws URISyntaxException, IOException {
+		return transformer.loadProperties(appOption, orphanedValues);
+		// throws URISyntaxException, IOException
+	}
+
+	protected UTF8Properties loadProperties(AppOption appOption) throws URISyntaxException, IOException {
+		return transformer.loadProperties(appOption, null);
+		// throws URISyntaxException, IOException
+	}
+
+	protected UTF8Properties loadInternalProperties(String text, String resourceRef) throws IOException {
+		return transformer.loadInternalProperties(text, resourceRef);
+	}
+
+	protected UTF8Properties loadExternalProperties(String text, String resourceRef)
+		throws URISyntaxException, IOException {
+		return transformer.loadExternalProperties(text, resourceRef);
+	}
+
+	protected void processOrphan(String sourceName, String sinkName, String key, String oldValue, String newValue,
+		Set<String> orphans) {
+		transformer.processOrphan(sourceName, sinkName, key, oldValue, newValue, orphans);
+	}
+
+	protected void logMerge(String sourceName, String sinkName, String key, String oldValue, String newValue) {
+		transformer.logMerge(sourceName, sinkName, key, oldValue, newValue);
+	}
+
+	//
 
 	public boolean							isVerbose;
 	public boolean							isTerse;
@@ -94,29 +180,37 @@ public class TransformOptions {
 	//
 
 	public void setLogging() throws TransformException {
-		this.transformer.logger = new TransformerLoggerFactory(this.transformer).createLogger(); // throws
-																				// TransformException
+		setLogger(new TransformerLoggerFactory(transformer).createLogger());
+		// throws TransformException
 
-		if (this.transformer.hasOption(AppOption.LOG_TERSE)) {
+		if (hasOption(AppOption.LOG_TERSE)) {
 			isTerse = true;
-		} else if (this.transformer.hasOption(AppOption.LOG_VERBOSE)) {
+		} else if (hasOption(AppOption.LOG_VERBOSE)) {
 			isVerbose = true;
 		}
 	}
 
-	protected void info(String message, Object... parms) {
-		this.transformer.getLogger().info(message, parms);
+	protected void noTerse(String message, Object... parms) {
+		if (!isTerse) {
+			info(message, parms);
+		}
 	}
 
-	protected void error(String message, Object... parms) {
-		this.transformer.getLogger().error(message, parms);
+	protected void verbose(String message, Object... parms) {
+		if (isVerbose) {
+			info(message, parms);
+		}
 	}
 
-	protected void error(String message, Throwable th, Object... parms) {
-		Logger useLogger = this.transformer.getLogger();
-		if (useLogger.isErrorEnabled()) {
-			message = String.format(message, parms);
-			useLogger.error(message, th);
+	protected void dual_noTerse(String message, Object... parms) {
+		if (!isTerse) {
+			dual_info(message, parms);
+		}
+	}
+
+	protected void dual_verbose(String message, Object... parms) {
+		if (isVerbose) {
+			dual_info(message, parms);
 		}
 	}
 
@@ -140,37 +234,36 @@ public class TransformOptions {
 	}
 
 	/**
-	 * Process the rules data.  Load and validate the data.
+	 * Process the rules data. Load and validate the data.
 	 *
-	 * @return True or false telling if the data was successfully loaded
-	 *     and is usable.
-	 *
-	 * @throws Exception Thrown if an error occurred while loading or
-	 *     validating the data.
+	 * @param immediateData Immediate rules data.
+	 * @return True or false telling if the data was successfully loaded and is
+	 *         usable.
+	 * @throws Exception Thrown if an error occurred while loading or validating
+	 *             the data.
 	 */
-	public boolean setRules() throws Exception {
-		ImmediateRuleData[] immediateData = this.transformer.getImmediateData();
+	public boolean setRules(ImmediateRuleData[] immediateData) throws Exception {
 		if ( immediateData == null ) {
 			return false;
 		}
 
-		Set<String> orphanedFinalPackages = new HashSet<String>();
+		Set<String> orphanedFinalPackages = new HashSet<>();
 
-		UTF8Properties selectionProperties = this.transformer.loadProperties(AppOption.RULES_SELECTIONS, null);
-		UTF8Properties renameProperties = this.transformer.loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
-		UTF8Properties versionProperties = this.transformer.loadProperties(AppOption.RULES_VERSIONS, null);
-		UTF8Properties updateProperties = this.transformer.loadProperties(AppOption.RULES_BUNDLES, null);
-		UTF8Properties directProperties = this.transformer.loadProperties(AppOption.RULES_DIRECT, null);
-		UTF8Properties textMasterProperties = this.transformer.loadProperties(AppOption.RULES_MASTER_TEXT, null);
-		UTF8Properties perClassConstantProperties = this.transformer.loadProperties(AppOption.RULES_PER_CLASS_CONSTANT, null);
+		UTF8Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS);
+		UTF8Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
+		UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS);
+		UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES);
+		UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT);
+		UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT);
+		UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT);
 
-		invert = this.transformer.hasOption(AppOption.INVERT);
+		invert = hasOption(AppOption.INVERT);
 
 		if ( !selectionProperties.isEmpty() ) {
 			includes = new HashSet<>();
 			excludes = new HashSet<>();
 			TransformProperties.addSelections(includes, excludes, selectionProperties);
-			this.transformer.dual_info("Selection rules are in use");
+			dual_noTerse("Selection rules are in use");
 		} else {
 			includes = null;
 			excludes = null;
@@ -182,7 +275,7 @@ public class TransformOptions {
 				renames = TransformProperties.invert(renames);
 			}
 			packageRenames = renames;
-			this.transformer.dual_info("Package renames are in use");
+			dual_noTerse("Package renames are in use");
 		} else {
 			packageRenames = null;
 		}
@@ -191,7 +284,7 @@ public class TransformOptions {
 			packageVersions = new HashMap<>( versionProperties.size() );
 			specificPackageVersions = new HashMap<>();
 			TransformProperties.setPackageVersions(versionProperties, packageVersions, specificPackageVersions);
-			this.transformer.dual_info("Package versions will be updated");
+			dual_noTerse("Package versions will be updated");
 		} else {
 			packageVersions = null;
 			specificPackageVersions = null;
@@ -200,7 +293,7 @@ public class TransformOptions {
 		if ( !updateProperties.isEmpty() ) {
 			bundleUpdates = TransformProperties.getBundleUpdates(updateProperties);
 			// throws IllegalArgumentException
-			this.transformer.dual_info("Bundle identities will be updated");
+			dual_noTerse("Bundle identities will be updated");
 		} else {
 			bundleUpdates = null;
 		}
@@ -208,7 +301,7 @@ public class TransformOptions {
 		String masterTextRef;
 
 		if ( !textMasterProperties.isEmpty() ) {
-			masterTextRef = this.transformer.getOptionValue(AppOption.RULES_MASTER_TEXT, Transformer.DO_NORMALIZE);
+			masterTextRef = getOptionValue(AppOption.RULES_MASTER_TEXT, DO_NORMALIZE);
 
 			Map<String, String> substitutionRefs =
 				TransformProperties.convertPropertiesToMap(textMasterProperties);
@@ -229,7 +322,7 @@ public class TransformOptions {
 
 			masterSubstitutionRefs = substitutionRefs;
 			masterTextUpdates = masterUpdates;
-			this.transformer.dual_info("Text files will be updated");
+			dual_noTerse("Text files will be updated");
 
 		} else {
 			masterTextRef = null;
@@ -238,14 +331,14 @@ public class TransformOptions {
 
 		if ( !directProperties.isEmpty() ) {
 			directStrings = TransformProperties.getDirectStrings(directProperties);
-			this.transformer.dual_info("Java direct string updates will be performed");
+			dual_noTerse("Java direct string updates will be performed");
 		} else {
 			directStrings = null;
-			this.transformer.dual_info("Java direct string updates will not be performed");
+			dual_noTerse("Java direct string updates will not be performed");
 		}
 
 		if ( !perClassConstantProperties.isEmpty() ) {
-			String masterDirect = this.transformer.getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT, Transformer.DO_NORMALIZE);
+			String masterDirect = getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT, DO_NORMALIZE);
 
 			Map<String, String> substitutionRefs =
 				TransformProperties.convertPropertiesToMap(perClassConstantProperties);
@@ -258,7 +351,8 @@ public class TransformOptions {
 
 				UTF8Properties substitutions = new UTF8Properties();
 				if ( masterDirect == null ) {
-					substitutions = this.transformer.loadInternalProperties("Substitions matching [ " + classSelector + " ]", substitutionsRef);
+					substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]",
+						substitutionsRef);
 				}
 				Map<String, String> substitutionsMap =
 					TransformProperties.convertPropertiesToMap(substitutions);
@@ -267,11 +361,11 @@ public class TransformOptions {
 			}
 
 			perClassConstantStrings = masterUpdates;
-			this.transformer.dual_info("Per class constant mapping files are enabled");
+			dual_noTerse("Per class constant mapping files are enabled");
 
 		} else {
 			perClassConstantStrings = null;
-			this.transformer.dual_info("Per class constant mapping files are not enabled");
+			dual_verbose("Per class constant mapping files are not enabled");
 		}
 
 		processImmediateData(immediateData, masterTextRef, orphanedFinalPackages);
@@ -280,25 +374,25 @@ public class TransformOptions {
 		// and by immediate data.
 
 		if ( includes == null ) {
-			this.transformer.dual_info("All resources will be selected");
+			dual_noTerse("All resources will be selected");
 		}
 		if ( packageRenames == null ) {
-			this.transformer.dual_info("Packages will not be renamed");
+			dual_verbose("Packages will not be renamed");
 		}
 		if ( packageVersions == null ) {
-			this.transformer.dual_info("Package versions will not be updated");
+			dual_verbose("Package versions will not be updated");
 		}
 		if ( bundleUpdates == null ) {
-			this.transformer.dual_info("Bundle identities will not be updated");
+			dual_verbose("Bundle identities will not be updated");
 		}
 		if ( masterTextUpdates == null ) {
-			this.transformer.dual_info("Text files will not be updated");
+			dual_verbose("Text files will not be updated");
 		}
 		if ( directStrings == null ) {
-			this.transformer.dual_info("Java direct string updates will not be performed");
+			dual_verbose("Java direct string updates will not be performed");
 		}
 		if ( perClassConstantStrings == null ) {
-			this.transformer.dual_info("Per class constant mapping files are not enabled");
+			dual_verbose("Per class constant mapping files are not enabled");
 		}
 
 		return validateVersionUpdates(orphanedFinalPackages);
@@ -332,7 +426,7 @@ public class TransformOptions {
 					break;
 
 				default:
-					this.transformer.dual_error("Unrecognized immediate data target [ %s ]", nextData.target);
+					dual_error("Unrecognized immediate data target [ %s ]", nextData.target);
 			}
 		}
 	}
@@ -341,7 +435,7 @@ public class TransformOptions {
 		if ( includes == null ) {
 			includes = new HashSet<>();
 			excludes = new HashSet<>();
-			this.transformer.dual_info("Selection rules use forced by immediate data");
+			dual_noTerse("Selection rules use forced by immediate data");
 		}
 
 		TransformProperties.addSelection(includes, excludes, selection);
@@ -353,7 +447,7 @@ public class TransformOptions {
 
 		if ( packageRenames == null ) {
 			packageRenames = new HashMap<String, String>();
-			this.transformer.dual_info("Package renames forced by immediate data.");
+			dual_noTerse("Package renames forced by immediate data.");
 		}
 
 		if ( invert ) {
@@ -364,12 +458,12 @@ public class TransformOptions {
 
 		String oldFinalPackageName = packageRenames.put(initialPackageName, finalPackageName);
 
-		this.transformer.processOrphan(
+		processOrphan(
 			"immediate rename data", "renameData",
 			initialPackageName, oldFinalPackageName, finalPackageName,
 			orphanedFinalPackages);
 
-		this.transformer.logMerge(
+		logMerge(
 			"immediate rename data", "rename data",
 			initialPackageName, oldFinalPackageName, finalPackageName);
 	}
@@ -378,7 +472,7 @@ public class TransformOptions {
 		if ( packageVersions == null ) {
 			packageVersions = new HashMap<>();
 			specificPackageVersions = new HashMap<>();
-			this.transformer.dual_info("Package version updates forced by immediate data.");
+			dual_noTerse("Package version updates forced by immediate data.");
 		}
 		TransformProperties.setPackageVersions(finalPackageName, versionText, packageVersions, specificPackageVersions);
 	}
@@ -386,24 +480,26 @@ public class TransformOptions {
 	private void addImmediateBundleData(String bundleId, String value) {
 		if ( bundleUpdates == null ) {
 			bundleUpdates = new HashMap<>();
-			this.transformer.dual_info("Bundle identity updates forced by immediate data.");
+			dual_noTerse("Bundle identity updates forced by immediate data.");
 		}
 		BundleData newBundleData = new BundleDataImpl(value);
 		BundleData oldBundleData = bundleUpdates.put(bundleId, newBundleData);
 		if ( oldBundleData != null ) {
-			this.transformer.logMerge("immediate bundle data", "bundle data", bundleId, oldBundleData.getPrintString(), newBundleData.getPrintString());
+			logMerge("immediate bundle data", "bundle data", bundleId, oldBundleData.getPrintString(),
+				newBundleData.getPrintString());
 		}
 	}
 
 	private void addImmediateDirect(String initialText, String finalText) {
 		if ( directStrings == null ) {
 			directStrings = new HashMap<>();
-			this.transformer.dual_info("Java direct string updates forced by immediate data");
+			dual_noTerse("Java direct string updates forced by immediate data");
 		}
 
 		String oldFinalText = directStrings.put(initialText, finalText);
 		if ( oldFinalText != null ) {
-			this.transformer.logMerge("immediate direct string data", "direct string data", initialText, oldFinalText, finalText);
+			logMerge("immediate direct string data", "direct string data", initialText, oldFinalText,
+				finalText);
 		}
 	}
 
@@ -411,18 +507,17 @@ public class TransformOptions {
 		throws IOException, URISyntaxException {
 		UTF8Properties substitutions;
 		if ( masterRef == null ) {
-			substitutions = this.transformer.loadInternalProperties(
-				"Substitions matching [ " + selector + " ]", substitutionsRef);
+			substitutions = loadInternalProperties("Substitions matching [ " + selector + " ]", substitutionsRef);
 			// throws IOException
 		} else {
-			String relativeSubstitutionsRef = this.transformer.relativize(substitutionsRef, masterRef);
+			String relativeSubstitutionsRef = transformer.relativize(substitutionsRef, masterRef);
 			if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
-				this.transformer.dual_info("Adjusted substition reference from [ %s ] to [ %s ]",
+				dual_verbose("Adjusted substition reference from [ %s ] to [ %s ]",
 					substitutionsRef, relativeSubstitutionsRef);
 			}
 
-			substitutions = this.transformer.loadExternalProperties(
-				"Substitions matching [ " + selector + " ]", relativeSubstitutionsRef);
+			substitutions = loadExternalProperties("Substitions matching [ " + selector + " ]",
+				relativeSubstitutionsRef);
 			// throws URISyntaxException, IOException
 		}
 
@@ -439,7 +534,7 @@ public class TransformOptions {
 
 		if ( masterTextUpdates == null ) {
 			masterTextUpdates = new HashMap<>();
-			this.transformer.dual_info("Text files updates forced by immediate data.");
+			dual_noTerse("Text files updates forced by immediate data.");
 		}
 
 		substitutionsRef = FileUtils.normalize(substitutionsRef);
@@ -455,7 +550,7 @@ public class TransformOptions {
 			masterTextUpdates.put(simpleNameSelector, substitutionsMap);
 
 		if ( oldSubstitutionsRef != null ) {
-			this.transformer.logMerge("immediate master text data", "master text data", simpleNameSelector, oldSubstitutionsRef,
+			logMerge("immediate master text data", "master text data", simpleNameSelector, oldSubstitutionsRef,
 				substitutionsRef);
 		}
 	}
@@ -485,7 +580,7 @@ public class TransformOptions {
 		// renames were specified.  A single error message is sufficient.
 
 		if ( (packageRenames == null) || packageRenames.isEmpty() ) {
-			this.transformer.dual_error("Package version updates were specified but no package renames were specified.");
+			dual_error("Package version updates were specified but no package renames were specified.");
 			return false;
 		}
 
@@ -509,7 +604,8 @@ public class TransformOptions {
 			}
 		}
 		if ( ignoredAttributes != null ) {
-			this.transformer.dual_info("Warning: Ignoring unknown attributes " + ignoredAttributes.toString() + " used for specific package version updates.");
+			dual_noTerse("Warning: Ignoring unknown attributes " + ignoredAttributes
+				+ " used for specific package version updates.");
 		}
 
 		return !missingFinalPackages;
@@ -565,25 +661,27 @@ public class TransformOptions {
 		// orphans.
 
 		if ( orphanedFinalPackages.contains(finalPackage) ) {
-			this.transformer.dual_info("Package [ %s ] has a version update but was orphaned.", finalPackage);
+			dual_noTerse("Package [ %s ] has a version update but was orphaned.", finalPackage);
 			return true;
 		}
 
-		this.transformer.dual_error("Package [ %s ] has a version update but was not renamed.", finalPackage);
+		dual_error("Package [ %s ] has a version update but was not renamed.", finalPackage);
 		return false;
 	}
 
 	protected String[] getRuleFileNames(AppOption ruleOption) {
-		String[] rulesFileNames = this.transformer.getOptionValues(ruleOption, Transformer.DO_NORMALIZE);
+		String[] rulesFileNames = getOptionValues(ruleOption, DO_NORMALIZE);
 		if (rulesFileNames != null) {
 			return rulesFileNames;
 		} else {
-			String defaultReference = this.transformer.getDefaultReference(ruleOption);
+			String defaultReference = transformer.getDefaultReference(ruleOption);
 			return ( (defaultReference == null) ? null : new String[] { defaultReference } );
 		}
 	}
 
 	protected void logRules() {
+		// Output guards are performed by the caller.
+
 		info("Includes:");
 		if ((includes == null) || includes.isEmpty()) {
 			info("  [ ** NONE ** ]");
@@ -677,7 +775,7 @@ public class TransformOptions {
 
 	protected SelectionRuleImpl getSelectionRule() {
 		if (selectionRules == null) {
-			selectionRules = new SelectionRuleImpl(this.transformer.logger, includes, excludes);
+			selectionRules = new SelectionRuleImpl(getLogger(), includes, excludes);
 		}
 		return selectionRules;
 	}
@@ -687,7 +785,7 @@ public class TransformOptions {
 	protected SignatureRuleImpl getSignatureRule() {
 		if (signatureRules == null) {
 			signatureRules = new SignatureRuleImpl(
-				this.transformer.logger,
+				getLogger(),
 				packageRenames, packageVersions, specificPackageVersions,
 				bundleUpdates,
 				masterTextUpdates, directStrings, perClassConstantStrings);
@@ -696,9 +794,9 @@ public class TransformOptions {
 	}
 
 	public boolean setInput() {
-		String useInputName = this.transformer.getInputFileNameFromCommandLine();
+		String useInputName = transformer.getInputFileNameFromCommandLine();
 		if (useInputName == null) {
-			this.transformer.dual_error("No input file was specified");
+			dual_error("No input file was specified");
 			return false;
 		}
 
@@ -707,19 +805,19 @@ public class TransformOptions {
 		inputPath = inputFile.getAbsolutePath();
 
 		if (!inputFile.exists()) {
-			this.transformer.dual_error("Input does not exist [ %s ] [ %s ]", inputName, inputPath);
+			dual_error("Input does not exist [ %s ] [ %s ]", inputName, inputPath);
 			return false;
 		}
 
-		this.transformer.dual_info("Input     [ %s ]", inputName);
-		this.transformer.dual_info("          [ %s ]", inputPath);
+		dual_verbose("Input     [ %s ]", inputName);
+		dual_info("Input     [ %s ]", inputPath); // Display even with terse output.
 		return true;
 	}
 
 	public static final String OUTPUT_PREFIX = "output_";
 
 	public boolean setOutput() {
-		String useOutputName = this.transformer.getOutputFileNameFromCommandLine();
+		String useOutputName = transformer.getOutputFileNameFromCommandLine();
 
 		boolean isExplicit = (useOutputName != null);
 
@@ -744,9 +842,7 @@ public class TransformOptions {
 
 		if (putIntoDirectory) {
 			useOutputName = useOutputName + '/' + inputName;
-			if (isVerbose) {
-				this.transformer.dual_info("Output generated using input name and output directory [ %s ]", useOutputName);
-			}
+			dual_verbose("Output generated using input name and output directory [ %s ]", useOutputName);
 
 			useOutputFile = new File(useOutputName);
 			useOutputPath = useOutputFile.getAbsolutePath();
@@ -767,26 +863,25 @@ public class TransformOptions {
 			}
 		}
 
-		this.transformer.dual_info("Output    [ %s ] (%s)", useOutputName, outputCase);
-		this.transformer.dual_info("          [ %s ]", useOutputPath);
+		dual_verbose("Output    [ %s ] (%s)", useOutputName, outputCase);
+		dual_info("Output    [ %s ]", useOutputPath);
+		// Display even with terse output.
 
-		allowOverwrite = this.transformer.hasOption(AppOption.OVERWRITE);
+		allowOverwrite = hasOption(AppOption.OVERWRITE);
 		if (allowOverwrite) {
-			this.transformer.dual_info("Overwrite of output is enabled");
+			dual_noTerse("Overwrite of output is enabled");
 		}
 
 		if (useOutputFile.exists()) {
 			if (allowOverwrite) {
-				this.transformer.dual_info("Output exists and will be overwritten [ %s ]", useOutputPath);
+				dual_noTerse("Output exists and will be overwritten [ %s ]", useOutputPath);
 			} else {
-				this.transformer.dual_error("Output already exists [ %s ]", useOutputPath);
+				dual_error("Output already exists [ %s ]", useOutputPath);
 				return false;
 			}
 		} else {
 			if (allowOverwrite) {
-				if (isVerbose) {
-					this.transformer.dual_info("Overwritten specified, but output [ %s ] does not exist", useOutputPath);
-				}
+				dual_verbose("Overwritten specified, but output [ %s ] does not exist", useOutputPath);
 			}
 		}
 
@@ -798,9 +893,9 @@ public class TransformOptions {
 	}
 
 	public void setActions() {
-		if (this.transformer.hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
+		if (hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
 			widenArchiveNesting = true;
-			this.transformer.dual_info("Widened action nesting is enabled.");
+			dual_noTerse("Widened action nesting is enabled.");
 		} else {
 			widenArchiveNesting = false;
 		}
@@ -808,7 +903,7 @@ public class TransformOptions {
 
 	public CompositeActionImpl getRootAction() {
 		if (rootAction == null) {
-			CompositeActionImpl useRootAction = new CompositeActionImpl(this.transformer.getLogger(), isTerse, isVerbose,
+			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse, isVerbose,
 				getBuffer(), getSelectionRule(), getSignatureRule());
 
 			DirectoryActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
@@ -927,57 +1022,37 @@ public class TransformOptions {
 	}
 
 	public boolean acceptAction() {
-		String actionName = this.transformer.getOptionValue(AppOption.FILE_TYPE);
+		String actionName = getOptionValue(AppOption.FILE_TYPE);
 		if (actionName != null) {
 			for (ActionImpl action : getRootAction().getActions()) {
 				if (action.getActionType()
 					.matches(actionName)) {
-					this.transformer.dual_info("Forced action [ %s ] [ %s ]", actionName, action.getName());
+					// Display even with terse output.
+					dual_info("Forced action [ %s ] [ %s ]", actionName, action.getName());
 					acceptedAction = action;
 					return true;
 				}
 			}
-			this.transformer.dual_error("No match for forced action [ %s ]", actionName);
+			dual_error("No match for forced action [ %s ]", actionName);
 			return false;
 
 		} else {
 			acceptedAction = getRootAction().acceptAction(inputName, inputFile);
 			if (acceptedAction == null) {
-				this.transformer.dual_error("No action selected for input [ %s ]", inputName);
+				dual_error("No action selected for input [ %s ]", inputName);
 				return false;
 			} else {
-				this.transformer.dual_info("Action selected for input [ %s ]: %s", inputName, acceptedAction.getName());
+				// Display even with terse output.
+				dual_info("Action selected for input [ %s ]: %s", inputName, acceptedAction.getName());
 				return true;
 			}
 		}
 	}
 
 	public void transform() throws TransformException {
-
 		acceptedAction.apply(inputName, inputFile, outputFile);
-
-		if (isTerse) {
-			if (!this.transformer.toSysOut && !this.transformer.toSysErr) {
-				acceptedAction.getLastActiveChanges()
-					.displayTerse(this.transformer.getSystemOut(), inputPath, outputPath);
-			}
-			acceptedAction.getLastActiveChanges()
-				.displayTerse(this.transformer.getLogger(), inputPath, outputPath);
-		} else if (isVerbose) {
-			if (!this.transformer.toSysOut && !this.transformer.toSysErr) {
-				acceptedAction.getLastActiveChanges()
-					.displayVerbose(this.transformer.getSystemOut(), inputPath, outputPath);
-			}
-			acceptedAction.getLastActiveChanges()
-				.displayVerbose(this.transformer.getLogger(), inputPath, outputPath);
-		} else {
-			if (!this.transformer.toSysOut && !this.transformer.toSysErr) {
-				acceptedAction.getLastActiveChanges()
-					.display(this.transformer.getSystemOut(), inputPath, outputPath);
-			}
-			acceptedAction.getLastActiveChanges()
-				.display(this.transformer.getLogger(), inputPath, outputPath);
-		}
+		acceptedAction.getLastActiveChanges()
+			.display(isTerse, isVerbose, getLogger(), inputPath, outputPath);
 	}
 
 	public Changes getLastActiveChanges() {

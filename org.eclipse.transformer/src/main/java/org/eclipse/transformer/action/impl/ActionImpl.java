@@ -107,12 +107,6 @@ public abstract class ActionImpl implements Action {
 		getLogger().info(message, parms);
 	}
 
-	public void terse(String message, Object... parms) {
-		if (getIsTerse()) {
-			info(message, parms);
-		}
-	}
-
 	public void verbose(String message, Object... parms) {
 		if (getIsVerbose()) {
 			info(message, parms);
@@ -370,9 +364,7 @@ public abstract class ActionImpl implements Action {
 	protected ChangesImpl				lastActiveChanges;
 
 	protected void startRecording(String inputName) {
-		if (getIsVerbose()) {
-			info("Start processing [ {} ] using [ {} ]", inputName, getActionType());
-		}
+		verbose("Start processing [ {} ] using [ {} ]", inputName, getActionType());
 
 		if (numActiveChanges == changes.size()) {
 			changes.add(activeChanges = newChanges());

@@ -22,6 +22,8 @@ public enum AppOption {
 	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
+	// See 'Transformer.hasArg(AppOption)' for particular issues relating to
+	// 'LOG_TERSE' and 'LOG_VERBOSE'.
 	LOG_TERSE("q", "quiet", "Display quiet output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 	LOG_VERBOSE("v", "verbose", "Display verbose output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,

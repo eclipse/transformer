@@ -37,20 +37,5 @@ public class LoggerSettings {
 
 		this.logLevel = transformer.getOptionValue(AppOption.LOG_LEVEL);
 		this.logFileName = transformer.getOptionValue(AppOption.LOG_FILE, Transformer.DO_NORMALIZE);
-
-		// System.out.println("LoggerSettings: isTerse [ " + this.isTerse +
-		// " ]");
-		// System.out.println("LoggerSettings: isVerbose [ " +
-		// this.isVerbose + " ]");
-		// System.out.println("LoggerSettings: properties [ " +
-		// this.properties + " ]");
-		// System.out.println("LoggerSettings: propertyFileName [ " +
-		// this.propertyFileName + " ]");
-		// System.out.println("LoggerSettings: logName [ " + this.logName +
-		// " ]");
-		// System.out.println("LoggerSettings: logLevel [ " + this.logLevel
-		// + " ]");
-		// System.out.println("LoggerSettings: logFileName [ " +
-		// this.logFileName + " ]");
 	}
 }

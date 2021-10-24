@@ -100,56 +100,41 @@ public class TransformerLoggerFactory {
 		return settings;
 	}
 
-	protected void verboseOutput(String message, Object... parms) {
+	// The logger factory operates before before the transformer
+	// creates its logger. Usual log output is not available.
+	// Logging must be to system output or to system error.
+
+	protected void outputPrint(String message, Object... parms) {
+		transformer.outputPrint(message, parms);
+	}
+
+	protected void dual_outputPrint(String message, Object... parms) {
+		transformer.outputPrint(message, parms);
+	}
+
+	protected void verbose(String message, Object... parms) {
 		if (settings.isVerbose) {
-			transformer.outputPrint(message, parms);
+			outputPrint(message, parms);
 		}
 	}
 
-	protected void normalOutput(String message, Object... parms) {
-		if (!settings.isVerbose && !settings.isTerse) {
-			transformer.outputPrint(message, parms);
+	protected void dual_verbose(String message, Object... parms) {
+		if (settings.isVerbose) {
+			dual_outputPrint(message, parms);
 		}
 	}
 
-	protected void nonTerseOutput(String message, Object... parms) {
-		// System.out.println("nonTerseOutput [ " + (settings.isTerse ?
-		// "Blocked" : "Unblocked") + " ] [ " + message + " ] [ " + parms + "
-		// ]");
-
+	protected void noTerse(String message, Object... parms) {
 		if (!settings.isTerse) {
-			transformer.outputPrint(message, parms);
+			outputPrint(message, parms);
 		}
 	}
 
-	protected void terseOutput(String message, Object... parms) {
-		if (settings.isTerse) {
-			transformer.outputPrint(message, parms);
+	protected void dual_noTerse(String message, Object... parms) {
+		if (!settings.isTerse) {
+			dual_outputPrint(message, parms);
 		}
 	}
-
-	// Options from the transformer:
-	//
-	// LOG_TERSE("q", "quiet", "Display quiet output",
-	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	// LOG_VERBOSE("v", "verbose", "Display verbose output",
-	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	// LOG_PROPERTY("lp", "logProperty", "Logging property",
-	// !OptionSettings.HAS_ARG, OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	// LOG_PROPERTY_FILE("lpf", "logPropertyFile", "Logging properties file",
-	// OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	// LOG_LEVEL("ll", "logLevel", "Logging level",
-	// OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	// LOG_FILE("lf", "logFile", "Logging file",
-	// OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-
-	
 
 	//
 
@@ -164,21 +149,11 @@ public class TransformerLoggerFactory {
 		if (settings.logFileName != null) {
 			setLoggingProperty(logFilePropertyName, settings.logFileName);
 		}
-		// else {
-		// System.out.println("Using preset logging property [ " +
-		// logFilePropertyName + " ] [ " +
-		// System.getProperty(logFilePropertyName) + " ]");
-		// }
 
 		String logLevelPropertyName = LoggerProperty.LOG_LEVEL_ROOT.getPropertyName();
 		if (settings.logLevel != null) {
 			setLoggingProperty(logLevelPropertyName, settings.logLevel);
 		}
-		// else {
-		// System.out.println("Using preset logging property [ " +
-		// logLevelPropertyName + " ] [ "
-		// + System.getProperty(logLevelPropertyName) + " ]");
-		// }
 
 		if (settings.properties != null) {
 			for (String propertyAssignment : settings.properties) {
@@ -192,27 +167,17 @@ public class TransformerLoggerFactory {
 			try {
 				properties = transformer.loadExternalProperties("Logging Properties File", settings.propertyFileName);
 			} catch (Exception e) {
-				throw new TransformException("Failed to load logging properties [ " + settings.propertyFileName + " ]",
-					e);
+				throw new TransformException("Failed to load logging properties [ " + settings.propertyFileName + " ]", e);
 			}
 
-			for (Entry<Object, Object> propertyEntry : properties.entrySet()) {
-				String propertyName = propertyEntry.getKey()
-					.toString();
-				String propertyValue = propertyEntry.getValue()
-					.toString();
-				setLoggingProperty(propertyName, propertyValue); // throws
-																	// TransformException
+			for (Entry<Object, Object> pEntry : properties.entrySet()) {
+				String pName = pEntry.getKey().toString();
+				String pValue = pEntry.getValue().toString();
+				setLoggingProperty(pName, pValue); // throws TransformException
 			}
 		}
 
-		if (settings.isTerse) {
-			// Don't report; in terse mode!
-		} else if (settings.isVerbose) {
-			nonTerseOutput("Verbose output requested");
-		} else {
-			// Don't use of default logging mode
-		}
+		dual_verbose("Verbose output requested"); // Output only when verbose output is enabled.
 	}
 
 	protected String selectLoggerName() {
@@ -225,7 +190,7 @@ public class TransformerLoggerFactory {
 			logNameCase = "Assigned";
 			logName = settings.logName;
 		}
-		nonTerseOutput("Logger name [ %s ] (%s)", logName, logNameCase);
+		dual_noTerse("Logger name [ %s ] (%s)", logName, logNameCase);
 
 		return logName;
 	}
@@ -260,51 +225,36 @@ public class TransformerLoggerFactory {
 		}
 	}
 
-	protected void assignLoggingProperty(String propertyAssignment) throws TransformException {
-		String[] assignmentValues = parseAssignment(propertyAssignment);
+	protected void assignLoggingProperty(String pAssignment) throws TransformException {
+		String[] assignmentValues = parseAssignment(pAssignment);
 		if (assignmentValues == null) {
-			throw new TransformException("Malformed logger property assignment [ " + propertyAssignment + " ]");
+			throw new TransformException("Malformed logger property assignment [ " + pAssignment + " ]");
 		}
 
-		String propertyName = assignmentValues[0];
-		String propertyValue = assignmentValues[1];
+		String pName = assignmentValues[0];
+		String pValue = assignmentValues[1];
 
-		String completedPropertyName = completePropertyName(propertyName);
-		if (completedPropertyName != null) {
-			verboseOutput("Transformer logging property adjusted from [ %s ] to [ %s ]", propertyName,
-				completedPropertyName, propertyValue);
+		String completedName = completePropertyName(pName);
+		if (completedName != null) {
+			dual_verbose("Logging property name adjusted from [ %s ] to [ %s ]", pName, completedName, pValue);
 		} else {
-			completedPropertyName = propertyName;
+			completedName = pName;
 		}
 
-		setLoggingProperty(completedPropertyName, propertyValue);
+		setLoggingProperty(completedName, pValue);
 	}
 
-	protected void setLoggingProperty(String propertyName, String newPropertyValue) {
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ...");
+	protected void setLoggingProperty(String pName, String newValue) {
+		String oldValue = System.getProperty(pName);
 
-		String oldPropertyValue = System.getProperty(propertyName);
-
-		// System.out.println("setLoggingProperty Old value [ " +
-		// oldPropertyValue + " ]");
-
-		if (oldPropertyValue != null) {
-			nonTerseOutput("Blocked assignment of logging property [ %s ] to [ %s ] by prior value [ %s ]",
-				propertyName, newPropertyValue, oldPropertyValue);
+		if (oldValue != null) {
+			dual_noTerse("Logging property assignment [ %s ] to [ %s ] blocked by prior value [ %s ]",
+					pName, newValue, oldValue);
 
 		} else {
-			System.setProperty(propertyName, newPropertyValue);
-
-			nonTerseOutput("Assigning logging property [ %s ] to [ %s ]", propertyName, newPropertyValue);
+			System.setProperty(pName, newValue);
+			dual_noTerse("Logging property assigns [ %s ] to [ %s ]", pName, newValue);
 		}
-
-		// String assignedPropertyValue = System.getProperty(propertyName);
-		// System.out.println("setLogginProperty Assigned value [ " +
-		// assignedPropertyValue + " ]");
-
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ... done");
 	}
 
 	public static boolean logToSysOut() {

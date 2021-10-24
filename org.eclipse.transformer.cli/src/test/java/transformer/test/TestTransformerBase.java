@@ -150,7 +150,7 @@ public abstract class TestTransformerBase {
 		assertEquals( outputFileName, options.getOutputFileName(),
 			"output file name is not correct [ " + options.getOutputFileName() + " ]" );
 
-		assertTrue(options.setRules(), "options.setRules() failed");
+		assertTrue(options.setRules(t.getImmediateData()), "options.setRules() failed");
 		assertTrue(options.acceptAction(), "options.acceptAction() failed");
 
 		options.transform();

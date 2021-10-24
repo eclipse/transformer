@@ -187,6 +187,8 @@ public class Transformer {
 
 	//
 
+	private static final String		COPYRIGHT_LINE			= "Copyright (c) Contributors to the Eclipse Foundation";
+
 	private static final String[]	COPYRIGHT_LINES					= {
 		"Copyright (c) Contributors to the Eclipse Foundation",
 		"This program and the accompanying materials are made available under the",
@@ -220,18 +222,26 @@ public class Transformer {
 		// }
 	}
 
-	private void displayCopyright() {
-		for (String copyrightLine : COPYRIGHT_LINES) {
-			preInitDisplay(copyrightLine);
+	private void displayHeader() {
+		String className = getClass().getCanonicalName();
+		String buildVersion = getBuildVersion();
+
+		if (!isVerbose()) {
+			preInitDisplay(COPYRIGHT_LINE);
+			preInitDisplay(className + " Version [ " + buildVersion + " ]");
+		} else {
+			for (String copyrightLine : COPYRIGHT_LINES) {
+				preInitDisplay(copyrightLine);
+			}
+			preInitDisplay(className);
+			preInitDisplay("  Version [ " + buildVersion + " ]");
+			preInitDisplay("");
 		}
 	}
 
-	private void displayBuildProperties() {
-		Properties useBuildProperties = getBuildProperties();
-
-		preInitDisplay(getClass().getName());
-		preInitDisplay("  Version [ " + useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME) + " ]");
-		preInitDisplay("");
+	private String getBuildVersion() {
+		String buildVersion = getBuildProperties().getProperty(SHORT_VERSION_PROPERTY_NAME);
+		return ((buildVersion == null) ? "** UNAVAILABLE **" : buildVersion);
 	}
 
 	//
@@ -315,6 +325,36 @@ public class Transformer {
 
 	protected String[] getArgs() {
 		return args;
+	}
+
+	private Boolean	isTerse;
+	private Boolean	isVerbose;
+
+	protected boolean isTerse() {
+		if (isTerse == null) {
+			isTerse = Boolean.valueOf(hasArg(AppOption.LOG_TERSE));
+		}
+		return isTerse.booleanValue();
+	}
+
+	protected boolean isVerbose() {
+		if (isVerbose == null) {
+			isVerbose = Boolean.valueOf(hasArg(AppOption.LOG_VERBOSE));
+		}
+		return isVerbose.booleanValue();
+	}
+
+	// TODO: This is approximate! Option arguments are not skipped.
+	protected boolean hasArg(AppOption appOption) {
+		String shortTag = '-' + appOption.getShortTag();
+		String longTag = "--" + appOption.getLongTag();
+
+		for (String arg : getArgs()) {
+			if (shortTag.equals(arg) || longTag.startsWith(arg)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void setParsedArgs() throws ParseException {
@@ -459,7 +499,7 @@ public class Transformer {
 		if (rulesReferences == null) {
 			String rulesReference = getDefaultReference(ruleOption);
 			if (rulesReference == null) {
-				dual_info("Skipping option [ %s ]", ruleOption);
+				dual_verbose("Skipping option [ %s ]", ruleOption);
 				return FileUtils.createProperties();
 			} else {
 				return loadInternalProperties(ruleOption, rulesReference);
@@ -522,13 +562,12 @@ public class Transformer {
 	}
 
 	protected UTF8Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
-		// dual_info("Using internal [ %s ]: [ %s ]", ruleOption, resourceRef);
 		URL rulesUrl = getRuleLoader().getResource(resourceRef);
 		if (rulesUrl == null) {
-			dual_info("Internal [ %s ] were not found [ %s ]", ruleOption, resourceRef);
+			dual_verbose("Internal [ %s ] were not found [ %s ]", ruleOption, resourceRef);
 			throw new IOException("Resource [ " + resourceRef + " ] not found on [ " + getRuleLoader() + " ]");
 		} else {
-			dual_info("Internal [ %s ] URL [ %s ]", ruleOption, rulesUrl);
+			dual_noTerse("Internal [ %s ] URL [ %s ]", ruleOption, rulesUrl);
 		}
 		return FileUtils.loadProperties(rulesUrl);
 	}
@@ -551,11 +590,9 @@ public class Transformer {
 		String referenceName, String externalReference, File relativeHome)
 		throws URISyntaxException, IOException {
 
-		// dual_info("Using external [ %s ]: [ %s ]", referenceName, externalReference);
-
 		URI relativeHomeUri = relativeHome.toURI();
 		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference).toURL();
-		dual_info("External [ %s ] URL [ %s ]", referenceName, rulesUrl);
+		dual_noTerse("External [ %s ] URL [ %s ]", referenceName, rulesUrl);
 
 		return FileUtils.loadProperties(rulesUrl);
 	}
@@ -606,16 +643,12 @@ public class Transformer {
 		}
 
 		if ( oldValue != null ) {
-			dual_debug(
-				"Merge of [ %s ] into [ %s ], key [ %s ] orphans [ %s ]",
-				sourceName, sinkName, key, oldValue);
+			dual_debug("Merge of [ %s ] into [ %s ], key [ %s ] orphans [ %s ]", sourceName, sinkName, key, oldValue);
 			orphans.add(oldValue);
 		}
 
 		if ( orphans.remove(newValue) ) {
-			dual_debug(
-				"Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]",
-				sourceName, sinkName, key, newValue);
+			dual_debug("Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]", sourceName, sinkName, key, newValue);
 		}
 	}
 
@@ -647,7 +680,7 @@ public class Transformer {
 	 *
 	 * @return Grouped immediate option data from the command line.
 	 */
-	protected ImmediateRuleData[] getImmediateData() {
+	public ImmediateRuleData[] getImmediateData() {
 		if ( !hasOption(AppOption.RULES_IMMEDIATE_DATA) ) {
 			return new ImmediateRuleData[] {
 				// EMPTY
@@ -672,7 +705,7 @@ public class Transformer {
 			String key = immediateArgs[baseNo + 1];
 			String value = immediateArgs[baseNo + 2];
 
-			dual_info("Immediate rule data specified; target [ %s ], key [ %s ], value [ %s ]", targetText, key, value);
+			dual_noTerse("Immediate rule data specified; target [ %s ], key [ %s ], value [ %s ]", targetText, key, value);
 
 			AppOption target = getTargetOption(targetText);
 			if (target == null) {
@@ -705,11 +738,13 @@ public class Transformer {
 		return null;
 	}
 
-
-
 	//
 
-	Logger logger;
+	private Logger logger;
+
+	protected void setLogger(Logger logger) {
+		this.logger = logger;
+	}
 
 	public Logger getLogger() {
 		return logger;
@@ -744,15 +779,25 @@ public class Transformer {
 	public boolean	toSysOut;
 	public boolean	toSysErr;
 
+	/**
+	 * Tell if logging has been directed to stdOut or to stdErr.
+	 *
+	 * @return True or false telling if logging has been directed to stdOut or
+	 *         stdErr.
+	 */
+	protected boolean isLogDirect() {
+		return toSysOut || toSysErr;
+	}
+
 	protected void detectLogFile() {
 		toSysOut = TransformerLoggerFactory.logToSysOut();
 		if (toSysOut) {
-			outputPrint("Logging is to System.out\n");
+			outputPrint("Log to System.out\n");
 		}
 
 		toSysErr = TransformerLoggerFactory.logToSysErr();
 		if (toSysOut) {
-			outputPrint("Logging is to System.err\n");
+			outputPrint("Log to System.err\n");
 		}
 
 		outputPrint("Log file [ " + System.getProperty(LoggerProperty.LOG_FILE.getPropertyName()) + " ]");
@@ -766,6 +811,18 @@ public class Transformer {
 			systemPrint(getSystemOut(), message);
 		}
 		info(message);
+	}
+
+	public void dual_noTerse(String message, Object... parms) {
+		if (!isTerse()) {
+			dual_info(message, parms);
+		}
+	}
+
+	public void dual_verbose(String message, Object... parms) {
+		if (isVerbose()) {
+			dual_info(message, parms);
+		}
 	}
 
 	public void dual_debug(String message, Object... parms) {
@@ -808,8 +865,7 @@ public class Transformer {
 	}
 
 	public int run() {
-		displayCopyright();
-		displayBuildProperties();
+		displayHeader();
 
 		try {
 			setParsedArgs();
@@ -847,7 +903,7 @@ public class Transformer {
 
 		boolean loadedRules;
 		try {
-			loadedRules = options.setRules();
+			loadedRules = options.setRules(getImmediateData());
 		} catch (Exception e) {
 			dual_error("Exception loading rules:", e);
 			return RULES_ERROR_RC;

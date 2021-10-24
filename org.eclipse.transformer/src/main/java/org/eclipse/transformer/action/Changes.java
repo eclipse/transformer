@@ -46,9 +46,12 @@ public interface Changes {
 
 	void display(PrintStream printStream, String inputPath, String outputPath);
 
+	void display(boolean isTerse, boolean isVerbose, Logger logger, String inputPath, String outputPath);
+
 	void display(Logger logger, String inputPath, String outputPath);
 
 	void displayTerse(PrintStream printStream, String inputPath, String outputPath);
 
 	void displayTerse(Logger logger, String inputPath, String outputPath);
+
 }

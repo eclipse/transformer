@@ -104,6 +104,17 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
+	public void display(boolean isTerse, boolean isVerbose, Logger logger, String inputPath, String outputPath) {
+		if (isTerse) {
+			displayTerse(logger, inputPath, outputPath);
+		} else if (isVerbose) {
+			displayVerbose(logger, inputPath, outputPath);
+		} else {
+			display(logger, inputPath, outputPath);
+		}
+	}
+
+	@Override
 	public void displayTerse(PrintStream printStream, String inputPath, String outputPath) {
 		if (!inputPath.equals(outputPath)) {
 			printStream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag());
