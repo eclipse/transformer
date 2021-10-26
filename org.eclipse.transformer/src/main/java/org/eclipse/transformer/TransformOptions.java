@@ -56,10 +56,6 @@ public class TransformOptions {
 
 	private final Transformer				transformer;
 
-	protected void setLogger(Logger logger) {
-		transformer.setLogger(logger);
-	}
-
 	protected Logger getLogger() {
 		return transformer.getLogger();
 	}
@@ -147,6 +143,7 @@ public class TransformOptions {
 
 	public boolean							isVerbose;
 	public boolean							isTerse;
+	public boolean							isExtraDebug;
 
 	public Set<String>						includes;
 	public Set<String>						excludes;
@@ -180,13 +177,27 @@ public class TransformOptions {
 	//
 
 	public void setLogging() throws TransformException {
-		setLogger(new TransformerLoggerFactory(transformer).createLogger());
+		Logger logger = new TransformerLoggerFactory(transformer).createLogger();
 		// throws TransformException
+
+		transformer.setLogger(logger);
 
 		if (hasOption(AppOption.LOG_TERSE)) {
 			isTerse = true;
+			// Don't say anything when terse output is requested.
+			// Since we are being terse.
 		} else if (hasOption(AppOption.LOG_VERBOSE)) {
 			isVerbose = true;
+			dual_verbose("Verbose output requested");
+		}
+
+		if (hasOption(AppOption.LOG_EXTRA_DEBUG)) {
+			isExtraDebug = true;
+			if (!logger.isDebugEnabled()) {
+				dual_info("Extra debugging output requested, but will have no effect: Debug output is not enabled.");
+			} else {
+				dual_info("Extra debugging output requested");
+			}
 		}
 	}
 
@@ -351,7 +362,7 @@ public class TransformOptions {
 
 				UTF8Properties substitutions = new UTF8Properties();
 				if ( masterDirect == null ) {
-					substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]",
+					substitutions = loadInternalProperties("Substitutions matching [ " + classSelector + " ]",
 						substitutionsRef);
 				}
 				Map<String, String> substitutionsMap =
@@ -507,7 +518,7 @@ public class TransformOptions {
 		throws IOException, URISyntaxException {
 		UTF8Properties substitutions;
 		if ( masterRef == null ) {
-			substitutions = loadInternalProperties("Substitions matching [ " + selector + " ]", substitutionsRef);
+			substitutions = loadInternalProperties("Substitutions matching [ " + selector + " ]", substitutionsRef);
 			// throws IOException
 		} else {
 			String relativeSubstitutionsRef = transformer.relativize(substitutionsRef, masterRef);
@@ -516,7 +527,7 @@ public class TransformOptions {
 					substitutionsRef, relativeSubstitutionsRef);
 			}
 
-			substitutions = loadExternalProperties("Substitions matching [ " + selector + " ]",
+			substitutions = loadExternalProperties("Substitutions matching [ " + selector + " ]",
 				relativeSubstitutionsRef);
 			// throws URISyntaxException, IOException
 		}
@@ -809,8 +820,8 @@ public class TransformOptions {
 			return false;
 		}
 
-		dual_verbose("Input     [ %s ]", inputName);
-		dual_info("Input     [ %s ]", inputPath); // Display even with terse output.
+		dual_verbose("Input [ %s ]", inputName);
+		dual_info("Input [ %s ]", inputPath); // Display even with terse output.
 		return true;
 	}
 
@@ -863,8 +874,8 @@ public class TransformOptions {
 			}
 		}
 
-		dual_verbose("Output    [ %s ] (%s)", useOutputName, outputCase);
-		dual_info("Output    [ %s ]", useOutputPath);
+		dual_verbose("Output [ %s ] (%s)", useOutputName, outputCase);
+		dual_info("Output [ %s ]", useOutputPath);
 		// Display even with terse output.
 
 		allowOverwrite = hasOption(AppOption.OVERWRITE);
@@ -903,7 +914,7 @@ public class TransformOptions {
 
 	public CompositeActionImpl getRootAction() {
 		if (rootAction == null) {
-			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse, isVerbose,
+			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse, isVerbose, isExtraDebug,
 				getBuffer(), getSelectionRule(), getSignatureRule());
 
 			DirectoryActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);

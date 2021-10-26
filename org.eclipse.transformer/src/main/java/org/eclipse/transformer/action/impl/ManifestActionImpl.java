@@ -43,21 +43,26 @@ public class ManifestActionImpl extends ActionImpl {
 	public static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
 	public static ManifestActionImpl newManifestAction(Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer, SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+		boolean isExtraDebug, InputBufferImpl buffer, SelectionRuleImpl selectionRule,
+		SignatureRuleImpl signatureRule) {
 
-		return new ManifestActionImpl(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule, IS_MANIFEST);
+		return new ManifestActionImpl(logger, isTerse, isVerbose, isExtraDebug, buffer, selectionRule, signatureRule,
+			IS_MANIFEST);
 	}
 
 	public static ManifestActionImpl newFeatureAction(Logger logger, boolean isTerse, boolean isVerbose,
-		InputBufferImpl buffer, SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+		boolean isExtraDebug, InputBufferImpl buffer, SelectionRuleImpl selectionRule,
+		SignatureRuleImpl signatureRule) {
 
-		return new ManifestActionImpl(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule, IS_FEATURE);
+		return new ManifestActionImpl(logger, isTerse, isVerbose, isExtraDebug, buffer, selectionRule, signatureRule,
+			IS_FEATURE);
 	}
 
-	public ManifestActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public ManifestActionImpl(Logger logger, boolean isTerse, boolean isVerbose, boolean isExtraDebug,
+		InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule, boolean isManifest) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, isTerse, isVerbose, isExtraDebug, buffer, selectionRule, signatureRule);
 
 		this.isManifest = isManifest;
 	}
@@ -190,7 +195,7 @@ public class ManifestActionImpl extends ActionImpl {
 	protected int transformPackages(String inputName, String entryName, Attributes initialAttributes,
 		Attributes finalAttributes) {
 
-		debug("Transforming [ {} ]: [ {} ] Attributes [ {} ]", inputName, entryName, initialAttributes.size());
+		extraDebug("Transforming [ {} ]: [ {} ] Attributes [ {} ]", inputName, entryName, initialAttributes.size());
 
 		int replacements = 0;
 
@@ -214,7 +219,7 @@ public class ManifestActionImpl extends ActionImpl {
 			finalAttributes.put(untypedName, finalValue);
 		}
 
-		debug("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]", inputName, entryName,
+		extraDebug("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]", inputName, entryName,
 			finalAttributes.size(), replacements);
 
 		return replacements;
@@ -552,7 +557,7 @@ public class ManifestActionImpl extends ActionImpl {
 		}
 
 		int commaIndex = text.indexOf(',');
-		debug("Comma index: [{}]", commaIndex);
+		// debug("Comma index: [{}]", commaIndex);
 		// If there is no comma, then the whole text is the packageAttributeText
 		if (commaIndex == -1) {
 			return text;
@@ -564,7 +569,7 @@ public class ManifestActionImpl extends ActionImpl {
 		// If an odd number of quotes are found, then the comma is in quotes and
 		// we need to find the next comma.
 		String packageText = text.substring(0, commaIndex + 1);
-		debug("packageText [ {} ]", packageText);
+		extraDebug("packageText [ {} ]", packageText);
 
 		while (!isPackageDelimitingComma(text, packageText, commaIndex)) {
 			commaIndex = text.indexOf(',', packageText.length());
@@ -583,7 +588,7 @@ public class ManifestActionImpl extends ActionImpl {
 			}
 		}
 
-		debug("getPackageAttributeText returning: [ {} ]", packageText);
+		extraDebug("getPackageAttributeText returning: [ {} ]", packageText);
 		return packageText;
 	}
 
@@ -697,7 +702,7 @@ public class ManifestActionImpl extends ActionImpl {
 
 		String initialSymbolicName = initialMainAttributes.getValue(SYMBOLIC_NAME_PROPERTY_NAME);
 		if (initialSymbolicName == null) {
-			debug("Input [ {} ] has no bundle symbolic name", inputName);
+			extraDebug("Input [ {} ] has no bundle symbolic name", inputName);
 			return false;
 		}
 
@@ -728,7 +733,7 @@ public class ManifestActionImpl extends ActionImpl {
 			isWildcard = false;
 			matchCase = "identity update";
 		}
-		debug("Input [ {} ] symbolic name [ {} ] has {}", inputName, initialSymbolicName, matchCase);
+		extraDebug("Input [ {} ] symbolic name [ {} ] has {}", inputName, initialSymbolicName, matchCase);
 		if (!matched) {
 			return false;
 		}

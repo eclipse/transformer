@@ -21,10 +21,11 @@ import org.slf4j.Logger;
  */
 public class PropertiesActionImpl extends ActionImpl {
 
-	public PropertiesActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public PropertiesActionImpl(Logger logger, boolean isTerse, boolean isVerbose, boolean isExtraDebug,
+		InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, isTerse, isVerbose, isExtraDebug, buffer, selectionRule, signatureRule);
 	}
 
 	@Override

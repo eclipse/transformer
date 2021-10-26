@@ -176,8 +176,6 @@ public class TransformerLoggerFactory {
 				setLoggingProperty(pName, pValue); // throws TransformException
 			}
 		}
-
-		dual_verbose("Verbose output requested"); // Output only when verbose output is enabled.
 	}
 
 	protected String selectLoggerName() {

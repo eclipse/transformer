@@ -17,6 +17,7 @@ import org.eclipse.transformer.Transformer;
 public class LoggerSettings {
 	public final boolean	isTerse;
 	public final boolean	isVerbose;
+	public final boolean	isExtraDebug;
 
 	public final String[]	properties;
 	public final String		propertyFileName;
@@ -28,6 +29,7 @@ public class LoggerSettings {
 	public LoggerSettings(Transformer transformer) {
 		this.isTerse = transformer.hasOption(AppOption.LOG_TERSE);
 		this.isVerbose = transformer.hasOption(AppOption.LOG_VERBOSE);
+		this.isExtraDebug = transformer.hasOption(AppOption.LOG_EXTRA_DEBUG);
 
 		this.properties = transformer.getOptionValues(AppOption.LOG_PROPERTY);
 		this.propertyFileName = transformer.getOptionValue(AppOption.LOG_PROPERTY_FILE,

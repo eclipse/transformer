@@ -88,7 +88,7 @@ public class TestTransformXML extends CaptureTest {
 		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			textAction = new TextActionImpl(useLogger, false, false, new InputBufferImpl(),
+			textAction = new TextActionImpl(useLogger, false, false, false, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
 					Collections.emptyMap()));

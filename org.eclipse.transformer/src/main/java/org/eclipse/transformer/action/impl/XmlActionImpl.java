@@ -40,10 +40,11 @@ import aQute.lib.io.ByteBufferOutputStream;
 
 public class XmlActionImpl extends ActionImpl {
 
-	public XmlActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public XmlActionImpl(Logger logger, boolean isTerse, boolean isVerbose, boolean isExtraDebug,
+		InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, isTerse, isVerbose, isExtraDebug, buffer, selectionRule, signatureRule);
 	}
 
 	//
@@ -303,12 +304,12 @@ public class XmlActionImpl extends ActionImpl {
 		}
 
 		protected void append(String text) {
-			debug("appending [" + text + "]");
+			extraDebug("append [ {} ]", text);
 			lineBuilder.append(text);
 		}
 
 		protected void appendLine(String text) {
-			debug("appendline[" + text + "]");
+			extraDebug("appendline [ {} ]", text);
 			lineBuilder.append(text);
 			lineBuilder.append('\n');
 		}
@@ -352,7 +353,7 @@ public class XmlActionImpl extends ActionImpl {
 			append("<?");
 			append(target);
 			if ((data != null) && data.length() > 0) {
-				debug("processingInstruction: data[" + data + "]");
+				extraDebug("processingInstruction [ {} ]", data);
 				append(' ');
 				append(data);
 			}
@@ -378,20 +379,24 @@ public class XmlActionImpl extends ActionImpl {
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-			debug("startElement: uri[" + uri + "] localName[" + localName + "] qName[" + qName + "] attributes["
-				+ attributes + "]");
+			extraDebug("startElement uri [ {} ] localName [ {} ] qName[ {} ] attributes[ {} ]", uri, localName, qName,
+				attributes);
 			append('<' + localName);
 			append(uri);
 
 			if (attributes != null) {
 				int numberAttributes = attributes.getLength();
 				for (int i = 0; i < numberAttributes; i++) {
+					String attrQName = attributes.getQName(i);
+					String attrValue = attributes.getValue(i);
+
+					extraDebug("startElement getQName({}) [ {} ]", i, attrQName);
+					extraDebug("startElement getValue({}) [ {} ]", i, attrValue);
+
 					append(' ');
-					append(attributes.getQName(i));
-					debug("startElement: attributes.getQName(" + i + ")[" + attributes.getQName(i) + "]");
+					append(attrQName);
 					append("=\"");
-					append(attributes.getValue(i));
-					debug("startElement: attributes.getValue(" + i + ")[" + attributes.getValue(i) + "]");
+					append(attrValue);
 					append('"');
 				}
 			}
@@ -404,7 +409,7 @@ public class XmlActionImpl extends ActionImpl {
 		@SuppressWarnings("unused")
 		@Override
 		public void endElement(String uri, String localName, String qName) throws SAXException {
-			debug("endElement: uri[" + uri + "] localName[" + localName + "] qName[" + qName + "]");
+			extraDebug("endElement uri [ {} ] localName [ {} ] qName [ {} ]", uri, localName, qName);
 			append("</");
 			append(localName + '>');
 		}
@@ -413,15 +418,17 @@ public class XmlActionImpl extends ActionImpl {
 		@Override
 		public void characters(char[] chars, int start, int length) throws SAXException {
 			String initialText = new String(chars, start, length);
-			debug("characters: initialText[" + initialText + "]");
 
-			String finalText = XmlActionImpl.this.replaceText(inputName, initialText);
+			String finalText = replaceText(inputName, initialText);
 			if (finalText == null) {
 				finalText = initialText;
-				XmlActionImpl.this.addReplacement();
+				extraDebug("characters [ {} ] (unchanged)", initialText);
+
+			} else {
+				debug("characters [ {} ] -> [ {} ]", initialText, finalText);
+				addReplacement();
 			}
 
-			debug("characters:  finalText[" + finalText + "]");
 			append(finalText);
 		}
 
@@ -436,8 +443,4 @@ public class XmlActionImpl extends ActionImpl {
 		// super.skippedEntity(name);
 		// }
 	}
-
-	// protected void debug(String s) {
-	// System.out.println(s);
-	// }
 }

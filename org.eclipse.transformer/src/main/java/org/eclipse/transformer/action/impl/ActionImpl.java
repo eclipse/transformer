@@ -43,12 +43,13 @@ import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
 public abstract class ActionImpl implements Action {
-	public ActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public ActionImpl(Logger logger, boolean isTerse, boolean isVerbose, boolean isExtraDebug, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		this.logger = logger;
 		this.isTerse = isTerse;
 		this.isVerbose = isVerbose;
+		this.isExtraDebug = isExtraDebug;
 
 		this.buffer = buffer;
 
@@ -64,12 +65,12 @@ public abstract class ActionImpl implements Action {
 	//
 
 	public interface ActionInit<A extends ActionImpl> {
-		A apply(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		A apply(Logger logger, boolean isTerse, boolean isVerbose, boolean isExtraDebug, InputBufferImpl buffer,
 			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule);
 	}
 
 	public <A extends ActionImpl> A createUsing(ActionInit<A> init) {
-		return init.apply(getLogger(), getIsTerse(), getIsVerbose(), getBuffer(), getSelectionRule(),
+		return init.apply(getLogger(), getIsTerse(), getIsVerbose(), getIsExtraDebug(), getBuffer(), getSelectionRule(),
 			getSignatureRule());
 	}
 
@@ -78,6 +79,7 @@ public abstract class ActionImpl implements Action {
 	private final Logger	logger;
 	private final boolean	isTerse;
 	private final boolean	isVerbose;
+	private final boolean	isExtraDebug;
 
 	public Logger getLogger() {
 		return logger;
@@ -91,10 +93,19 @@ public abstract class ActionImpl implements Action {
 		return isVerbose;
 	}
 
+	public boolean getIsExtraDebug() {
+		return isExtraDebug;
+	}
+
 	public void trace(String message, Object... parms) {
 		getLogger().trace(message, parms);
 	}
 
+	public void extraDebug(String message, Object... parms) {
+		if (getIsExtraDebug()) {
+			debug(message, parms);
+		}
+	}
 	public void debug(String message, Object... parms) {
 		getLogger().debug(message, parms);
 	}
@@ -110,6 +121,14 @@ public abstract class ActionImpl implements Action {
 	public void verbose(String message, Object... parms) {
 		if (getIsVerbose()) {
 			info(message, parms);
+		}
+	}
+
+	public void verboseOrDebug(String message, Object... parms) {
+		if (!getIsVerbose()) {
+			debug(message, parms);
+		} else {
+			verbose(message, parms);
 		}
 	}
 
@@ -212,24 +231,20 @@ public abstract class ActionImpl implements Action {
 
 		String genericVersion = getPackageVersions().get(packageName);
 
-		// System.out.println("Attribute [ " + attributeName + " ] Package [ " + packageName + " ]");
-		// System.out.println("  Generic version  [ " + genericVersion + " ]");
-		// System.out.println("  Specific version [ " + specificVersion + " ]");
-
 		if ( (specificVersion == null) && (genericVersion == null) ) {
-			debug("Manifest attribute {}: Package {} version {} is unchanged",
+			extraDebug("Manifest attribute {}: Package {} version {} is unchanged",
 				attributeName, packageName, oldVersion);
 			return null;
 		} else if (specificVersion == null) {
-			verbose("Manifest attribute {}: Generic update of package {} version {} to {}",
+			extraDebug("Manifest attribute {}: Generic update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, genericVersion);
 			return genericVersion;
 		} else if (genericVersion == null) {
-			verbose("Manifest attribute {}: Specific update of package {} version {} to {}",
+			extraDebug("Manifest attribute {}: Specific update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, specificVersion);
 			return specificVersion;
 		} else {
-			verbose(
+			extraDebug(
 				"Manifest attribute {}: Specific update of package {} version {} to {}" +
 					" overrides generic version update {}",
 				attributeName, packageName, oldVersion, specificVersion, genericVersion);
@@ -547,26 +562,30 @@ public abstract class ActionImpl implements Action {
 		throws TransformException {
 
 		String className = getClass().getSimpleName();
-		String methodName = "apply";
+		String methodName = "basicApply";
 
 		debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
-		ByteData inputData = read(inputName, inputStream, inputCount); // throws
-																		// JakartaTransformException
+		ByteData inputData = read(inputName, inputStream, inputCount);
+		// throws JakartaTransformException
 
 		if (isDebugEnabled()) {
 			// Issue #158: This clogs output.
 
-//			byte[] altInputData;
-//			if (inputData.length < inputData.data.length) {
-//				altInputData = new byte[inputData.length];
-//				System.arraycopy(inputData.data, 0, altInputData, 0, inputData.length);
-//			} else {
-//				altInputData = inputData.data;
-//			}
-//			debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
-//			    altInputData);
+			// byte[] altInputData;
+			// if (inputData.length < inputData.data.length) {
+			// altInputData = new byte[inputData.length];
+			// System.arraycopy(inputData.data, 0, altInputData, 0,
+			// inputData.length);
+			// } else {
+			// altInputData = inputData.data;
+			// }
+			// debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className,
+			// methodName, inputName, inputData.length,
+			// altInputData);
 
-			debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+			if (inputCount != inputData.length) {
+				debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+			}
 		}
 
 		ByteData outputData;
@@ -608,8 +627,8 @@ public abstract class ActionImpl implements Action {
 
 		startRecording(inputName);
 		try {
-			basicApply(inputName, inputStream, inputCount, outputStream); // throws
-																			// TransformException
+			basicApply(inputName, inputStream, inputCount, outputStream);
+			// throws TransformException
 		} finally {
 			stopRecording(inputName);
 		}
@@ -621,12 +640,14 @@ public abstract class ActionImpl implements Action {
 		int intInputCount = FileUtils.verifyArray(0, inputCount);
 
 		String className = getClass().getSimpleName();
-		String methodName = "apply";
+		String methodName = "basicApply";
 
 		debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
-		ByteData inputData = read(inputName, inputStream, intInputCount); // throws
-																			// JakartaTransformException
-		debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+		ByteData inputData = read(inputName, inputStream, intInputCount);
+		// throws JakartaTransformException
+		if (intInputCount != inputData.length) {
+			debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+		}
 
 		ByteData outputData;
 		try {

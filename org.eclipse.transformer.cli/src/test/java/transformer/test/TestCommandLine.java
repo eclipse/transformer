@@ -70,26 +70,29 @@ public class TestCommandLine {
 	public static final boolean	IS_TERSE	= true;
 	public static final boolean	IS_VERBOSE	= true;
 	public static final boolean	IS_DEBUG	= true;
+	public static final boolean	IS_EXTRA_DEBUG	= true;
 
 	public static class LogOptions {
 		public final boolean	isTerse;
 		public final boolean	isVerbose;
 		public final boolean	isDebug;
+		public final boolean	isExtraDebug;
 
-		public LogOptions(boolean isTerse, boolean isVerbose, boolean isDebug) {
+		public LogOptions(boolean isTerse, boolean isVerbose, boolean isDebug, boolean isExtraDebug) {
 			this.isTerse = isTerse;
 			this.isVerbose = isVerbose;
 			this.isDebug = isDebug;
+			this.isExtraDebug = isExtraDebug;
 		}
 
 		@Override
 		public String toString() {
 			return "LogOptions isTerse [ " + isTerse + " ] isVerbose [ " + isVerbose + " ] isDebug [ "
-				+ isDebug + " ]";
+				+ isDebug + " ] isExtraDebug [ " + isExtraDebug + " ]";
 		}
 
 		public String[] addTo(String[] args) {
-			int additions = (isTerse | isVerbose ? 1 : 0) + (isDebug ? 1 : 0);
+			int additions = ((isTerse | isVerbose) ? 1 : 0) + (isDebug ? 2 : 0) + (isExtraDebug ? 1 : 0);
 			if (additions == 0) {
 				return args;
 			}
@@ -105,18 +108,28 @@ public class TestCommandLine {
 				newArgs[numArgs++] = "-v";
 			}
 			if (isDebug) {
-				newArgs[numArgs++] = "-d";
+				newArgs[numArgs++] = "-ll";
+				newArgs[numArgs++] = "debug";
+			}
+			if (isExtraDebug) {
+				newArgs[numArgs++] = "-x";
 			}
 			return newArgs;
 		}
 	}
 
 	public LogOptions[] LOG_OPTIONS = {
-		new LogOptions(!IS_TERSE, !IS_VERBOSE, !IS_DEBUG), new LogOptions(!IS_TERSE, !IS_VERBOSE, IS_DEBUG),
+		new LogOptions(!IS_TERSE, !IS_VERBOSE, !IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(!IS_TERSE, !IS_VERBOSE, IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(!IS_TERSE, !IS_VERBOSE, IS_DEBUG, IS_EXTRA_DEBUG),
 
-		new LogOptions(IS_TERSE, !IS_VERBOSE, !IS_DEBUG), new LogOptions(IS_TERSE, !IS_VERBOSE, IS_DEBUG),
+		new LogOptions(IS_TERSE, !IS_VERBOSE, !IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(IS_TERSE, !IS_VERBOSE, IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(IS_TERSE, !IS_VERBOSE, IS_DEBUG, IS_EXTRA_DEBUG),
 
-		new LogOptions(!IS_TERSE, IS_VERBOSE, !IS_DEBUG), new LogOptions(!IS_TERSE, IS_VERBOSE, IS_DEBUG),
+		new LogOptions(!IS_TERSE, IS_VERBOSE, !IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(!IS_TERSE, IS_VERBOSE, IS_DEBUG, !IS_EXTRA_DEBUG),
+		new LogOptions(!IS_TERSE, IS_VERBOSE, IS_DEBUG, IS_EXTRA_DEBUG)
 	};
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName) throws Exception {

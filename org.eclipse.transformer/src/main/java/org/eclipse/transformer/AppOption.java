@@ -28,6 +28,9 @@ public enum AppOption {
 		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 	LOG_VERBOSE("v", "verbose", "Display verbose output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	LOG_EXTRA_DEBUG("x", "xtraDebug", "Display extra debug output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
+		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+
 	LOG_PROPERTY("lp", "logProperty", "Logging property", !OptionSettings.HAS_ARG, OptionSettings.HAS_ARGS,
 		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 	LOG_PROPERTY_FILE("lpf", "logPropertyFile", "Logging properties file", OptionSettings.HAS_ARG,

@@ -145,7 +145,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaServiceAction = new ServiceLoaderConfigActionImpl(useLogger, false, false, createBuffer(),
+			jakartaServiceAction = new ServiceLoaderConfigActionImpl(useLogger, false, false, false, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
 		}
@@ -158,7 +158,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			javaxServiceAction = new ServiceLoaderConfigActionImpl(useLogger, false, false, createBuffer(),
+			javaxServiceAction = new ServiceLoaderConfigActionImpl(useLogger, false, false, false, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 		}
@@ -171,11 +171,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			CompositeActionImpl useRootAction = new CompositeActionImpl(useLogger, false, false, createBuffer(),
+			CompositeActionImpl useRootAction = new CompositeActionImpl(useLogger, false, false, false, createBuffer(),
 				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = new JarActionImpl(useLogger, false, false, createBuffer(),
+			jarJavaxServiceAction = new JarActionImpl(useLogger, false, false, false, createBuffer(),
 				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 

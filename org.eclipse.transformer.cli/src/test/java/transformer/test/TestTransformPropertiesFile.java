@@ -78,7 +78,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		if (jakartaPropertiesAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaPropertiesAction = new PropertiesActionImpl(useLogger, false, false, createBuffer(),
+			jakartaPropertiesAction = new PropertiesActionImpl(useLogger, false, false, false, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames()));
 		}
