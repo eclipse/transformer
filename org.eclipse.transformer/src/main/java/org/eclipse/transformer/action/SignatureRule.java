@@ -143,6 +143,6 @@ public interface SignatureRule {
 
 	String getDirectString(String initialValue);
 
-	String getConstantString(String initialValue, String clazz);
+	String getDirectString(String initialValue, String clazz);
 
 }

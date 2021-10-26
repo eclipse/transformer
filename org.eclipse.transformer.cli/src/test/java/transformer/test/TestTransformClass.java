@@ -42,7 +42,9 @@ import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.jakarta.JakartaTransformer;
 import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.InputStreamData;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import aQute.bnd.classfile.AnnotationInfo;
@@ -61,11 +63,22 @@ import transformer.test.util.CaptureLoggerImpl;
 import transformer.test.util.ClassData;
 
 public class TestTransformClass extends CaptureTest {
+
+	@BeforeEach
+	public void beforeTest() throws Exception {
+		consumeCapturedEvents();
+	}
+
+	@AfterEach
+	public void afterTest() throws Exception {
+		displayCapturedEvents();
+	}
+
 	// Rename used by the injection sample.
 
 	public static final String	JAVAX_INJECT_PACKAGE_NAME			= "javax.inject";
 	public static final String	JAKARTA_INJECT_PACKAGE_NAME			= "jakarta.inject";
-	
+
 	// Rename used by the security sample.
 	public static final String JAVAX_SECURITY_AUTH_MESSAGE_CONFIG = "javax.security.auth.message.config";
 	public static final String JAKARTA_SECURITY_AUTH_MESSAGE_CONFIG = "jakarta.security.auth.message.config";
@@ -94,8 +107,7 @@ public class TestTransformClass extends CaptureTest {
 	public static final String	REPEAT_TARGET_RESOURCE_NAME			= "Sample_Repeat_Target.class";
 
 	public static final String	SECURITY_JAVAX_CLASS_NAME			= Sample_SecurityAPI_Javax.class.getName();
-	
-	
+
 	// The annotated servlet and the mixed servlet classes are provided from
 	// open-liberty.
 
@@ -157,7 +169,7 @@ public class TestTransformClass extends CaptureTest {
 		testData.log(new PrintWriter(System.out, true)); // autoflush
 	}
 
-	
+
 	@Test
 	public void testJakartaAsJavax_inject() {
 		System.out.println("Test jakarta to javax transformation on the injection sample");
@@ -236,6 +248,47 @@ public class TestTransformClass extends CaptureTest {
 		return toJakartaRenames;
 	}
 
+	//
+
+	public static final String	OVERRIDE_TARGET_CLASS_NAME		= "transformer.test.data.Sample_DirectOverride";
+
+	public static final String	OVERRIDE_TARGET_RESOURCE_NAME	= ClassActionImpl
+		.classNameToResourceName(OVERRIDE_TARGET_CLASS_NAME);
+
+	public Set<String> getOverrideIncludes() {
+		Set<String> overrideIncludes = new HashSet<>();
+		overrideIncludes.add(OVERRIDE_TARGET_RESOURCE_NAME);
+		return overrideIncludes;
+	}
+
+	protected static final String	JAVAX_SERVLET_CLASS_NAME			= "javax.servlet.Servlet";
+	protected static final String	DIRECT_OVERRIDE_SERVLET_CLASS_NAME	= "transformer.test.data1.Servlet";
+
+	protected Map<String, String> toJakartaDirectStrings;
+
+	public Map<String, String> toJakartaDirectStrings() {
+		if (toJakartaDirectStrings == null) {
+			toJakartaDirectStrings = new HashMap<>();
+			toJakartaDirectStrings.put(JAVAX_SERVLET_CLASS_NAME, DIRECT_OVERRIDE_SERVLET_CLASS_NAME);
+		}
+		return toJakartaDirectStrings;
+	}
+
+	protected static final String				PER_CLASS_OVERRIDE_PACKAGE_NAME	= "transformer.test.data2";
+
+	protected Map<String, Map<String, String>> toJakartaPerClassDirectStrings;
+
+	public Map<String, Map<String, String>> toJakartaPerClassDirectStrings() {
+		if (toJakartaPerClassDirectStrings == null) {
+			toJakartaPerClassDirectStrings = new HashMap<>();
+
+			Map<String, String> directStringsForClass = new HashMap<>();
+			directStringsForClass.put(JAVAX_SERVLET_PACKAGE_NAME, PER_CLASS_OVERRIDE_PACKAGE_NAME);
+			toJakartaPerClassDirectStrings.put(OVERRIDE_TARGET_RESOURCE_NAME, directStringsForClass);
+		}
+		return toJakartaPerClassDirectStrings;
+	}
+
 	protected Map<String, String> toJakartaPrefixes;
 
 	public Map<String, String> getToJakartaPrefixes() {
@@ -263,7 +316,6 @@ public class TestTransformClass extends CaptureTest {
 	//
 
 	public JarActionImpl	toJakartaJarAction;
-	public JarActionImpl	toJavaxJarAction;
 
 	public JarActionImpl getJavaxToJakartaJarAction() {
 		if (toJakartaJarAction == null) {
@@ -276,6 +328,8 @@ public class TestTransformClass extends CaptureTest {
 
 		return toJakartaJarAction;
 	}
+
+	public JarActionImpl toJavaxJarAction;
 
 	public JarActionImpl getJakartaToJavaxJarAction() {
 		if (toJavaxJarAction == null) {
@@ -291,6 +345,35 @@ public class TestTransformClass extends CaptureTest {
 		return toJavaxJarAction;
 	}
 
+	public JarActionImpl toJakartaJarAction_DirectOverride;
+
+	public JarActionImpl getJavaxToJakartaJarAction_DirectOverride() {
+		if (toJakartaJarAction_DirectOverride == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
+
+			toJakartaJarAction_DirectOverride = new JarActionImpl(useLogger, false, false, createBuffer(),
+				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
+				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(), null));
+		}
+
+		return toJakartaJarAction_DirectOverride;
+	}
+
+	public JarActionImpl toJakartaJarAction_PerClassDirectOverride;
+
+	public JarActionImpl getJavaxToJakartaJarAction_PerClassDirectOverride() {
+		if (toJakartaJarAction_PerClassDirectOverride == null) {
+			CaptureLoggerImpl useLogger = getCaptureLogger();
+
+			toJakartaJarAction_PerClassDirectOverride = new JarActionImpl(useLogger, false, false, createBuffer(),
+				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
+				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(),
+					toJakartaPerClassDirectStrings()));
+		}
+
+		return toJakartaJarAction_PerClassDirectOverride;
+	}
+
 	public ClassLoader getClassLoader_toJakarta() {
 		JarActionImpl jarAction = getJavaxToJakartaJarAction();
 		ClassActionImpl classAction = jarAction.addUsing(ClassActionImpl::new);
@@ -301,6 +384,22 @@ public class TestTransformClass extends CaptureTest {
 
 	public ClassLoader getClassLoader_toJavax() {
 		JarActionImpl jarAction = getJakartaToJavaxJarAction();
+		ClassActionImpl classAction = jarAction.addUsing(ClassActionImpl::new);
+		ServiceLoaderConfigActionImpl configAction = jarAction.addUsing(ServiceLoaderConfigActionImpl::new);
+
+		return new TransformClassLoader(getClass().getClassLoader(), jarAction, classAction, configAction);
+	}
+
+	public ClassLoader getClassLoader_toJakarta_DirectOverride() {
+		JarActionImpl jarAction = getJavaxToJakartaJarAction_DirectOverride();
+		ClassActionImpl classAction = jarAction.addUsing(ClassActionImpl::new);
+		ServiceLoaderConfigActionImpl configAction = jarAction.addUsing(ServiceLoaderConfigActionImpl::new);
+
+		return new TransformClassLoader(getClass().getClassLoader(), jarAction, classAction, configAction);
+	}
+
+	public ClassLoader getClassLoader_toJakarta_PerClassDirectOverride() {
+		JarActionImpl jarAction = getJavaxToJakartaJarAction_PerClassDirectOverride();
 		ClassActionImpl classAction = jarAction.addUsing(ClassActionImpl::new);
 		ServiceLoaderConfigActionImpl configAction = jarAction.addUsing(ServiceLoaderConfigActionImpl::new);
 
@@ -830,6 +929,137 @@ public class TestTransformClass extends CaptureTest {
 
 	//
 
+	@Test
+	public void testjavaxAsJakarta_directOverride() throws Exception {
+		System.out.println("Test transformation with a direct override");
+		Class<?> targetClass = testLoad(OVERRIDE_TARGET_CLASS_NAME, getClassLoader_toJakarta_DirectOverride());
+
+		Class<?> transformedType = getStaticFieldType(targetClass, "sampleServlet");
+		String transformedClassName = getStaticField(targetClass, "SAMPLE_CLASS_NAME");
+		String transformedValue = getStaticField(targetClass, "SAMPLE_STRING");
+		String transformedRefValue = getStaticField(targetClass, "SAMPLE_STRING_REFERENCE");
+		String transformedAnnoValue1 = getAnnotationValue(targetClass, "transformer.test.data.Sample_Annotation",
+			"value1");
+		String transformedAnnoValue2 = getAnnotationValue(targetClass, "transformer.test.data.Sample_Annotation",
+			"value2");
+
+		System.out.println("Transformed type [ sampleServlet ]: " + transformedType.getName());
+		System.out.println("Transformed class name [ SAMPLE_CLASS_NAME ]: " + transformedClassName);
+		System.out.println("Transformed value [ SAMPLE_STRING ]: " + transformedValue);
+		System.out.println("Transformed reference value [ SAMPLE_STRING_REFERENCE ]: " + transformedRefValue);
+		System.out.println("Transformed annotation value [ Sample_Annotation.value1 ]: " + transformedAnnoValue1);
+		System.out.println("Transformed annotation value [ Sample_Annotation.value2 ]: " + transformedAnnoValue2);
+
+		// 'javax.servlet.Servlet' as a field type uses the package rename rule.
+		Assertions.assertEquals("jakarta.servlet.Servlet", transformedType.getName(),
+			"Type of [ sampleServlet ]");
+
+		// A simple class name as a string value transforms using all three
+		// rules.
+		// This test doesn't have a per-class override, so the direct override
+		// should have precedence.
+		// The string reference is transformed, even though the reference class
+		// was not transformed.
+		Assertions.assertEquals("transformer.test.data1.Servlet", transformedClassName, "Value of [ SAMPLE_STRING ]");
+		Assertions.assertEquals("transformer.test.data1.Servlet", transformedRefValue,
+			"Value of [ SAMPLE_STRING_REFERENCE ]");
+		Assertions.assertEquals("transformer.test.data1.Servlet", transformedAnnoValue1,
+			"Value of [ Sample_Annotation.value1 ]");
+
+		// This complex value will be transformed by the simple dotted case
+		// driven by package rules.
+		Assertions.assertEquals(
+			"jakarta.servlet.Servlet=MyServlet,jakarta.servlet.Listener=MyListener",
+			transformedValue,
+			"Value of [ SAMPLE_STRING ]");
+
+		Assertions.assertEquals(
+			"jakarta.servlet.Servlet=MyServlet,jakarta.servlet.Listener=MyListener",
+			transformedAnnoValue2,
+			"Value of [ Sample_Annotation.value2 ]");
+	}
+
+	@Test
+	public void testjavaxAsJakarta_PerClassOverride() throws Exception {
+		System.out.println("Test transformation with a per-class override");
+		Class<?> targetClass = testLoad(OVERRIDE_TARGET_CLASS_NAME, getClassLoader_toJakarta_PerClassDirectOverride());
+
+		Class<?> transformedType = getStaticFieldType(targetClass, "sampleServlet");
+		String transformedClassName = getStaticField(targetClass, "SAMPLE_CLASS_NAME");
+		String transformedValue = getStaticField(targetClass, "SAMPLE_STRING");
+		String transformedRefValue = getStaticField(targetClass, "SAMPLE_STRING_REFERENCE");
+		String transformedAnnoValue1 = getAnnotationValue(targetClass, "transformer.test.data.Sample_Annotation",
+			"value1");
+		String transformedAnnoValue2 = getAnnotationValue(targetClass, "transformer.test.data.Sample_Annotation",
+			"value2");
+
+		System.out.println("Transformed type [ sampleServlet ]: " + transformedType.getName());
+		System.out.println("Transformed class name [ SAMPLE_CLASS_NAME ]: " + transformedClassName);
+		System.out.println("Transformed value [ SAMPLE_STRING ]: " + transformedValue);
+		System.out.println("Transformed reference value [ SAMPLE_STRING_REFERENCE ]: " + transformedRefValue);
+		System.out.println("Transformed annotation value [ Sample_Annotation.value1 ]: " + transformedAnnoValue1);
+		System.out.println("Transformed annotation value [ Sample_Annotation.value2 ]: " + transformedAnnoValue2);
+
+		// 'javax.servlet.Servlet' as a field type uses the package rename rule.
+		Assertions.assertEquals("jakarta.servlet.Servlet", transformedType.getName(),
+			"Type of [ sampleServlet ]");
+
+		// A simple class name as a string value transforms using all three
+		// rules.
+		// This test doesn't have a per-class override, so that has precedence.
+		// The string reference is transformed, even though the reference class
+		// was not transformed.
+		Assertions.assertEquals("transformer.test.data2.Servlet", transformedClassName, "Value of [ SAMPLE_STRING ]");
+		Assertions.assertEquals("transformer.test.data2.Servlet", transformedRefValue,
+			"Value of [ SAMPLE_STRING_REFERENCE ]");
+		Assertions.assertEquals("transformer.test.data2.Servlet", transformedAnnoValue1,
+			"Value of [ Sample_Annotation.value1 ]");
+
+		// A complex value will be transformed by the per-class rule, overriding
+		// the dotted case driven by the package rule.
+		Assertions.assertEquals(
+			"transformer.test.data2.Servlet=MyServlet,transformer.test.data2.Listener=MyListener",
+			transformedValue,
+			"Value of [ SAMPLE_STRING ]");
+		Assertions.assertEquals(
+			"transformer.test.data2.Servlet=MyServlet,transformer.test.data2.Listener=MyListener",
+			transformedAnnoValue2,
+			"Value of [ Sample_Annotation.value2 ]");
+	}
+
+	public Class<?> getStaticFieldType(Class<?> targetClass, String fieldName) throws Exception {
+		Field staticField = targetClass.getDeclaredField(fieldName);
+		return staticField.getType();
+	}
+
+	public String getStaticField(Class<?> targetClass, String fieldName) throws Exception {
+		Field staticField = targetClass.getDeclaredField(fieldName);
+		return (String) staticField.get(null);
+	}
+
+	public String getAnnotationValue(Class<?> targetClass, String annoClassName, String attributeName) throws Exception {
+		Annotation[] annotations = targetClass.getDeclaredAnnotations();
+		for ( Annotation annotation : annotations ) {
+			Class<? extends Annotation> annoType = annotation.annotationType();
+			if (!annoType.getName()
+				.equals(annoClassName)) {
+				continue;
+			}
+
+			Method attrMethod = annoType.getDeclaredMethod(attributeName);
+			String annoValue = (String) attrMethod.invoke(annotation);
+			return annoValue;
+		}
+
+		Assertions.fail(
+			"Class [ " + targetClass + " ]" +
+		    " does not have annotation [ " + annoClassName + " ]" +
+		    " with attribute [ " + attributeName + " ]");
+		return null;
+	}
+
+	//
+
 	public static Map<String, String> getStandardRenames() throws IOException {
 		String transformerResourceName = JakartaTransformer.class.getPackage()
 			.getName()
@@ -848,5 +1078,4 @@ public class TestTransformClass extends CaptureTest {
 			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
 		// 'getStandardRenames' throws IOException
 	}
-
 }

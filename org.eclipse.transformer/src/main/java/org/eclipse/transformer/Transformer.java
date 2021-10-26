@@ -103,23 +103,33 @@ public class Transformer {
 	}
 
 	public static Properties loadProperties(String resourceRef) throws IOException {
-		Properties properties = new Properties();
 		try (InputStream inputStream = Transformer.getResourceStream(resourceRef)) {
-			properties.load(inputStream);
+			if (inputStream == null) {
+				return null;
+			} else {
+				Properties properties = new Properties();
+				properties.load(inputStream);
+				return properties;
+			}
 		}
-		return properties;
 	}
 
 	public Transformer(PrintStream sysOut, PrintStream sysErr) {
 		this.sysOut = sysOut;
 		this.sysErr = sysErr;
 
+		String propsRef = TRANSFORMER_BUILD_PROPERTIES;
 		Properties useProperties;
 		try {
-			useProperties = Transformer.loadProperties(TRANSFORMER_BUILD_PROPERTIES);
+			useProperties = Transformer.loadProperties(propsRef);
+			if (useProperties == null) {
+				sysErr.println("Failed to locate build properties [ " + propsRef + " ]");
+				useProperties = new Properties();
+			}
 		} catch (IOException e) {
 			useProperties = new Properties();
-			this.error("Failed to load properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]", e);
+			sysErr.println("Failed to load build properties [ " + propsRef + " ]: " + e.getMessage());
+			e.printStackTrace(sysErr);
 		}
 		this.buildProperties = useProperties;
 

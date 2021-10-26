@@ -940,31 +940,60 @@ public class ClassActionImpl extends ActionImpl {
 		return null;
 	}
 
-	private Object transformConstantValue(Object inputValue, String inputName) {
-		if (inputValue instanceof String) {
-			String inputString = (String) inputValue;
-			String transformCase = "constant"; // dotted package format
-			String outputString = transformConstantAsDescriptor(inputString, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-			if (outputString == null) {
-				transformCase = "resource"; // url format (slashes)
-				outputString = transformConstantAsBinaryType(inputString, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-				if (outputString == null) {
+	private String transformString(String caseText, String inputString, String inputName) {
+		String outputString;
+
+		String transformCase;
+
+		if ((inputString == null) || inputString.isEmpty()) {
+			outputString = null;
+			transformCase = null; // Unused
+
+		} else {
+			outputString = transformDirectString(inputString, inputName);
+
+			if (outputString != null) {
+				transformCase = "direct per class";
+			} else {
+				outputString = transformDirectString(inputString);
+				if (outputString != null) {
 					transformCase = "direct";
-					outputString = transformDirectString(inputString);
-					if (outputString == null) {
-						transformCase = "direct per class";
-						outputString = transformConstantString(inputString, inputName);
+				} else {
+					// Descriptor format;
+					// includes function, method, and class descriptors;
+					// includes simple dotted class names
+					outputString = transformConstantAsDescriptor(inputString, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
+					if (outputString != null) {
+						transformCase = "dotted";
+					} else {
+						// Signature format;
+						// includes function, method, and class signatures
+						// includes simple slash class resources
+						outputString = transformConstantAsBinaryType(inputString,
+							SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
+						if (outputString != null) {
+							transformCase = "slash";
+						} else {
+							transformCase = null;
+						}
 					}
 				}
 			}
-			if (outputString == null) {
-				debug("    String ConstantValue: {} (unchanged)", inputValue);
-			} else {
-				debug("    String ConstantValue: {}                       -> {} ({})", inputValue, outputString,
-					transformCase);
-				verbose("String ConstantValue: {} -> {} ({})", inputValue, outputString, transformCase);
-			}
-			return outputString;
+		}
+
+		if (outputString == null) {
+			debug("    String {}: {} (unchanged)", caseText, inputString);
+		} else {
+			debug("    String {}: {} -> {} ({})", caseText, inputString, outputString, transformCase);
+			verbose("String {}: {} -> {} ({})", caseText, inputString, outputString, transformCase);
+		}
+
+		return outputString;
+	}
+
+	private Object transformConstantValue(Object inputValue, String inputName) {
+		if (inputValue instanceof String) {
+			return transformString("ConstantValue", (String) inputValue, inputName);
 		} else {
 			debug("    Non-String ConstantValue: {} (unchanged)", inputValue);
 			return null;
@@ -1121,12 +1150,7 @@ public class ClassActionImpl extends ActionImpl {
 			return transform(annotationValue, AnnotationInfo::new, inputName);
 
 		} else if (inputValue instanceof String) {
-			String inputString = (String) inputValue;
-			String outputString = transformDirectString(inputString);
-			if (outputString == null) {
-				outputString = transformConstantString(inputString, inputName);
-			}
-			return outputString;
+			return transformString("AnnotationValue", (String) inputValue, inputName);
 
 		} else if (inputValue instanceof Object[]) {
 			Object[] inputElementValues = ((Object[]) inputValue);
@@ -1246,36 +1270,12 @@ public class ClassActionImpl extends ActionImpl {
 
 				case ConstantPool.CONSTANT_Utf8 :
 					String inputUtf8 = constants.entry(constantNo);
-
-					String transformCase;
-					String outputUtf8;
-
-					if ((inputUtf8 == null) || inputUtf8.isEmpty()) {
-						transformCase = null; // Unused
-						outputUtf8 = null;
-					} else {
-						transformCase = "constant"; // dotted package format
-						outputUtf8 = transformConstantAsDescriptor(inputUtf8, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-						if (outputUtf8 == null) {
-							transformCase = "resource"; // url format (slashes)
-							outputUtf8 = transformConstantAsBinaryType(inputUtf8,
-								SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-							if (outputUtf8 == null) {
-								transformCase = "Direct";
-								outputUtf8 = transformDirectString(inputUtf8);
-								if (outputUtf8 == null) {
-									transformCase = "Direct per class";
-									outputUtf8 = transformConstantString(inputUtf8, inputName);
-								}
-							}
-						}
-					}
-
+					String outputUtf8 = transformString("UTF8Constant", inputUtf8, inputName);
 					if (outputUtf8 != null) {
 						constants.entry(constantNo, outputUtf8);
 						modifiedConstants++;
-						debug("    UTF8: {} -> {} ({})", inputUtf8, outputUtf8, transformCase);
-						verbose("UTF8: {} -> {} ({})", inputUtf8, outputUtf8, transformCase);
+						debug("    UTF8: {} -> {}", inputUtf8, outputUtf8);
+						verbose("UTF8: {} -> {}", inputUtf8, outputUtf8);
 					} else {
 						debug("Skip UTF8 {} (unchanged)", inputUtf8);
 					}
@@ -1285,22 +1285,8 @@ public class ClassActionImpl extends ActionImpl {
 				case ConstantPool.CONSTANT_String : {
 					StringInfo stringInfo = constants.entry(constantNo);
 					String inputString = constants.utf8(stringInfo.string_index);
-					transformCase = "constant"; // dotted package format
-					String outputString = transformConstantAsDescriptor(inputString,
-						SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-					if (outputString == null) {
-						transformCase = "String"; // url format (slashes)
-						outputString = transformConstantAsBinaryType(inputString,
-							SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-						if (outputString == null) {
-							transformCase = "Direct";
-							outputString = transformDirectString(inputString);
-							if (outputString == null) {
-								transformCase = "Direct per class";
-								outputString = transformConstantString(inputString, inputName);
-							}
-						}
-					}
+					String outputString = transformString("StringConstant", inputString, inputName);
+
 					if (outputString != null) {
 						constants.entry(constantNo, new StringInfo(constants.utf8Info(outputString)));
 						modifiedConstants++;
