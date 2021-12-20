@@ -12,48 +12,47 @@
 package org.eclipse.transformer;
 
 public enum AppOption {
-	USAGE("u", "usage", "Display usage", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	HELP("h", "help", "Display help", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	USAGE(new Settings("u", "usage", "Display usage", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
+	HELP(new Settings("h", "help", "Display help", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
 
 	// TODO: Refine versioning
 	// FULL_VERSION("f", "fullVersion", "Display full version information",
 	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-	LOG_TERSE("q", "quiet", "Display quiet output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_VERBOSE("v", "verbose", "Display verbose output", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_PROPERTY("lp", "logProperty", "Logging property", !OptionSettings.HAS_ARG, OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_PROPERTY_FILE("lpf", "logPropertyFile", "Logging properties file", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_NAME("ln", "logName", "Logger name", OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_LEVEL("ll", "logLevel", "Logging level", OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	LOG_FILE("lf", "logFile", "Logging file", OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	LOG_TERSE(new Settings("q", "quiet", "Display quiet output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_VERBOSE(new Settings("v", "verbose", "Display verbose output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_PROPERTY(new Settings("lp", "logProperty", "Logging property", !Settings.HAS_ARG, Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_PROPERTY_FILE(new Settings("lpf", "logPropertyFile", "Logging properties file", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_NAME(new Settings("ln", "logName", "Logger name", Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
+	LOG_LEVEL(new Settings("ll", "logLevel", "Logging level", Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_FILE(new Settings("lf", "logFile", "Logging file", Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
 
-	RULES_SELECTIONS("ts", "selection", "Transformation selections URL", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	RULES_RENAMES("tr", "renames", "Transformation package renames URL", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	RULES_VERSIONS("tv", "versions", "Transformation package versions URL", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	RULES_BUNDLES("tb", "bundles", "Transformation bundle updates URL", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	RULES_DIRECT("td", "direct", "Transformation direct string replacements", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	RULES_SELECTIONS(new Settings("ts", "selection", "Transformation selections URL", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	RULES_RENAMES(new Settings("tr", "renames", "Transformation package renames URL", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	RULES_VERSIONS(new Settings("tv", "versions", "Transformation package versions URL", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	RULES_BUNDLES(new Settings("tb", "bundles", "Transformation bundle updates URL", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	RULES_DIRECT(new Settings("td", "direct", "Transformation direct string replacements", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
-	RULES_MASTER_TEXT("tf", "text", "Map of filenames to property files", OptionSettings.HAS_ARG,
-		!OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	RULES_MASTER_TEXT(new Settings("tf", "text", "Map of filenames to property files", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
-	RULES_IMMEDIATE_DATA("ti", "immediate", "Immediate rule data", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		OptionSettings.HAS_ARG_COUNT, 3,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	RULES_IMMEDIATE_DATA(new Settings("ti", "immediate", "Immediate rule data", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		Settings.HAS_ARG_COUNT, 3, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
 	// Issue #154: Enable processing of JARs within JARs. See:
 	// https://github.com/eclipse/transformer/issues/154
@@ -64,68 +63,149 @@ public enum AppOption {
 	//
 	// See 'getRootAction'.
 
-	WIDEN_ARCHIVE_NESTING("w", "widen", "Widen archive nesting", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	WIDEN_ARCHIVE_NESTING(new Settings("w", "widen", "Widen archive nesting", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
-	// RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files", OptionSettings.HAS_ARG,
-	//    !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	// RULES_MASTER_XML("tf", "xml", "Map of XML filenames to property files",
+	// OptionSettings.HAS_ARG,
+	// !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED,
+	// OptionSettings.NO_GROUP),
 
-	INVERT("i", "invert", "Invert transformation rules", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	INVERT(new Settings("i", "invert", "Invert transformation rules", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
-	FILE_TYPE("t", "type", "Input file type", OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-	OVERWRITE("o", "overwrite", "Overwrite", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
+	FILE_TYPE(new Settings("t", "type", "Input file type", Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
+	OVERWRITE(new Settings("o", "overwrite", "Overwrite", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
 
-	DRYRUN("d", "dryrun", "Dry run", !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS, !OptionSettings.IS_REQUIRED,
-		OptionSettings.NO_GROUP),
+	DRYRUN(new Settings("d", "dryrun", "Dry run", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
+		Settings.NO_GROUP)),
 
-	RULES_PER_CLASS_CONSTANT("tp", "per-class-constant", "Transformation per class constant string replacements",
-		OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-		!OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP);
+	RULES_PER_CLASS_CONSTANT(
+		new Settings("tp", "per-class-constant", "Transformation per class constant string replacements",
+			Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP));
 
-	AppOption(String shortTag, String longTag, String description, boolean hasArg, boolean hasArgs,
-		boolean hasArgCount, int argCount,
-		boolean required, String groupTag) {
-
-		this.settings = new OptionSettings(shortTag, longTag, description, hasArg, hasArgs, hasArgCount, argCount,
-			required, groupTag);
+	AppOption(Settings settings) {
+		this.settings = settings;
 	}
 
-	AppOption(String shortTag, String longTag, String description, boolean hasArg, boolean hasArgs,
-		boolean required, String groupTag) {
-
-		this.settings = new OptionSettings(shortTag, longTag, description, hasArg, hasArgs, required, groupTag);
-	}
-
-	private final OptionSettings settings;
-
-	public OptionSettings getSettings() {
-		return settings;
-	}
+	private final Settings settings;
 
 	public String getShortTag() {
-		return getSettings().getShortTag();
+		return settings.getShortTag();
 	}
 
 	public String getLongTag() {
-		return getSettings().getLongTag();
+		return settings.getLongTag();
 	}
 
 	public String getDescription() {
-		return getSettings().getDescription();
+		return settings.getDescription();
 	}
 
 	public boolean isRequired() {
-		return getSettings().isRequired();
+		return settings.isRequired();
 	}
 
 	public boolean getHasArg() {
-		return getSettings().getHasArg();
+		return settings.getHasArg();
+	}
+
+	public boolean getHasArgs() {
+		return settings.getHasArgs();
+	}
+
+	public boolean getHasArgCount() {
+		return settings.getHasArgCount();
+	}
+
+	public int getArgCount() {
+		return settings.getArgCount();
 	}
 
 	public String getGroupTag() {
-		return getSettings().getGroupTag();
+		return settings.getGroupTag();
+	}
+
+	static class Settings {
+		static final boolean	HAS_ARG			= true;
+		static final boolean	HAS_ARGS		= true;
+		static final boolean	HAS_ARG_COUNT	= true;
+		static final boolean	IS_REQUIRED		= true;
+		static final String		NO_GROUP		= null;
+
+		Settings(String shortTag, String longTag, String description, boolean hasArg, boolean hasArgs, boolean required,
+			String groupTag) {
+			this(shortTag, longTag, description, hasArg, hasArgs, !HAS_ARG_COUNT, -1, required, groupTag);
+		}
+
+		Settings(String shortTag, String longTag, String description, boolean hasArg, boolean hasArgs,
+			boolean hasArgCount, int argCount, boolean required, String groupTag) {
+
+			this.shortTag = shortTag;
+			this.longTag = longTag;
+			this.description = description;
+
+			this.required = required;
+
+			this.hasArg = hasArg;
+			this.hasArgs = hasArgs;
+			this.hasArgCount = hasArgCount;
+			this.argCount = argCount;
+
+			this.groupTag = groupTag;
+		}
+
+		private final String	shortTag;
+		private final String	longTag;
+		private final String	description;
+		// Is this option required.
+		// If in a group, is at least one of the group required.
+
+		private final boolean	required;
+
+		private final boolean	hasArg;
+		private final boolean	hasArgs;
+		private final boolean	hasArgCount;
+		private final int		argCount;
+
+		private final String	groupTag;
+
+		String getShortTag() {
+			return shortTag;
+		}
+
+		String getLongTag() {
+			return longTag;
+		}
+
+		String getDescription() {
+			return description;
+		}
+
+		boolean getHasArg() {
+			return hasArg;
+		}
+
+		boolean getHasArgs() {
+			return hasArgs;
+		}
+
+		boolean getHasArgCount() {
+			return hasArgCount;
+		}
+
+		int getArgCount() {
+			return argCount;
+		}
+
+		String getGroupTag() {
+			return groupTag;
+		}
+
+		boolean isRequired() {
+			return required;
+		}
 	}
 }

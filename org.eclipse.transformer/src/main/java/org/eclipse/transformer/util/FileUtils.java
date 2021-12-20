@@ -11,7 +11,6 @@
 
 package org.eclipse.transformer.util;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -194,14 +193,6 @@ public class FileUtils {
 	//
 
 	public static final char SLASH = '/';
-
-	public static String normalize(String path) {
-		if (File.separatorChar == '\\') {
-			return path.replace(File.separatorChar, SLASH);
-		} else {
-			return path;
-		}
-	}
 
 	//
 

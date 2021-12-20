@@ -12,13 +12,17 @@
 package org.eclipse.transformer.maven;
 
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -28,8 +32,12 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
 import org.eclipse.transformer.AppOption;
+import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.jakarta.JakartaTransformer;
+import org.eclipse.transformer.Transformer.ResultCode;
+import org.eclipse.transformer.jakarta.JakartaTransform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a Maven plugin which runs the Eclipse Transformer on build artifacts
@@ -37,15 +45,16 @@ import org.eclipse.transformer.jakarta.JakartaTransformer;
  */
 @Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME_PLUS_SYSTEM, defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true, threadSafe = true)
 public class TransformMojo extends AbstractMojo {
+	static final Logger			logger	= LoggerFactory.getLogger(TransformMojo.class);
 
 	@Parameter(defaultValue = "${project}", readonly = true, required = true)
 	private MavenProject		project;
 
 	@Parameter(defaultValue = "false", property = "transformer-plugin.invert", required = true)
-	private Boolean				invert;
+	private boolean				invert;
 
 	@Parameter(defaultValue = "true", property = "transformer-plugin.overwrite", required = true)
-	private Boolean				overwrite;
+	private boolean				overwrite;
 
 	@Parameter(property = "transformer-plugin.renames", defaultValue = "")
 	private String				rulesRenamesUri;
@@ -80,14 +89,13 @@ public class TransformMojo extends AbstractMojo {
 	 *
 	 * @throws MojoFailureException Thrown if there is an error during plugin
 	 *             execution
+	 * @throws MojoExecutionException
 	 */
 	@Override
-	public void execute() throws MojoFailureException {
-		final Transformer transformer = getTransformer();
-
+	public void execute() throws MojoFailureException, MojoExecutionException {
 		final Artifact[] sourceArtifacts = getSourceArtifacts();
 		for (final Artifact sourceArtifact : sourceArtifacts) {
-			transform(transformer, sourceArtifact);
+			transform(sourceArtifact);
 		}
 	}
 
@@ -96,48 +104,96 @@ public class TransformMojo extends AbstractMojo {
 	 * transformer provided. The transformed artifact is attached to the
 	 * project.
 	 *
-	 * @param transformer The Transformer to use for the transformation
 	 * @param sourceArtifact The Artifact to transform
 	 * @throws MojoFailureException if plugin execution fails
+	 * @throws MojoExecutionException
 	 */
-	public void transform(final Transformer transformer, final Artifact sourceArtifact) throws MojoFailureException {
-
+	public void transform(final Artifact sourceArtifact) throws MojoFailureException, MojoExecutionException {
 		final String sourceClassifier = sourceArtifact.getClassifier();
 		final String targetClassifier = (sourceClassifier == null || sourceClassifier.length() == 0) ? this.classifier
 			: sourceClassifier + "-" + this.classifier;
 
 		final File targetFile = new File(outputDirectory, sourceArtifact.getArtifactId() + "-" + targetClassifier + "-"
 			+ sourceArtifact.getVersion() + "." + sourceArtifact.getType());
+		TransformOptions options = new TransformOptions() {
+			final Map<String, String>	optionDefaults	= JakartaTransform.getOptionDefaults();
+			final Function<String, URL>		ruleLoader		= JakartaTransform.getRuleLoader();
+			@Override
+			public boolean hasOption(AppOption option) {
+				switch (option) {
+					case OVERWRITE :
+						return overwrite;
+					case INVERT :
+						return invert;
+					default :
+						return TransformOptions.super.hasOption(option);
+				}
+			}
 
-		final List<String> args = new ArrayList<>();
-		args.add(sourceArtifact.getFile()
-			.getAbsolutePath());
-		args.add(targetFile.getAbsolutePath());
+			@Override
+			public String getOptionValue(AppOption option) {
+				switch (option) {
+					case RULES_RENAMES :
+						return emptyAsNull(rulesRenamesUri);
+					case RULES_VERSIONS :
+						return emptyAsNull(rulesVersionUri);
+					case RULES_BUNDLES :
+						return emptyAsNull(rulesBundlesUri);
+					case RULES_DIRECT :
+						return emptyAsNull(rulesDirectUri);
+					case RULES_MASTER_TEXT :
+						return emptyAsNull(rulesXmlsUri);
+					case RULES_PER_CLASS_CONSTANT :
+						return emptyAsNull(rulesPerClassConstantUri);
+					default :
+						return null;
+				}
+			}
 
-		if (this.overwrite) {
-			args.add("-o");
+			@Override
+			public List<String> getOptionValues(AppOption option) {
+				String result = getOptionValue(option);
+				if (Objects.nonNull(result)) {
+					return Collections.singletonList(result);
+				}
+				return null;
+			}
+
+			@Override
+			public String getDefaultValue(AppOption option) {
+				return optionDefaults.get(option.getLongTag());
+			}
+
+			@Override
+			public Function<String, URL> getRuleLoader() {
+				return ruleLoader;
+			}
+
+			@Override
+			public String getInputFileName() {
+				return sourceArtifact.getFile()
+					.getAbsolutePath();
+			}
+
+			@Override
+			public String getOutputFileName() {
+				return targetFile.getAbsolutePath();
+			}
+		};
+
+		Transformer transformer = new Transformer(logger, options);
+
+		ResultCode rc;
+		try {
+			rc = transformer.run();
+		} catch (Exception e) {
+			throw new MojoExecutionException("Transformer failed with an exception", e);
 		}
-
-		transformer.setArgs(args.toArray(new String[0]));
-		int rc = transformer.run();
-
-		if (rc != 0) {
-			throw new MojoFailureException("Transformer failed with an error: " + Transformer.RC_DESCRIPTIONS[rc]);
+		if (rc != ResultCode.SUCCESS_RC) {
+			throw new MojoFailureException("Transformer failed with an error: " + rc);
 		}
 
 		projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
-	}
-
-	/**
-	 * Builds a configured transformer for the specified source and target
-	 * artifacts
-	 *
-	 * @return A configured transformer
-	 */
-	public Transformer getTransformer() {
-		final Transformer transformer = new Transformer(System.out, System.err);
-		transformer.setOptionDefaults(JakartaTransformer.class, getOptionDefaults());
-		return transformer;
 	}
 
 	/**
@@ -161,26 +217,8 @@ public class TransformMojo extends AbstractMojo {
 		return artifactList.toArray(new Artifact[0]);
 	}
 
-	private Map<AppOption, String> getOptionDefaults() {
-		Map<AppOption, String> optionDefaults = new HashMap<>();
-		optionDefaults.put(AppOption.RULES_RENAMES,
-			isEmpty(rulesRenamesUri) ? "jakarta-renames.properties" : rulesRenamesUri);
-		optionDefaults.put(AppOption.RULES_VERSIONS,
-			isEmpty(rulesVersionUri) ? "jakarta-versions.properties" : rulesVersionUri);
-		optionDefaults.put(AppOption.RULES_BUNDLES,
-			isEmpty(rulesBundlesUri) ? "jakarta-bundles.properties" : rulesBundlesUri);
-		optionDefaults.put(AppOption.RULES_DIRECT,
-			isEmpty(rulesDirectUri) ? "jakarta-direct.properties" : rulesDirectUri);
-		optionDefaults.put(AppOption.RULES_MASTER_TEXT,
-			isEmpty(rulesXmlsUri) ? "jakarta-text-master.properties" : rulesXmlsUri);
-		optionDefaults.put(AppOption.RULES_PER_CLASS_CONSTANT,
-			isEmpty(rulesPerClassConstantUri) ? "jakarta-per-class-constant-master.properties" : rulesPerClassConstantUri);
-		return optionDefaults;
-	}
-
-	private boolean isEmpty(final String input) {
-		return input == null || input.trim()
-			.length() == 0;
+	private String emptyAsNull(String input) {
+		return (Objects.nonNull(input) && !(input = input.trim()).isEmpty()) ? input : null;
 	}
 
 	void setProject(MavenProject project) {

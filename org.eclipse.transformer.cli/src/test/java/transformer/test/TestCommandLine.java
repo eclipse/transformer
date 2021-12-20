@@ -11,18 +11,28 @@
 
 package transformer.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
+import java.util.Properties;
 
-import org.eclipse.transformer.TransformOptions;
+import org.assertj.core.api.SoftAssertions;
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
-import org.eclipse.transformer.jakarta.JakartaTransformer;
+import org.eclipse.transformer.cli.JakartaTransformerCLI;
+import org.eclipse.transformer.cli.TransformerCLI;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.slf4j.Logger;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 class TestCommandLine {
 
@@ -30,9 +40,20 @@ class TestCommandLine {
 	private static final String DYNAMIC_CONTENT_DIR          = "target/test/data/command-line";
 
 	private String currentDirectory	= ".";
+	private Properties			prior;
+	private String				name;
 
 	@BeforeEach
-	public void setUp() {
+	public void setUp(TestInfo testInfo) {
+		name = testInfo.getTestClass()
+			.get()
+			.getName() + "."
+			+ testInfo.getTestMethod()
+				.get()
+				.getName();
+		prior = new Properties();
+		prior.putAll(System.getProperties());
+
 		currentDirectory = System.getProperty("user.dir");
 		System.out.println("setUp: Current directory is: [" + currentDirectory + "]");
 		System.out.println("setUp: Static content directory is: [" + STATIC_CONTENT_DIR + "]");
@@ -40,6 +61,11 @@ class TestCommandLine {
 
 		TestUtils.verifyDirectory(STATIC_CONTENT_DIR, !TestUtils.DO_CREATE, "static content");
 		TestUtils.verifyDirectory(DYNAMIC_CONTENT_DIR, TestUtils.DO_CREATE, "dynamic content");
+	}
+
+	@AfterEach
+	public void tearDown() {
+		System.setProperties(prior);
 	}
 
 	@Test
@@ -58,43 +84,90 @@ class TestCommandLine {
 
 	@Test
 	void testSetLogLevel() throws Exception {
-		Transformer t = new Transformer(System.out, System.err);
-		t.setArgs(new String[] {
-			"-ll", "debug"
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
+			"--logName", name,
+			"--logProperty", "org.slf4j.simpleLogger.log." + name + "=debug"
 		});
-		t.setParsedArgs();
-		TransformOptions options = t.createTransformOptions();
-		options.setLogging();
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+		Logger logger = transformer.getLogger();
+		assertThat(logger.isDebugEnabled()).isTrue();
+	}
+
+	@Test
+	void testSetLogFile() throws Exception {
+		ByteArrayOutputStream sysOut = new ByteArrayOutputStream();
+		ByteArrayOutputStream sysErr = new ByteArrayOutputStream();
+		String logFileName = DYNAMIC_CONTENT_DIR + '/' + "log.txt";
+		File logFile = new File(logFileName);
+		logFile.delete();
+		assertThat(logFile).doesNotExist();
+		try (PrintStream out = new PrintStream(sysOut); PrintStream err = new PrintStream(sysErr)) {
+			TransformerCLI cli = new TransformerCLI(out, err, new String[] {
+				"--logName", name,
+				"--logProperty", "org.slf4j.simpleLogger.log." + name + "=debug",
+				"--logFile", logFileName
+			});
+			Transformer transformer = new Transformer(cli.getLogger(), cli);
+			Logger logger = transformer.getLogger();
+			assertThat(logger.isDebugEnabled()).isTrue();
+			Marker consoleMarker = MarkerFactory.getMarker("console");
+			Marker otherMarker = MarkerFactory.getMarker("other");
+			logger.debug(consoleMarker, "Test log console marker");
+			logger.error(consoleMarker, "Test error console marker");
+			logger.info("Test log {}", "plain");
+			logger.error(otherMarker, "Test log {} {}", "other", "marker");
+			out.flush();
+			err.flush();
+		}
+
+		SoftAssertions.assertSoftly(softly -> {
+			/*
+			 * We cannot uncomment the logFile asserts since the Simple slf4j
+			 * implementation is a static config and other test classes already
+			 * cause the configuration to be locked into stdout. So our
+			 * configuration request to use a file does not actually cause a
+			 * file to we written. Sigh!
+			 */
+			// softly.assertThat(logFile)
+			// .content()
+			// .contains("Test log console marker")
+			// .contains("Test error console marker")
+			// .contains("Test log plain")
+			// .contains("Test log other marker");
+			softly.assertThat(sysOut.toString())
+				.contains("Test log console marker")
+			.doesNotContain("Test error console marker")
+			.doesNotContain("Test log plain")
+				.doesNotContain("Test log other marker");
+			softly.assertThat(sysErr.toString())
+				.doesNotContain("Test log console marker")
+			.contains("Test error console marker")
+			.doesNotContain("Test log plain")
+				.doesNotContain("Test log other marker");
+		});
+
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName) throws Exception {
-		Transformer t = new Transformer(System.out, System.err);
-
-		t.setOptionDefaults(JakartaTransformer.class, JakartaTransformer.getOptionDefaults());
-
-		String[] args = new String[] {
+		TransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, new String[] {
 			inputFileName, outputFileName, "-o"
-		};
+		});
 
-		t.setArgs(args);
-		t.setParsedArgs();
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
 
-		TransformOptions options = t.createTransformOptions();
-		options.setLogging();
+		assertTrue(transformer.setInput(), "options.setInput() failed");
+		assertEquals(inputFileName, transformer.getInputFileName(),
+			"input file name is not correct [" + transformer.getInputFileName() + "]");
 
-		assertTrue(options.setInput(), "options.setInput() failed");
-		assertEquals(inputFileName, options.getInputFileName(),
-			"input file name is not correct [" + options.getInputFileName() + "]");
+		assertTrue(transformer.setOutput(), "options.setOutput() failed");
+		assertEquals(outputFileName, transformer.getOutputFileName(),
+			"output file name is not correct [" + transformer.getOutputFileName() + "]");
 
-		assertTrue(options.setOutput(), "options.setOutput() failed");
-		assertEquals(outputFileName, options.getOutputFileName(),
-			"output file name is not correct [" + options.getOutputFileName() + "]");
+		assertTrue(transformer.setRules(), "options.setRules() failed");
+		assertTrue(transformer.acceptAction(), "options.acceptAction() failed");
+		assertEquals(actionClassName, transformer.acceptedAction.getClass().getName());
 
-		assertTrue(options.setRules(), "options.setRules() failed");
-		assertTrue(options.acceptAction(), "options.acceptAction() failed");
-		assertEquals(actionClassName, options.acceptedAction.getClass().getName());
-
-		options.transform();
+		transformer.transform();
 		assertTrue((new File(outputFileName)).exists(), "output file not created");
 	}
 }
