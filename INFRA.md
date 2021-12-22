@@ -22,10 +22,12 @@ Build scripts and standard files are located at the root:
 
 Project contents are currently managed as two maven modules:
 
-| Module                      | Description                                     |
-|-----------------------------|-------------------------------------------------|
-| org.eclipse.transformer     | Core transformer and raw command line interface |
-| org.eclipse.transformer.cli | Jakarta command line interface                  |
+| Module                          | Description                                     |
+|---------------------------------|-------------------------------------------------|
+| org.eclipse.transformer         | Core transformer library                        |
+| org.eclipse.transformer.jakarta | Jakarta EE ruleset                              |
+| org.eclipse.transformer.cli     | Jakarta command line interface                  |
+| org.eclipse.transformer.maven   | Maven plugin                                    |
 
 ## Build
 
@@ -44,7 +46,7 @@ Current packaging consists of the Jakarta command line interface:
 
     org.eclipse.transformer.cli-0.1.1-SNAPSHOT.jar
 
-Plus the core command line interface and the jar containing core function, together with dependency libaries, placed in a libraries folder:
+Plus the core command line interface and the jar containing core function, together with dependency libraries, placed in a libraries folder:
 
     libs/
     libs/org.eclipse.transformer-0.1.1-SNAPSHOT.jar

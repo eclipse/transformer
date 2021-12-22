@@ -11,423 +11,531 @@
 
 package org.eclipse.transformer;
 
+import static aQute.bnd.exceptions.BiFunctionWithException.asBiFunction;
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Option.Builder;
-import org.apache.commons.cli.OptionGroup;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.log.LoggerProperty;
-import org.eclipse.transformer.log.TransformerLoggerFactory;
+import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.BundleDataImpl;
+import org.eclipse.transformer.action.impl.ClassActionImpl;
+import org.eclipse.transformer.action.impl.CompositeActionImpl;
+import org.eclipse.transformer.action.impl.DirectoryActionImpl;
+import org.eclipse.transformer.action.impl.EarActionImpl;
+import org.eclipse.transformer.action.impl.InputBufferImpl;
+import org.eclipse.transformer.action.impl.JarActionImpl;
+import org.eclipse.transformer.action.impl.JavaActionImpl;
+import org.eclipse.transformer.action.impl.ManifestActionImpl;
+import org.eclipse.transformer.action.impl.NullActionImpl;
+import org.eclipse.transformer.action.impl.PropertiesActionImpl;
+import org.eclipse.transformer.action.impl.RarActionImpl;
+import org.eclipse.transformer.action.impl.SelectionRuleImpl;
+import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
+import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.action.impl.TextActionImpl;
+import org.eclipse.transformer.action.impl.WarActionImpl;
+import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import aQute.lib.io.IO;
 import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
 public class Transformer {
-	// TODO: Make this an enum?
+	public enum ResultCode {
+		SUCCESS_RC("Success"),
+		ARGS_ERROR_RC("Argument Error"),
+		RULES_ERROR_RC("Rules Error"),
+		TRANSFORM_ERROR_RC("Transform Error"),
+		FILE_TYPE_ERROR_RC("File Type Error");
 
-	public static final int	SUCCESS_RC					= 0;
-	public static final int	PARSE_ERROR_RC				= 1;
-	public static final int	RULES_ERROR_RC				= 2;
-	public static final int	TRANSFORM_ERROR_RC			= 3;
-	public static final int	FILE_TYPE_ERROR_RC			= 4;
-	public static final int	LOGGER_SETTINGS_ERROR_RC	= 5;
+		private final String description;
 
-	public static String[]	RC_DESCRIPTIONS				= new String[] {
-		"Success", "Parse Error", "Rules Error", "Transform Error", "File Type Error", "Logger Settings Error"
-	};
-
-	//
-
-	public static void main(String[] args) throws Exception {
-		@SuppressWarnings("unused")
-		int rc = runWith(System.out, System.err, args);
-		// System.exit(rc); // TODO: How should this code be returned?
-	}
-
-	public static int runWith(PrintStream sysOut, PrintStream sysErr, String... args) {
-		Transformer trans = new Transformer(sysOut, sysErr);
-		trans.setArgs(args);
-
-		int rc = trans.run();
-		if (rc == SUCCESS_RC) {
-			System.out.println("Return Code [ 0 ]: Success");
-		} else {
-			System.err.println("Return Code [ " + rc + " ]: Failure [ " + RC_DESCRIPTIONS[rc] + " ]");
+		ResultCode(String description) {
+			this.description = description;
 		}
-		return rc;
-	}
 
-	// Not in use, until option grouping is figured out.
-
-	public static final String	INPUT_GROUP		= "input";
-	public static final String	LOGGING_GROUP	= "logging";
-
-	public static final String	HELP_SHORT_TAG	= "-h";
-	public static final String	HELP_LONG_TAG	= "--help";
-
-	public static final String	USAGE_SHORT_TAG	= "-u";
-	public static final String	USAGE_LONG_TAG	= "--usage";
-
-
-
-	//
-
-	public static InputStream getResourceStream(String resourceRef) {
-		return Transformer.class.getClassLoader()
-			.getResourceAsStream(resourceRef);
-	}
-
-	public static Properties loadProperties(String resourceRef) throws IOException {
-		try (InputStream inputStream = Transformer.getResourceStream(resourceRef)) {
-			if (inputStream == null) {
-				return null;
-			} else {
-				Properties properties = new Properties();
-				properties.load(inputStream);
-				return properties;
-			}
+		@Override
+		public String toString() {
+			return description;
 		}
-	}
-
-	public Transformer(PrintStream sysOut, PrintStream sysErr) {
-		this.sysOut = sysOut;
-		this.sysErr = sysErr;
-
-		String propsRef = TRANSFORMER_BUILD_PROPERTIES;
-		Properties useProperties;
-		try {
-			useProperties = Transformer.loadProperties(propsRef);
-			if (useProperties == null) {
-				sysErr.println("Failed to locate build properties [ " + propsRef + " ]");
-				useProperties = new Properties();
-			}
-		} catch (IOException e) {
-			useProperties = new Properties();
-			sysErr.println("Failed to load build properties [ " + propsRef + " ]: " + e.getMessage());
-			e.printStackTrace(sysErr);
-		}
-		this.buildProperties = useProperties;
-
-		this.appOptions = buildOptions();
-	}
-
-	private Options buildOptions() {
-		Options options = new Options();
-		Map<String, OptionGroup> groups = new HashMap<>();
-
-		Arrays.stream(AppOption.values())
-			.map(AppOption::getSettings)
-			.forEach(optionSettings -> {
-				String groupTag = optionSettings.getGroupTag();
-				OptionGroup group;
-				if (groupTag != null) {
-					group = groups.computeIfAbsent(groupTag, k -> {
-						OptionGroup result = new OptionGroup();
-						if (optionSettings.isRequired()) {
-							result.setRequired(true);
-						}
-						options.addOptionGroup(result);
-						return result;
-					});
-				} else {
-					group = null;
-				}
-
-				Builder builder = Option.builder(optionSettings.getShortTag());
-				builder.longOpt(optionSettings.getLongTag());
-				builder.desc(optionSettings.getDescription());
-				if (optionSettings.getHasArgs()) {
-					builder.hasArg(false);
-					builder.hasArgs();
-				} else if (optionSettings.getHasArg()) {
-					builder.hasArg();
-				} else if (optionSettings.getHasArgCount()) {
-					builder.numberOfArgs(optionSettings.getArgCount());
-				} else {
-					// No arguments are required for this option.
-				}
-				builder.required((group == null) && optionSettings.isRequired());
-
-				Option option = builder.build();
-
-				if (group != null) {
-					group.addOption(option);
-				} else {
-					options.addOption(option);
-				}
-			});
-
-		return options;
-	}
-
-	//
-
-	private static final String[]	COPYRIGHT_LINES					= {
-		"Copyright (c) Contributors to the Eclipse Foundation",
-		"This program and the accompanying materials are made available under the",
-		"terms of the Eclipse Public License 2.0 which is available at",
-		"http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0",
-		"which is available at https://www.apache.org/licenses/LICENSE-2.0.",
-		"SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)", ""
-	};
-
-	private static final String		SHORT_VERSION_PROPERTY_NAME		= "version";
-
-	private static final String		TRANSFORMER_BUILD_PROPERTIES	= "META-INF/maven/org.eclipse.transformer/org.eclipse.transformer/pom.properties";
-
-	private final Properties		buildProperties;
-
-	private final Properties getBuildProperties() {
-		return buildProperties;
-	}
-
-	// TODO: Usual command line usage puts SysOut and SysErr together, which
-	// results
-	// in the properties writing out twice.
-
-	private void preInitDisplay(String message) {
-		PrintStream useSysOut = getSystemOut();
-		// PrintStream useSysErr = getSystemErr();
-
-		useSysOut.println(message);
-		// if ( useSysErr != useSysOut ) {
-		// useSysErr.println(message);
-		// }
-	}
-
-	private void displayCopyright() {
-		for (String copyrightLine : COPYRIGHT_LINES) {
-			preInitDisplay(copyrightLine);
-		}
-	}
-
-	private void displayBuildProperties() {
-		Properties useBuildProperties = getBuildProperties();
-
-		preInitDisplay(getClass().getName());
-		preInitDisplay("  Version [ " + useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME) + " ]");
-		preInitDisplay("");
-	}
-
-	//
-
-	private final PrintStream sysOut;
-
-	protected PrintStream getSystemOut() {
-		return sysOut;
-	}
-
-	private final PrintStream sysErr;
-
-	protected PrintStream getSystemErr() {
-		return sysErr;
-	}
-
-	public void systemPrint(PrintStream output, String message, Object... parms) {
-		if (parms.length != 0) {
-			message = String.format(message, parms);
-		}
-		output.println(message);
-	}
-
-	public void errorPrint(String message, Object... parms) {
-		systemPrint(getSystemErr(), message, parms);
-	}
-
-	public void outputPrint(String message, Object... parms) {
-		systemPrint(getSystemOut(), message, parms);
-	}
-
-	//
-
-	private final Options appOptions;
-
-	public Options getAppOptions() {
-		return appOptions;
-	}
-
-	private Class<?>				ruleLoader;
-	private Map<AppOption, String>	ruleDefaultRefs;
-
-	private String[]				args;
-	private CommandLine				parsedArgs;
-
-	private Changes					lastActiveChanges;
-
-	public Changes getLastActiveChanges() {
-		return lastActiveChanges;
 	}
 
 	/**
-	 * Set default resource references for the several 'RULE" options. Values
-	 * are located relative to the option loader class.
 	 *
-	 * @param optionLoader The class relative to which to load the default
-	 *            resources.
-	 * @param optionDefaults Table ot default resource references.
 	 */
-	public void setOptionDefaults(Class<?> optionLoader, Map<AppOption, String> optionDefaults) {
-		this.ruleLoader = optionLoader;
-		this.ruleDefaultRefs = new HashMap<>(optionDefaults);
+	public static final Marker		consoleMarker	= MarkerFactory.getMarker("console");
+	private final Logger			logger;
+	private final TransformOptions options;
+
+	/**
+	 * @param options
+	 */
+	public Transformer(TransformOptions options) {
+		this(LoggerFactory.getLogger(Transformer.class), options);
 	}
 
-	public Class<?> getRuleLoader() {
-		return ruleLoader;
+	/**
+	 * @param logger
+	 * @param options
+	 */
+	public Transformer(Logger logger, TransformOptions options) {
+		this.logger = requireNonNull(logger);
+		this.options = requireNonNull(options);
+		isTerse = options.hasOption(AppOption.LOG_TERSE);
+		isVerbose = options.hasOption(AppOption.LOG_VERBOSE);
 	}
 
-	public Map<AppOption, String> getRuleDefaultRefs() {
-		return ruleDefaultRefs;
+	public boolean							isVerbose;
+	public boolean							isTerse;
+
+	public Set<String>						includes;
+	public Set<String>						excludes;
+
+	public boolean							invert;
+	public Map<String, String>				packageRenames;
+	public Map<String, String>				packageVersions;
+	public Map<String, Map<String, String>> specificPackageVersions;
+	public Map<String, BundleData>			bundleUpdates;
+	public Map<String, String>				masterSubstitutionRefs;
+	public Map<String, Map<String, String>>	masterTextUpdates;
+	// ( pattern -> ( initial-> final ) )
+
+	public Map<String, String>				directStrings;
+
+	public boolean							widenArchiveNesting;
+	public CompositeActionImpl				rootAction;
+	public ActionImpl						acceptedAction;
+
+	public String							inputName;
+	public String							inputPath;
+	public File								inputFile;
+
+	public boolean							allowOverwrite;
+
+	public String							outputName;
+	public String							outputPath;
+	public File								outputFile;
+	public Map<String, Map<String, String>> perClassConstantStrings;
+
+	//
+
+	public Logger getLogger() {
+		return logger;
 	}
 
-	public String getDefaultReference(AppOption appOption) {
-		Map<AppOption, String> useDefaultRefs = getRuleDefaultRefs();
-		return ((useDefaultRefs == null) ? null : getRuleDefaultRefs().get(appOption));
-	}
-
-	public void setArgs(String[] args) {
-		this.args = args;
-	}
-
-	protected String[] getArgs() {
-		return args;
-	}
-
-	public void setParsedArgs() throws ParseException {
-		CommandLineParser parser = new DefaultParser();
-		parsedArgs = parser.parse(getAppOptions(), getArgs());
-	}
-
-	protected CommandLine getParsedArgs() {
-		return parsedArgs;
-	}
-
-	protected String getInputFileNameFromCommandLine() {
-		String[] useArgs = parsedArgs.getArgs();
-		if (useArgs != null) {
-			if (useArgs.length > 0) {
-				return useArgs[0]; // First argument
-			}
-		}
-		return null;
-	}
-
-	protected String getOutputFileNameFromCommandLine() {
-		String[] useArgs = parsedArgs.getArgs();
-		if (useArgs != null) {
-			if (useArgs.length > 1) {
-				return useArgs[1]; // Second argument
-			}
-		}
-		return null;
-	}
-
-	public boolean hasOption(AppOption option) {
-		return getParsedArgs().hasOption(option.getShortTag());
-	}
-
-	public static boolean DO_NORMALIZE = true;
-
-	public String getOptionValue(AppOption option) {
-		return getOptionValue(option, !DO_NORMALIZE);
-	}
-
-	public String getOptionValue(AppOption option, boolean normalize) {
-		CommandLine useParsedArgs = getParsedArgs();
-		String useShortTag = option.getShortTag();
-		if (useParsedArgs.hasOption(useShortTag)) {
-			String optionValue = useParsedArgs.getOptionValue(useShortTag);
-			if (normalize) {
-				optionValue = FileUtils.normalize(optionValue);
-			}
-			return optionValue;
-		} else {
-			return null;
+	private void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
+		if (oldValue != null) {
+			getLogger().debug(consoleMarker,
+				"Merge of [ {} ] into [ {} ], key [ {} ] replaces value [ {} ] with [ {} ]", sourceName, sinkName, key,
+				oldValue, newValue);
 		}
 	}
 
-	public String[] getOptionValues(AppOption option) {
-		return getOptionValues(option, !DO_NORMALIZE);
-	}
-
-	protected String[] getOptionValues(AppOption option, boolean normalize) {
-		CommandLine useParsedArgs = getParsedArgs();
-		String useShortTag = option.getShortTag();
-		if (useParsedArgs.hasOption(useShortTag)) {
-			String[] optionValues = useParsedArgs.getOptionValues(useShortTag);
-			if (normalize) {
-				for (int optionNo = 0; optionNo < optionValues.length; optionNo++) {
-					optionValues[optionNo] = FileUtils.normalize(optionValues[optionNo]);
-				}
-			}
-			return optionValues;
-		} else {
-			return null;
+	public ResultCode run() {
+		if (!setInput()) {
+			return ResultCode.TRANSFORM_ERROR_RC;
 		}
+
+		if (!setOutput()) {
+			return ResultCode.TRANSFORM_ERROR_RC;
+		}
+
+		boolean loadedRules;
+		try {
+			loadedRules = setRules();
+		} catch (Exception e) {
+			getLogger().error(consoleMarker, "Exception loading rules:", e);
+			return ResultCode.RULES_ERROR_RC;
+		}
+		if (!loadedRules) {
+			getLogger().error(consoleMarker, "Transformation rules cannot be used");
+			return ResultCode.RULES_ERROR_RC;
+		}
+		if (isVerbose) {
+			logRules();
+		}
+
+		setActions();
+
+		if (!acceptAction()) {
+			getLogger().error(consoleMarker, "No action selected");
+			return ResultCode.FILE_TYPE_ERROR_RC;
+		}
+
+		transform();
+
+		return ResultCode.SUCCESS_RC;
 	}
 
 	//
 
-	private void usage(PrintStream helpStream) {
-		helpStream.println("Usage: " + Transformer.class.getName() + " input [ output ] [ options ]");
-		helpStream.println();
-		helpStream
-			.println("Use option [ " + HELP_SHORT_TAG + " ] or [ " + HELP_LONG_TAG + " ] to display help information.");
-		helpStream.flush();
+	public String getInputFileName() {
+		return inputName;
 	}
 
-	private void help(PrintStream helpStream) {
-		try (PrintWriter helpWriter = new PrintWriter(helpStream)) {
-			helpWriter.println();
+	public String getOutputFileName() {
+		return outputName;
+	}
 
-			HelpFormatter helpFormatter = new HelpFormatter();
-			boolean AUTO_USAGE = true;
-			helpFormatter.printHelp(helpWriter, HelpFormatter.DEFAULT_WIDTH + 5,
-				Transformer.class.getName() + " input [ output ] [ options ]", // Command
-																				// line
-																				// syntax
-				"Options:", // Header
-				getAppOptions(), HelpFormatter.DEFAULT_LEFT_PAD, HelpFormatter.DEFAULT_DESC_PAD, "", // Footer
-				!AUTO_USAGE);
+	private InputBufferImpl buffer;
 
-			helpWriter.println();
-			helpWriter.println("Actions:");
-			for (ActionType actionType : ActionType.values()) {
-				helpWriter.println("  [ " + actionType.name() + " ]");
+	protected InputBufferImpl getBuffer() {
+		if (buffer == null) {
+			buffer = new InputBufferImpl();
+		}
+		return buffer;
+	}
+
+	public static final AppOption[] TARGETABLE_RULES = new AppOption[] {
+		AppOption.RULES_SELECTIONS,
+
+		AppOption.RULES_RENAMES, AppOption.RULES_VERSIONS, AppOption.RULES_DIRECT, AppOption.RULES_PER_CLASS_CONSTANT,
+
+		AppOption.RULES_BUNDLES, AppOption.RULES_MASTER_TEXT
+	};
+
+	public AppOption getTargetOption(String targetText) {
+		for (AppOption appOption : TARGETABLE_RULES) {
+			if (targetText.equals(appOption.getShortTag())) {
+				return appOption;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Fetch all immediate option data from the command line. Organize the data
+	 * into separate objects, one object per specific immediate option on the
+	 * command line.
+	 *
+	 * @return Grouped immediate option data from the command line.
+	 */
+	public ImmediateRuleData[] getImmediateData() {
+		if (!options.hasOption(AppOption.RULES_IMMEDIATE_DATA)) {
+			return new ImmediateRuleData[] {
+				// EMPTY
+			};
+		}
+
+		List<String> immediateArgs = options.getOptionValues(AppOption.RULES_IMMEDIATE_DATA);
+
+		if ((immediateArgs.size() % 3) != 0) {
+			getLogger().error(consoleMarker, "Incorrect number of arguments to option [ {} ]",
+				AppOption.RULES_IMMEDIATE_DATA.getShortTag());
+			return null;
+		}
+
+		int argCount = immediateArgs.size() / 3;
+
+		ImmediateRuleData[] immediateData = new ImmediateRuleData[argCount];
+
+		for (int argNo = 0; argNo < argCount; argNo++) {
+			int baseNo = argNo * 3;
+			String targetText = immediateArgs.get(baseNo);
+			String key = immediateArgs.get(baseNo + 1);
+			String value = immediateArgs.get(baseNo + 2);
+
+			getLogger().info(consoleMarker, "Immediate rule data specified; target [ {} ], key [ {} ], value [ {} ]",
+				targetText, key, value);
+
+			AppOption target = getTargetOption(targetText);
+			if (target == null) {
+				getLogger().error(consoleMarker, "Immediate rules target [ {} ] is not valid.", targetText);
+				return null;
 			}
 
-			helpWriter.println();
-			helpWriter.println("Logging Properties:");
-			for (LoggerProperty loggerProperty : LoggerProperty
-				.values()) {
-				helpWriter.println("  [ " + loggerProperty.getPropertyName() + " ]");
+			immediateData[argNo] = new ImmediateRuleData(target, key, value);
+		}
+
+		return immediateData;
+	}
+
+	/**
+	 * Process the rules data. Load and validate the data.
+	 *
+	 * @return True or false telling if the data was successfully loaded and is
+	 *         usable.
+	 * @throws Exception Thrown if an error occurred while loading or validating
+	 *             the data.
+	 */
+	public boolean setRules() throws Exception {
+		ImmediateRuleData[] immediateData = getImmediateData();
+		if ( immediateData == null ) {
+			return false;
+		}
+
+		Set<String> orphanedFinalPackages = new HashSet<String>();
+
+		UTF8Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
+		UTF8Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
+		UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
+		UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
+		UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT, null);
+		UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
+		UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT,
+			null);
+
+		invert = options.hasOption(AppOption.INVERT);
+
+		if ( !selectionProperties.isEmpty() ) {
+			includes = new HashSet<>();
+			excludes = new HashSet<>();
+			TransformProperties.addSelections(includes, excludes, selectionProperties);
+			getLogger().info(consoleMarker, "Selection rules are in use");
+		} else {
+			includes = null;
+			excludes = null;
+		}
+
+		if ( !renameProperties.isEmpty() ) {
+			Map<String, String> renames = TransformProperties.getPackageRenames(renameProperties);
+			if ( invert ) {
+				renames = TransformProperties.invert(renames);
+			}
+			packageRenames = renames;
+			getLogger().info(consoleMarker, "Package renames are in use");
+		} else {
+			packageRenames = null;
+		}
+
+		if ( !versionProperties.isEmpty() ) {
+			packageVersions = new HashMap<>( versionProperties.size() );
+			specificPackageVersions = new HashMap<>();
+			TransformProperties.setPackageVersions(versionProperties, packageVersions, specificPackageVersions);
+			getLogger().info(consoleMarker, "Package versions will be updated");
+		} else {
+			packageVersions = null;
+			specificPackageVersions = null;
+		}
+
+		if ( !updateProperties.isEmpty() ) {
+			bundleUpdates = TransformProperties.getBundleUpdates(updateProperties);
+			// throws IllegalArgumentException
+			getLogger().info(consoleMarker, "Bundle identities will be updated");
+		} else {
+			bundleUpdates = null;
+		}
+
+		String masterTextRef;
+
+		if ( !textMasterProperties.isEmpty() ) {
+			masterTextRef = options.normalize(options.getOptionValue(AppOption.RULES_MASTER_TEXT));
+
+			Map<String, String> substitutionRefs =
+				TransformProperties.convertPropertiesToMap(textMasterProperties);
+			// throws IllegalArgumentException
+
+			Map<String, Map<String, String>> masterUpdates = new HashMap<>();
+			for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
+				String simpleNameSelector = substitutionRefEntry.getKey();
+				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
+
+				Map<String, String> substitutionsMap =
+					loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
+				// throws URISyntaxException, IOException
+
+				substitutionRefs.put(simpleNameSelector, substitutionsRef);
+				masterUpdates.put(simpleNameSelector, substitutionsMap);
 			}
 
-			helpWriter.flush();
+			masterSubstitutionRefs = substitutionRefs;
+			masterTextUpdates = masterUpdates;
+			getLogger().info(consoleMarker, "Text files will be updated");
+
+		} else {
+			masterTextRef = null;
+			masterTextUpdates = null;
+		}
+
+		if ( !directProperties.isEmpty() ) {
+			directStrings = TransformProperties.getDirectStrings(directProperties);
+			getLogger().info(consoleMarker, "Java direct string updates will be performed");
+		} else {
+			directStrings = null;
+			getLogger().info(consoleMarker, "Java direct string updates will not be performed");
+		}
+
+		if ( !perClassConstantProperties.isEmpty() ) {
+			String masterDirect = options.normalize(options.getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT));
+
+			Map<String, String> substitutionRefs =
+				TransformProperties.convertPropertiesToMap(perClassConstantProperties);
+			// throws IllegalArgumentException
+
+			Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
+			for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
+				String classSelector = substitutionRefEntry.getKey();
+				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
+
+				UTF8Properties substitutions = new UTF8Properties();
+				if ( masterDirect == null ) {
+					substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]",
+						substitutionsRef);
+				}
+				Map<String, String> substitutionsMap =
+					TransformProperties.convertPropertiesToMap(substitutions);
+				// throws IllegalArgumentException
+				masterUpdates.put(classSelector, substitutionsMap);
+			}
+
+			perClassConstantStrings = masterUpdates;
+			getLogger().info(consoleMarker, "Per class constant mapping files are enabled");
+
+		} else {
+			perClassConstantStrings = null;
+			getLogger().info(consoleMarker, "Per class constant mapping files are not enabled");
+		}
+
+		processImmediateData(immediateData, masterTextRef, orphanedFinalPackages);
+
+		// Delay reporting null property sets: These are assigned directly
+		// and by immediate data.
+
+		if ( includes == null ) {
+			getLogger().info(consoleMarker, "All resources will be selected");
+		}
+		if ( packageRenames == null ) {
+			getLogger().info(consoleMarker, "Packages will not be renamed");
+		}
+		if ( packageVersions == null ) {
+			getLogger().info(consoleMarker, "Package versions will not be updated");
+		}
+		if ( bundleUpdates == null ) {
+			getLogger().info(consoleMarker, "Bundle identities will not be updated");
+		}
+		if ( masterTextUpdates == null ) {
+			getLogger().info(consoleMarker, "Text files will not be updated");
+		}
+		if ( directStrings == null ) {
+			getLogger().info(consoleMarker, "Java direct string updates will not be performed");
+		}
+		if ( perClassConstantStrings == null ) {
+			getLogger().info(consoleMarker, "Per class constant mapping files are not enabled");
+		}
+
+		return validateVersionUpdates(orphanedFinalPackages);
+	}
+
+	protected void processImmediateData(
+		ImmediateRuleData[] immediateData, String masterTextRef,
+		Set<String> orphanedFinalVersions)
+		throws IOException, URISyntaxException {
+
+		for ( ImmediateRuleData nextData : immediateData ) {
+			switch ( nextData.target ) {
+				case RULES_SELECTIONS:
+					addImmediateSelection(nextData.key, nextData.value);
+					break;
+				case RULES_RENAMES:
+					addImmediateRename(nextData.key, nextData.value, orphanedFinalVersions);
+					break;
+				case RULES_VERSIONS:
+					addImmediateVersion(nextData.key, nextData.value);
+					break;
+				case RULES_BUNDLES:
+					addImmediateBundleData(nextData.key, nextData.value);
+					break;
+				case RULES_DIRECT:
+					addImmediateDirect(nextData.key, nextData.value);
+					break;
+				case RULES_MASTER_TEXT:
+					addImmediateMasterText(masterTextRef, nextData.key, nextData.value);
+					// throws IOException, URISyntaxException
+					break;
+
+				default:
+					getLogger().error(consoleMarker, "Unrecognized immediate data target [ {} ]", nextData.target);
+			}
+		}
+	}
+
+	private void addImmediateSelection(String selection, @SuppressWarnings("unused") String ignored) {
+		if ( includes == null ) {
+			includes = new HashSet<>();
+			excludes = new HashSet<>();
+			getLogger().info(consoleMarker, "Selection rules use forced by immediate data");
+		}
+
+		TransformProperties.addSelection(includes, excludes, selection);
+	}
+
+	private void addImmediateRename(
+		String initialPackageName, String finalPackageName,
+		Set<String> orphanedFinalPackages) {
+
+		if ( packageRenames == null ) {
+			packageRenames = new HashMap<String, String>();
+			getLogger().info(consoleMarker, "Package renames forced by immediate data.");
+		}
+
+		if ( invert ) {
+			String initialHold = initialPackageName;
+			initialPackageName = finalPackageName;
+			finalPackageName = initialHold;
+		}
+
+		String oldFinalPackageName = packageRenames.put(initialPackageName, finalPackageName);
+
+		processOrphan(
+			"immediate rename data", "renameData",
+			initialPackageName, oldFinalPackageName, finalPackageName,
+			orphanedFinalPackages);
+
+		logMerge(
+			"immediate rename data", "rename data",
+			initialPackageName, oldFinalPackageName, finalPackageName);
+	}
+
+	private void addImmediateVersion(String finalPackageName, String versionText) {
+		if ( packageVersions == null ) {
+			packageVersions = new HashMap<>();
+			specificPackageVersions = new HashMap<>();
+			getLogger().info(consoleMarker, "Package version updates forced by immediate data.");
+		}
+		TransformProperties.setPackageVersions(finalPackageName, versionText, packageVersions, specificPackageVersions);
+	}
+
+	private void addImmediateBundleData(String bundleId, String value) {
+		if ( bundleUpdates == null ) {
+			bundleUpdates = new HashMap<>();
+			getLogger().info(consoleMarker, "Bundle identity updates forced by immediate data.");
+		}
+		BundleData newBundleData = new BundleDataImpl(value);
+		BundleData oldBundleData = bundleUpdates.put(bundleId, newBundleData);
+		if ( oldBundleData != null ) {
+			logMerge("immediate bundle data", "bundle data", bundleId, oldBundleData.getPrintString(),
+				newBundleData.getPrintString());
+		}
+	}
+
+	private void addImmediateDirect(String initialText, String finalText) {
+		if ( directStrings == null ) {
+			directStrings = new HashMap<>();
+			getLogger().info(consoleMarker, "Java direct string updates forced by immediate data");
+		}
+
+		String oldFinalText = directStrings.put(initialText, finalText);
+		if ( oldFinalText != null ) {
+			logMerge("immediate direct string data", "direct string data", initialText, oldFinalText,
+				finalText);
 		}
 	}
 
@@ -435,53 +543,46 @@ public class Transformer {
 
 	/**
 	 * Load properties for the specified rule option. Answer an empty collection
-	 * if the rule option was not provided.
-	 *
-	 * Options loading tries {@link #getOptionValue(AppOption)} then tries
-	 * {@link #getDefaultReference(AppOption)}. An empty collection is returned
-	 * when neither is available.
-	 *
-	 * Orphaned values are
+	 * if the rule option was not provided. Options loading tries
+	 * {@link TransformOptions#getOptionValue(AppOption)} then tries
+	 * {@link TransformOptions#getDefaultValue(AppOption)}. An empty
+	 * collection is returned when neither is available. Orphaned values are
 	 *
 	 * @param ruleOption The option for which to load properties.
 	 * @param orphanedValues Values which have been orphaned by merges.
 	 * @return Properties loaded using the reference set for the option.
-	 *
 	 * @throws IOException Thrown if the load failed.
-	 *
 	 * @throws URISyntaxException Thrown if the load failed because a non-valid
 	 *             URI was specified.
 	 */
-	protected UTF8Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
+	public UTF8Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
 		throws IOException, URISyntaxException {
-		String[] rulesReferences = getOptionValues(ruleOption, DO_NORMALIZE);
+		List<String> rulesReferences = options.normalize(options.getOptionValues(ruleOption));
 
 		if (rulesReferences == null) {
-			String rulesReference = getDefaultReference(ruleOption);
+			String rulesReference = options.getDefaultValue(ruleOption);
 			if (rulesReference == null) {
-				dual_info("Skipping option [ %s ]", ruleOption);
+				getLogger().info(consoleMarker, "Skipping option [ {} ]", ruleOption);
 				return FileUtils.createProperties();
 			} else {
 				return loadInternalProperties(ruleOption, rulesReference);
 			}
-
-		} else if ( rulesReferences.length == 1 ) {
-			return loadExternalProperties(ruleOption, rulesReferences[0]);
-
+		} else if (rulesReferences.size() == 1) {
+			return loadExternalProperties(ruleOption, rulesReferences.get(0));
 		} else {
-			UTF8Properties[] properties = new UTF8Properties[ rulesReferences.length ];
-			for ( int referenceNo = 0; referenceNo < rulesReferences.length; referenceNo++ ) {
-				properties[referenceNo] = loadExternalProperties( ruleOption, rulesReferences[referenceNo] );
-			}
-
-			String baseReference = rulesReferences[0];
-			UTF8Properties mergedProperties = properties[0];
-
-			for ( int referenceNo = 1; referenceNo < rulesReferences.length; referenceNo++ ) {
-				merge( baseReference, mergedProperties,
-					   rulesReferences[referenceNo], properties[referenceNo],
-					   orphanedValues );
-			}
+			String baseReference = rulesReferences.get(0);
+			UTF8Properties mergedProperties = rulesReferences.stream()
+				.reduce(null, asBiFunction((props, ref) -> {
+					UTF8Properties p = loadExternalProperties(ruleOption, ref);
+					if (props == null) {
+						return p;
+					}
+					merge(baseReference, props, ref, p, orphanedValues);
+					return props;
+				}), (props1, props2) -> {
+					props1.putAll(props2);
+					return props1;
+				});
 
 			return mergedProperties;
 		}
@@ -494,83 +595,69 @@ public class Transformer {
 	}
 
 	/*
-		Results of 'relativize':
-
-		Base reference [ c:\dev\rules\textMaster ]
-		Sibling reference [ sibling1 ]
-		Base path [ c:\dev\rules\textMaster ]
-		Sibling path [ c:\dev\rules\sibling1 ]
-
-		Base reference [ c:\textMaster ]
-		Sibling reference [ sibling1 ]
-		Base path [ c:\textMaster ]
-		Sibling path [ c:\sibling1 ]
-
-		Base reference [ \textMaster ]
-		Sibling reference [ sibling1 ]
-		Base path [ \textMaster ]
-		Sibling path [ \sibling1 ]
-
-		Base reference [ textMaster ]
-		Sibling reference [ sibling1 ]
-		Base path [ textMaster ]
-		Sibling path [ sibling1 ]
-	*/
+	 * Results of 'relativize': Base reference [ c:\dev\rules\textMaster ]
+	 * Sibling reference [ sibling1 ] Base path [ c:\dev\rules\textMaster ]
+	 * Sibling path [ c:\dev\rules\sibling1 ] Base reference [ c:\textMaster ]
+	 * Sibling reference [ sibling1 ] Base path [ c:\textMaster ] Sibling path [
+	 * c:\sibling1 ] Base reference [ \textMaster ] Sibling reference [ sibling1
+	 * ] Base path [ \textMaster ] Sibling path [ \sibling1 ] Base reference [
+	 * textMaster ] Sibling reference [ sibling1 ] Base path [ textMaster ]
+	 * Sibling path [ sibling1 ]
+	 */
 
 	protected UTF8Properties loadInternalProperties(AppOption ruleOption, String resourceRef) throws IOException {
 		return loadInternalProperties(ruleOption.toString(), resourceRef);
 	}
 
 	protected UTF8Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
-		// dual_info("Using internal [ %s ]: [ %s ]", ruleOption, resourceRef);
-		URL rulesUrl = getRuleLoader().getResource(resourceRef);
+		// getLogger().info(consoleMarker, "Using internal [ {} ]: [ {} ]",
+		// ruleOption, resourceRef);
+		URL rulesUrl = options.getRuleLoader()
+			.apply(resourceRef);
 		if (rulesUrl == null) {
-			dual_info("Internal [ %s ] were not found [ %s ]", ruleOption, resourceRef);
-			throw new IOException("Resource [ " + resourceRef + " ] not found on [ " + getRuleLoader() + " ]");
+			getLogger().info(consoleMarker, "Internal [ {} ] were not found [ {} ]", ruleOption, resourceRef);
+			throw new IOException("Resource [ " + resourceRef + " ] not found on [ " + options.getRuleLoader() + " ]");
 		} else {
-			dual_info("Internal [ %s ] URL [ %s ]", ruleOption, rulesUrl);
+			getLogger().info(consoleMarker, "Internal [ {}] URL [ {} ]", ruleOption, rulesUrl);
 		}
 		return FileUtils.loadProperties(rulesUrl);
 	}
 
-	protected UTF8Properties loadExternalProperties
-	    (AppOption ruleOption, String resourceRef)
+	protected UTF8Properties loadExternalProperties(AppOption ruleOption, String resourceRef)
 		throws URISyntaxException, IOException {
 
 		return loadExternalProperties(ruleOption.toString(), resourceRef);
 	}
 
-	public UTF8Properties loadExternalProperties
-	    (String referenceName, String externalReference)
+	public UTF8Properties loadExternalProperties(String referenceName, String externalReference)
 		throws URISyntaxException, IOException {
 
 		return loadExternalProperties(referenceName, externalReference, IO.work);
 	}
 
-	protected UTF8Properties loadExternalProperties(
-		String referenceName, String externalReference, File relativeHome)
+	protected UTF8Properties loadExternalProperties(String referenceName, String externalReference, File relativeHome)
 		throws URISyntaxException, IOException {
 
-		// dual_info("Using external [ %s ]: [ %s ]", referenceName, externalReference);
+		// getLogger().info(consoleMarker, "Using external [ {} ]: [ {} ]",
+		// referenceName, externalReference);
 
 		URI relativeHomeUri = relativeHome.toURI();
-		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference).toURL();
-		dual_info("External [ %s ] URL [ %s ]", referenceName, rulesUrl);
+		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference)
+			.toURL();
+		getLogger().info(consoleMarker, "External [ {} ] URL [ {} ]", referenceName, rulesUrl);
 
 		return FileUtils.loadProperties(rulesUrl);
 	}
 
-	protected void merge(
-		String sinkName, UTF8Properties sink,
-		String sourceName, UTF8Properties source,
+	protected void merge(String sinkName, UTF8Properties sink, String sourceName, UTF8Properties source,
 		Set<String> orphanedValues) {
 
-		for ( Map.Entry<Object, Object> sourceEntry : source.entrySet() ) {
+		for (Map.Entry<Object, Object> sourceEntry : source.entrySet()) {
 			String key = (String) sourceEntry.getKey();
 			String newValue = (String) sourceEntry.getValue();
 			String oldValue = (String) sink.put(key, newValue);
 
-			if ( orphanedValues != null ) {
+			if (orphanedValues != null) {
 				processOrphan(sourceName, sinkName, key, oldValue, newValue, orphanedValues);
 			}
 
@@ -579,305 +666,616 @@ public class Transformer {
 	}
 
 	/**
-	 * Detect orphaned and un-orphaned property assignments.
-	 *
-	 * An orphaned property assignment occurs when a new property
-	 * assignment changes the assigned property value.
-	 *
-	 * An orphaned value become un-orphaned if a property assignment
-	 * has that value.
+	 * Detect orphaned and un-orphaned property assignments. An orphaned
+	 * property assignment occurs when a new property assignment changes the
+	 * assigned property value. An orphaned value become un-orphaned if a
+	 * property assignment has that value.
 	 *
 	 * @param sourceName A name associated with the properties which were added.
-	 *     Used for logging.
-	 * @param sinkName A name associated with the properties into which the source
-	 *     properties were added.  Used for logging.
+	 *            Used for logging.
+	 * @param sinkName A name associated with the properties into which the
+	 *            source properties were added. Used for logging.
 	 * @param key The key which was overridden by the source properties.
-	 * @param oldValue The value previously assigned to the key in the sink properties.
-	 * @param newValue The value newly assigned to the key in the sink properties.
+	 * @param oldValue The value previously assigned to the key in the sink
+	 *            properties.
+	 * @param newValue The value newly assigned to the key in the sink
+	 *            properties.
 	 * @param orphans Accumulated sink property values which were orphaned.
 	 */
-	protected void processOrphan(
-		String sourceName, String sinkName,
-		String key, String oldValue, String newValue,
+	protected void processOrphan(String sourceName, String sinkName, String key, String oldValue, String newValue,
 		Set<String> orphans) {
 
-		if ( (oldValue != null) && oldValue.equals(newValue) ) {
+		if ((oldValue != null) && oldValue.equals(newValue)) {
 			return; // Nothing to do: The old and new assignments are the same.
 		}
 
-		if ( oldValue != null ) {
-			dual_debug(
-				"Merge of [ %s ] into [ %s ], key [ %s ] orphans [ %s ]",
-				sourceName, sinkName, key, oldValue);
+		if (oldValue != null) {
+			getLogger().debug(consoleMarker, "Merge of [ {} ] into [ {} ], key [ {} ] orphans [ {} ]", sourceName,
+				sinkName, key, oldValue);
 			orphans.add(oldValue);
 		}
 
-		if ( orphans.remove(newValue) ) {
-			dual_debug(
-				"Merge of [ %s ] into [ %s ], key [ %s ] un-orphans [ %s ]",
-				sourceName, sinkName, key, newValue);
+		if (orphans.remove(newValue)) {
+			getLogger().debug(consoleMarker, "Merge of [ {} ] into [ {} ], key [ {} ] un-orphans [ {} ]", sourceName,
+				sinkName, key, newValue);
 		}
 	}
 
-	protected void logMerge(String propertyName,
-		String sourceName, String sinkName,
-		Object key, Object oldValue, Object newValue) {
+	private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef)
+		throws IOException, URISyntaxException {
+		UTF8Properties substitutions;
+		if ( masterRef == null ) {
+			substitutions = loadInternalProperties(
+				"Substitions matching [ " + selector + " ]", substitutionsRef);
+			// throws IOException
+		} else {
+			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
+			if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
+				getLogger().info(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]",
+					substitutionsRef, relativeSubstitutionsRef);
+			}
 
-		if (oldValue != null) {
-			dual_debug("Under property [ %s ]:" +
-				" Merge of [ %s ] into [ %s ]," +
-				" key [ %s ] replaces value [ %s ] with [ %s ]",
-				propertyName,
-				sourceName, sinkName,
-				key, oldValue, newValue);
+			substitutions = loadExternalProperties(
+				"Substitions matching [ " + selector + " ]", relativeSubstitutionsRef);
+			// throws URISyntaxException, IOException
 		}
+
+		Map<String, String> substitutionsMap =
+			TransformProperties.convertPropertiesToMap(substitutions);
+		// throws IllegalArgumentException
+
+		return substitutionsMap;
 	}
 
-	protected void logMerge(String sourceName, String sinkName, Object key, Object oldValue, Object newValue) {
-		if (oldValue != null) {
-			dual_debug("Merge of [ %s ] into [ %s ], key [ %s ] replaces value [ %s ] with [ %s ]", sourceName,
-				sinkName, key, oldValue, newValue);
+	private void addImmediateMasterText(
+		String masterTextRef, String simpleNameSelector, String substitutionsRef)
+		throws IOException, URISyntaxException {
+
+		if ( masterTextUpdates == null ) {
+			masterTextUpdates = new HashMap<>();
+			getLogger().info(consoleMarker, "Text files updates forced by immediate data.");
+		}
+
+		substitutionsRef = options.normalize(substitutionsRef);
+
+		Map<String, String> substitutionsMap =
+			loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
+		// throws URISyntaxException, IOException
+
+		String oldSubstitutionsRef =
+			masterSubstitutionRefs.put(simpleNameSelector, substitutionsRef);
+		@SuppressWarnings("unused")
+		Map<String, String> oldSubstitutionMap =
+			masterTextUpdates.put(simpleNameSelector, substitutionsMap);
+
+		if ( oldSubstitutionsRef != null ) {
+			logMerge("immediate master text data", "master text data", simpleNameSelector,
+				oldSubstitutionsRef,
+				substitutionsRef);
 		}
 	}
 
 	/**
-	 * Fetch all immediate option data from the command line. Organize the data
-	 * into separate objects, one object per specific immediate option on the
-	 * command line.
+	 * Validate package version updates.  Answer true or false, telling if
+	 * the version updates are valid.
 	 *
-	 * @return Grouped immediate option data from the command line.
+	 * That is, validate the generic and the specific package version updates.
+	 * The version updates are valid if and only if each package version update
+	 * uses a package name which is the final package name of a package rename.
+	 *
+	 * See {@link #validateVersionUpdates(Map, Set)}.
+	 *
+	 * @param orphanedFinalPackages Orphaned final packages.
+	 *
+	 * @return True or false, telling if the package version updates are
+	 *     valid.
 	 */
-	protected ImmediateRuleData[] getImmediateData() {
-		if ( !hasOption(AppOption.RULES_IMMEDIATE_DATA) ) {
-			return new ImmediateRuleData[] {
-				// EMPTY
-			};
+	protected boolean validateVersionUpdates(Set<String> orphanedFinalPackages) {
+		if ( ((packageVersions == null) || packageVersions.isEmpty()) &&
+			 ((specificPackageVersions == null) || specificPackageVersions.isEmpty()) ) {
+			return true; // Nothing to validate
 		}
 
-		String[] immediateArgs = getOptionValues(AppOption.RULES_IMMEDIATE_DATA);
+		// Don't bother listing all of the missing package names if no
+		// renames were specified.  A single error message is sufficient.
 
-		if ((immediateArgs.length % 3) != 0) {
-			dual_error(
-				"Incorrect number of arguments to option [ " + AppOption.RULES_IMMEDIATE_DATA.getShortTag() + " ]");
-			return null;
+		if ( (packageRenames == null) || packageRenames.isEmpty() ) {
+			getLogger().error(consoleMarker,
+				"Package version updates were specified but no package renames were specified.");
+			return false;
 		}
 
-		int argCount = immediateArgs.length / 3;
+		boolean missingFinalPackages = !validateVersionUpdates(packageVersions, orphanedFinalPackages);
 
-		ImmediateRuleData[] immediateData = new ImmediateRuleData[argCount];
-
-		for (int argNo = 0; argNo < argCount; argNo++) {
-			int baseNo = argNo * 3;
-			String targetText = immediateArgs[baseNo];
-			String key = immediateArgs[baseNo + 1];
-			String value = immediateArgs[baseNo + 2];
-
-			dual_info("Immediate rule data specified; target [ %s ], key [ %s ], value [ %s ]", targetText, key, value);
-
-			AppOption target = getTargetOption(targetText);
-			if (target == null) {
-				dual_error("Immediate rules target [ " + targetText + " ] is not valid.");
-				return null;
+		for ( Map.Entry<String, Map<String, String>> specificEntry : specificPackageVersions.entrySet() ) {
+			String attributeName = specificEntry.getKey();
+			Map<String, String> updatesForAttribute = specificEntry.getValue();
+			if ( !validateVersionUpdates(updatesForAttribute, orphanedFinalPackages) ) {
+				missingFinalPackages = true;
 			}
-
-			immediateData[argNo] = new ImmediateRuleData(target, key, value);
 		}
 
-		return immediateData;
+		Set<String> ignoredAttributes = null;
+		for ( String attributeName : specificPackageVersions.keySet() ) {
+			if ( !ManifestActionImpl.selectAttribute(attributeName) ) {
+				if ( ignoredAttributes == null ) {
+					ignoredAttributes = new HashSet<>();
+				}
+				ignoredAttributes.add(attributeName);
+			}
+		}
+		if ( ignoredAttributes != null ) {
+			getLogger().info(consoleMarker,
+				"Warning: Ignoring unknown attributes {} used for specific package version updates.",
+				ignoredAttributes);
+		}
+
+		return !missingFinalPackages;
 	}
 
-	public static final AppOption[] TARGETABLE_RULES = new AppOption[] {
-		AppOption.RULES_SELECTIONS,
-
-		AppOption.RULES_RENAMES, AppOption.RULES_VERSIONS,
-		AppOption.RULES_DIRECT,
-		AppOption.RULES_PER_CLASS_CONSTANT,
-
-		AppOption.RULES_BUNDLES, AppOption.RULES_MASTER_TEXT
-	};
-
-	public AppOption getTargetOption(String targetText) {
-		for ( AppOption appOption : TARGETABLE_RULES ) {
-			if (targetText.contentEquals(appOption.getShortTag())) {
-				return appOption;
+	protected boolean validateVersionUpdates(Map<String, String> versionUpdates, Set<String> orphanedFinalPackages) {
+		boolean isValid = true;
+		for ( String finalPackage : versionUpdates.keySet() ) {
+			// Keep looping even after a non-valid update is detected:
+			// Emit error messages for all problem version updates.
+			if ( !validateVersionUpdate(finalPackage, orphanedFinalPackages) ) {
+				isValid = false;
 			}
+		}
+		return isValid;
+	}
+
+	/**
+	 * Validate a package version update against the specified package renames.
+	 * Answer true or false, telling if the update is valid.
+	 *
+	 * There are three cases:
+	 *
+	 * The version update uses a package which is the final package
+	 * in a package rename rule.  The update is valid.
+	 *
+	 * The version update uses a package which has been orphaned by a
+	 * package rename rule.  That is, the version update would be valid
+	 * if the final package was not orphaned.  The update is considered
+	 * valid.
+	 *
+	 * The version update uses a package which was not specified as the
+	 * final package in a package rename rule.  The update is not valid.
+	 *
+	 * @param finalPackage The package which was used as the key to a
+	 *     package version update.  This package must be used as the
+	 *     final package of a package rename.
+	 * @param orphanedFinalPackages Final packages which were orphaned.
+	 *
+	 * @return True or false, telling if the package version update is
+	 *     valid.
+	 */
+	protected boolean validateVersionUpdate(String finalPackage, Set<String> orphanedFinalPackages) {
+		if ( packageRenames.containsValue(finalPackage) ) {
+			return true;
+		}
+
+		// This orphaned case is curious:
+		//
+		// False might be returned, because the version update will never be used.
+		//
+		// However, true is returned, since we want to allow overrides which create
+		// orphans.
+
+		if ( orphanedFinalPackages.contains(finalPackage) ) {
+			getLogger().info(consoleMarker, "Package [ {} ] has a version update but was orphaned.", finalPackage);
+			return true;
+		}
+
+		getLogger().error(consoleMarker, "Package [ {} ] has a version update but was not renamed.", finalPackage);
+		return false;
+	}
+
+	// protected List<String> getRuleFileNames(AppOption ruleOption) {
+	// List<String> rulesFileNames =
+	// options.normalize(options.getOptionValues(ruleOption));
+	// if (rulesFileNames != null) {
+	// return rulesFileNames;
+	// } else {
+	// String defaultReference = options.getDefaultReference(ruleOption);
+	// return ( (defaultReference == null) ? null : new String[] {
+	// defaultReference } );
+	// }
+	// }
+
+	public void logRules() {
+		getLogger().info("Includes:");
+		if ((includes == null) || includes.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (String include : includes) {
+				getLogger().info("  [ {} ]", include);
+			}
+		}
+
+		getLogger().info("Excludes:");
+		if ((excludes == null) || excludes.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (String exclude : excludes) {
+				getLogger().info("  [ {} ]", exclude);
+			}
+		}
+
+		if (invert) {
+			getLogger().info("Package Renames: [ ** INVERTED ** ]");
+		} else {
+			getLogger().info("Package Renames:");
+		}
+
+		if ((packageRenames == null) || packageRenames.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (Map.Entry<String, String> renameEntry : packageRenames.entrySet()) {
+				getLogger().info("  [ {} ]: [ {} ]", renameEntry.getKey(), renameEntry.getValue());
+			}
+		}
+
+		getLogger().info("Package Versions:");
+		if ((packageVersions == null) || packageVersions.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (Map.Entry<String, String> versionEntry : packageVersions.entrySet()) {
+				getLogger().info("  [ {} ]: [ {} ]", versionEntry.getKey(), versionEntry.getValue());
+			}
+		}
+
+		getLogger().info("Bundle Updates:");
+		if ((bundleUpdates == null) || bundleUpdates.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (Map.Entry<String, BundleData> updateEntry : bundleUpdates.entrySet()) {
+				BundleData updateData = updateEntry.getValue();
+
+				getLogger().info("  [ {} ]: [ {} ]", updateEntry.getKey(), updateData.getSymbolicName());
+
+				getLogger().info("    [ Version ]: [ {} ]", updateData.getVersion());
+
+				if (updateData.getAddName()) {
+					getLogger().info("    [ Name ]: [ " + BundleData.ADDITIVE_CHAR + "{} ]", updateData.getName());
+				} else {
+					getLogger().info("    [ Name ]: [ {} ]", updateData.getName());
+				}
+
+				if (updateData.getAddDescription()) {
+					getLogger().info(
+						"    [ Description ]: [ " + BundleData.ADDITIVE_CHAR + "{} ]", updateData.getDescription());
+				} else {
+					getLogger().info("    [ Description ]: [ {} ]", updateData.getDescription());
+				}
+			}
+		}
+
+		getLogger().info("Java string substitutions:");
+		if ((directStrings == null) || directStrings.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (Map.Entry<String, String> directEntry : directStrings.entrySet()) {
+				getLogger().info("  [ {} ]: [ {} ]", directEntry.getKey(), directEntry.getValue());
+			}
+		}
+
+		getLogger().info("Text substitutions:");
+		if ((masterTextUpdates == null) || masterTextUpdates.isEmpty()) {
+			getLogger().info("  [ ** NONE ** ]");
+		} else {
+			for (Map.Entry<String, Map<String, String>> masterTextEntry : masterTextUpdates.entrySet()) {
+				getLogger().info("  Pattern [ {} ]", masterTextEntry.getKey());
+				for (Map.Entry<String, String> substitution : masterTextEntry.getValue()
+					.entrySet()) {
+					getLogger().info("    [ {} ]: [ {} ]", substitution.getKey(), substitution.getValue());
+				}
+			}
+		}
+	}
+
+	private SelectionRuleImpl selectionRules;
+
+	protected SelectionRuleImpl getSelectionRule() {
+		if (selectionRules == null) {
+			selectionRules = new SelectionRuleImpl(getLogger(), includes, excludes);
+		}
+		return selectionRules;
+	}
+
+	private SignatureRuleImpl signatureRules;
+	protected SignatureRuleImpl getSignatureRule() {
+		if (signatureRules == null) {
+			signatureRules = new SignatureRuleImpl(
+				getLogger(),
+				packageRenames, packageVersions, specificPackageVersions,
+				bundleUpdates,
+				masterTextUpdates, directStrings, perClassConstantStrings);
+		}
+		return signatureRules;
+	}
+
+	public boolean setInput() {
+		String useInputName = options.getInputFileName();
+		if (useInputName == null) {
+			getLogger().error(consoleMarker, "No input file was specified");
+			return false;
+		}
+
+		inputName = options.normalize(useInputName);
+		inputFile = new File(inputName);
+		inputPath = inputFile.getAbsolutePath();
+
+		if (!inputFile.exists()) {
+			getLogger().error(consoleMarker, "Input does not exist [ {} ] [ {} ]", inputName, inputPath);
+			return false;
+		}
+
+		getLogger().info(consoleMarker, "Input     [ {} ]", inputName);
+		getLogger().info(consoleMarker, "          [ {} ]", inputPath);
+		return true;
+	}
+
+	public static final String OUTPUT_PREFIX = "output_";
+
+	public boolean setOutput() {
+		String useOutputName = options.getOutputFileName();
+
+		boolean isExplicit = (useOutputName != null);
+
+		if (isExplicit) {
+			useOutputName = options.normalize(useOutputName);
+
+		} else {
+			int indexOfLastSlash = inputName.lastIndexOf('/');
+			if (indexOfLastSlash == -1) {
+				useOutputName = OUTPUT_PREFIX + inputName;
+			} else {
+				String inputPrefix = inputName.substring(0, indexOfLastSlash + 1);
+				String inputSuffix = inputName.substring(indexOfLastSlash + 1);
+				useOutputName = inputPrefix + OUTPUT_PREFIX + inputSuffix;
+			}
+		}
+
+		File useOutputFile = new File(useOutputName);
+		String useOutputPath = useOutputFile.getAbsolutePath();
+
+		boolean putIntoDirectory = (inputFile.isFile() && useOutputFile.isDirectory());
+
+		if (putIntoDirectory) {
+			useOutputName = useOutputName + '/' + inputName;
+			if (isVerbose) {
+				getLogger().info(consoleMarker, "Output generated using input name and output directory [ {} ]",
+					useOutputName);
+			}
+
+			useOutputFile = new File(useOutputName);
+			useOutputPath = useOutputFile.getAbsolutePath();
+		}
+
+		String outputCase;
+		if (isExplicit) {
+			if (putIntoDirectory) {
+				outputCase = "Explicit directory";
+			} else {
+				outputCase = "Explicit";
+			}
+		} else {
+			if (putIntoDirectory) {
+				outputCase = "Directory generated from input";
+			} else {
+				outputCase = "Generated from input";
+			}
+		}
+
+		getLogger().info(consoleMarker, "Output    [ {} ] ({})", useOutputName, outputCase);
+		getLogger().info(consoleMarker, "          [ {} ]", useOutputPath);
+
+		allowOverwrite = options.hasOption(AppOption.OVERWRITE);
+		if (allowOverwrite) {
+			getLogger().info(consoleMarker, "Overwrite of output is enabled");
+		}
+
+		if (useOutputFile.exists()) {
+			if (allowOverwrite) {
+				getLogger().info(consoleMarker, "Output exists and will be overwritten [ {} ]", useOutputPath);
+			} else {
+				getLogger().error(consoleMarker, "Output already exists [ {} ]", useOutputPath);
+				return false;
+			}
+		} else {
+			if (allowOverwrite) {
+				if (isVerbose) {
+					getLogger().info(consoleMarker, "Overwritten specified, but output [ {} ] does not exist",
+						useOutputPath);
+				}
+			}
+		}
+
+		outputName = useOutputName;
+		outputFile = useOutputFile;
+		outputPath = useOutputPath;
+
+		return true;
+	}
+
+	public void setActions() {
+		if (options.hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
+			widenArchiveNesting = true;
+			getLogger().info(consoleMarker, "Widened action nesting is enabled.");
+		} else {
+			widenArchiveNesting = false;
+		}
+	}
+
+	public CompositeActionImpl getRootAction() {
+		if (rootAction == null) {
+			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse,
+				isVerbose,
+				getBuffer(), getSelectionRule(), getSignatureRule());
+
+			DirectoryActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
+
+			ClassActionImpl classAction = useRootAction.addUsing(ClassActionImpl::new);
+			JavaActionImpl javaAction = useRootAction.addUsing(JavaActionImpl::new);
+			ServiceLoaderConfigActionImpl serviceConfigAction = useRootAction
+				.addUsing(ServiceLoaderConfigActionImpl::new);
+			ManifestActionImpl manifestAction = useRootAction.addUsing(ManifestActionImpl::newManifestAction);
+			ManifestActionImpl featureAction = useRootAction.addUsing(ManifestActionImpl::newFeatureAction);
+			PropertiesActionImpl propertiesAction = useRootAction.addUsing(PropertiesActionImpl::new);
+
+			JarActionImpl jarAction = useRootAction.addUsing(JarActionImpl::new);
+			WarActionImpl warAction = useRootAction.addUsing(WarActionImpl::new);
+			RarActionImpl rarAction = useRootAction.addUsing(RarActionImpl::new);
+			EarActionImpl earAction = useRootAction.addUsing(EarActionImpl::new);
+
+			TextActionImpl textAction = useRootAction.addUsing(TextActionImpl::new);
+			// XmlActionImpl xmlAction =
+			// useRootAction.addUsing( XmlActionImpl::new );
+
+			ZipActionImpl zipAction = useRootAction.addUsing(ZipActionImpl::new);
+
+			NullActionImpl nullAction = useRootAction.addUsing(NullActionImpl::new);
+
+			// Directory actions know about all actions except for directory
+			// actions.
+
+			directoryAction.addAction(classAction);
+			directoryAction.addAction(javaAction);
+			directoryAction.addAction(serviceConfigAction);
+			directoryAction.addAction(manifestAction);
+			directoryAction.addAction(featureAction);
+			directoryAction.addAction(zipAction);
+			directoryAction.addAction(jarAction);
+			directoryAction.addAction(warAction);
+			directoryAction.addAction(rarAction);
+			directoryAction.addAction(earAction);
+			directoryAction.addAction(textAction);
+
+			// Container actions nest per usual JavaEE nesting rules.
+			// That is, EAR can contain JAR, WAR, and RAR,
+			// WAR can container JAR, and RAR can contain JAR.
+
+			jarAction.addAction(classAction);
+			jarAction.addAction(javaAction);
+			jarAction.addAction(serviceConfigAction);
+			jarAction.addAction(manifestAction);
+			jarAction.addAction(featureAction);
+			jarAction.addAction(textAction);
+			jarAction.addAction(propertiesAction);
+
+			warAction.addAction(classAction);
+			warAction.addAction(javaAction);
+			warAction.addAction(serviceConfigAction);
+			warAction.addAction(manifestAction);
+			warAction.addAction(featureAction);
+			warAction.addAction(jarAction);
+			warAction.addAction(textAction);
+
+			rarAction.addAction(classAction);
+			rarAction.addAction(javaAction);
+			rarAction.addAction(serviceConfigAction);
+			rarAction.addAction(manifestAction);
+			rarAction.addAction(featureAction);
+			rarAction.addAction(jarAction);
+			rarAction.addAction(textAction);
+
+			earAction.addAction(manifestAction);
+			earAction.addAction(jarAction);
+			earAction.addAction(warAction);
+			earAction.addAction(rarAction);
+			earAction.addAction(textAction);
+
+			zipAction.addAction(classAction);
+			zipAction.addAction(javaAction);
+			zipAction.addAction(serviceConfigAction);
+			zipAction.addAction(manifestAction);
+			zipAction.addAction(featureAction);
+			zipAction.addAction(jarAction);
+			zipAction.addAction(warAction);
+			zipAction.addAction(rarAction);
+			zipAction.addAction(earAction);
+			zipAction.addAction(textAction);
+
+			// On occasion, the JavaEE nesting rules are too
+			// restrictive. Allow a slight widening of the
+			// usual nesting.
+
+			if (widenArchiveNesting) {
+				jarAction.addAction(jarAction);
+				jarAction.addAction(zipAction);
+
+				rarAction.addAction(zipAction);
+				warAction.addAction(zipAction);
+				earAction.addAction(zipAction);
+
+				zipAction.addAction(zipAction);
+			}
+
+			// Null actions must be added last: The null
+			// is always selected, which prevents selection of
+			// any action added after the null action.
+
+			directoryAction.addAction(nullAction);
+			jarAction.addAction(nullAction);
+			warAction.addAction(nullAction);
+			rarAction.addAction(nullAction);
+			earAction.addAction(nullAction);
+			zipAction.addAction(nullAction);
+
+			rootAction = useRootAction;
+		}
+
+		return rootAction;
+	}
+
+	public boolean acceptAction() {
+		String actionName = options.getOptionValue(AppOption.FILE_TYPE);
+		if (actionName != null) {
+			for (ActionImpl action : getRootAction().getActions()) {
+				if (action.getActionType()
+					.matches(actionName)) {
+					getLogger().info(consoleMarker, "Forced action [ {} ] [ {} ]", actionName, action.getName());
+					acceptedAction = action;
+					return true;
+				}
+			}
+			getLogger().error(consoleMarker, "No match for forced action [ {} ]", actionName);
+			return false;
+
+		} else {
+			acceptedAction = getRootAction().acceptAction(inputName, inputFile);
+			if (acceptedAction == null) {
+				getLogger().error(consoleMarker, "No action selected for input [ {} ]", inputName);
+				return false;
+			} else {
+				getLogger().info(consoleMarker, "Action selected for input [ {} ]: {}", inputName,
+					acceptedAction.getName());
+				return true;
+			}
+		}
+	}
+
+	public void transform() throws TransformException {
+
+		acceptedAction.apply(inputName, inputFile, outputFile);
+
+		if (isTerse) {
+			acceptedAction.getLastActiveChanges()
+				.displayTerse(getLogger(), inputPath, outputPath);
+		} else if (isVerbose) {
+			acceptedAction.getLastActiveChanges()
+				.displayVerbose(getLogger(), inputPath, outputPath);
+		} else {
+			acceptedAction.getLastActiveChanges()
+				.display(getLogger(), inputPath, outputPath);
+		}
+	}
+
+	public Changes getLastActiveChanges() {
+		if (acceptedAction != null) {
+			return acceptedAction.getLastActiveChanges();
 		}
 		return null;
-	}
-
-
-
-	//
-
-	Logger logger;
-
-	public Logger getLogger() {
-		return logger;
-	}
-
-	public void info(String message, Object... parms) {
-		getLogger().info(message, parms);
-	}
-
-	public boolean isDebugEnabled() {
-		return getLogger().isDebugEnabled();
-	}
-
-	public void debug(String message, Object... parms) {
-		getLogger().debug(message, parms);
-	}
-
-	protected void error(String message, Object... parms) {
-		getLogger().error(message, parms);
-	}
-
-	protected void error(String message, Throwable th, Object... parms) {
-		Logger useLogger = getLogger();
-		if (useLogger.isErrorEnabled()) {
-			message = String.format(message, parms);
-			useLogger.error(message, th);
-		}
-	}
-
-	//
-
-	public boolean	toSysOut;
-	public boolean	toSysErr;
-
-	protected void detectLogFile() {
-		toSysOut = TransformerLoggerFactory.logToSysOut();
-		if (toSysOut) {
-			outputPrint("Logging is to System.out\n");
-		}
-
-		toSysErr = TransformerLoggerFactory.logToSysErr();
-		if (toSysOut) {
-			outputPrint("Logging is to System.err\n");
-		}
-
-		outputPrint("Log file [ " + System.getProperty(LoggerProperty.LOG_FILE.getPropertyName()) + " ]");
-	}
-
-	public void dual_info(String message, Object... parms) {
-		if (parms.length != 0) {
-			message = String.format(message, parms);
-		}
-		if (!toSysOut && !toSysErr) {
-			systemPrint(getSystemOut(), message);
-		}
-		info(message);
-	}
-
-	public void dual_debug(String message, Object... parms) {
-		if ( !isDebugEnabled() ) {
-			return;
-		}
-
-		if (parms.length != 0) {
-			message = String.format(message, parms);
-		}
-		if (!toSysOut && !toSysErr) {
-			systemPrint(getSystemOut(), message);
-		}
-		debug(message);
-	}
-
-	protected void dual_error(String message, Object... parms) {
-		if (parms.length != 0) {
-			message = String.format(message, parms);
-		}
-		if (!toSysOut && !toSysErr) {
-			systemPrint(getSystemErr(), message);
-		}
-		info(message);
-	}
-
-	protected void dual_error(String message, Throwable th) {
-		if (!toSysOut && !toSysErr) {
-			PrintStream useOutput = getSystemErr();
-			systemPrint(useOutput, message);
-			th.printStackTrace(useOutput);
-		}
-		getLogger().error(message, th);
-	}
-
-	//
-
-	public TransformOptions createTransformOptions() {
-		return new TransformOptions(this);
-	}
-
-	public int run() {
-		displayCopyright();
-		displayBuildProperties();
-
-		try {
-			setParsedArgs();
-		} catch (ParseException e) {
-			errorPrint("Exception parsing command line arguments: %s", e);
-			help(getSystemOut());
-			return PARSE_ERROR_RC;
-		}
-
-		if ((getArgs().length == 0) || hasOption(AppOption.USAGE)) {
-			usage(getSystemOut());
-			return SUCCESS_RC; // TODO: Is this the correct return value?
-		} else if (hasOption(AppOption.HELP)) {
-			help(getSystemOut());
-			return SUCCESS_RC; // TODO: Is this the correct return value?
-		}
-
-		TransformOptions options = createTransformOptions();
-
-		try {
-			options.setLogging();
-		} catch (Exception e) {
-			errorPrint("Logger settings error: %s", e);
-			return LOGGER_SETTINGS_ERROR_RC;
-		}
-		detectLogFile();
-
-		if (!options.setInput()) {
-			return TRANSFORM_ERROR_RC;
-		}
-
-		if (!options.setOutput()) {
-			return TRANSFORM_ERROR_RC;
-		}
-
-		boolean loadedRules;
-		try {
-			loadedRules = options.setRules();
-		} catch (Exception e) {
-			dual_error("Exception loading rules:", e);
-			return RULES_ERROR_RC;
-		}
-		if (!loadedRules) {
-			dual_error("Transformation rules cannot be used");
-			return RULES_ERROR_RC;
-		}
-		if (options.isVerbose) {
-			options.logRules();
-		}
-
-		options.setActions();
-
-		if (!options.acceptAction()) {
-			dual_error("No action selected");
-			return FILE_TYPE_ERROR_RC;
-		}
-
-		try {
-			options.transform(); // throws JakartaTransformException
-			lastActiveChanges = options.getLastActiveChanges();
-		} catch (TransformException e) {
-			dual_error("Transform failure:", e);
-			return TRANSFORM_ERROR_RC;
-		} catch (Throwable th) {
-			dual_error("Unexpected failure:", th);
-			return TRANSFORM_ERROR_RC;
-		}
-
-		return SUCCESS_RC;
 	}
 }

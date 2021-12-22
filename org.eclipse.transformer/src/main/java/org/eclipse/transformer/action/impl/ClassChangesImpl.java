@@ -11,7 +11,7 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.PrintStream;
+import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.slf4j.Logger;
 
@@ -163,44 +163,21 @@ public class ClassChangesImpl extends ChangesImpl {
 	//
 
 	@Override
-	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
-		printStream.printf("Input name [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
-
-		printStream.printf("Output name [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
-
-		printStream.printf("Class name [ %s ] [ %s ]\n", getInputClassName(), getOutputClassName());
-
-		String useInputSuperName = getInputSuperName();
-		if (useInputSuperName != null) {
-			printStream.printf("Super class name [ %s ] [ %s ]\n", useInputSuperName, getOutputSuperName());
-		}
-
-		printStream.printf("Modified interfaces [ %s ]\n", getModifiedInterfaces());
-		printStream.printf("Modified fields     [ %s ]\n", getModifiedFields());
-		printStream.printf("Modified methods    [ %s ]\n", getModifiedMethods());
-		printStream.printf("Modified constants  [ %s ]\n", getModifiedConstants());
-	}
-
-	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if (!logger.isInfoEnabled()) {
-			return;
-		}
+		logger.info(consoleMarker, "Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 
-		logger.info("Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+		logger.info(consoleMarker, "Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
 
-		logger.info("Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-
-		logger.info("Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
+		logger.info(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
 
 		String useInputSuperName = getInputSuperName();
 		if (useInputSuperName != null) {
-			logger.info("Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
+			logger.info(consoleMarker, "Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
 		}
 
-		logger.info("Modified interfaces [ {} ]", getModifiedInterfaces());
-		logger.info("Modified fields     [ {} ]", getModifiedFields());
-		logger.info("Modified methods    [ {} ]", getModifiedMethods());
-		logger.info("Modified constants  [ {} ]", getModifiedConstants());
+		logger.info(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());
+		logger.info(consoleMarker, "Modified fields     [ {} ]", getModifiedFields());
+		logger.info(consoleMarker, "Modified methods    [ {} ]", getModifiedMethods());
+		logger.info(consoleMarker, "Modified constants  [ {} ]", getModifiedConstants());
 	}
 }

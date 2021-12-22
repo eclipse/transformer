@@ -28,7 +28,6 @@ import org.apache.maven.plugin.testing.resources.TestResources;
 import org.apache.maven.plugin.testing.stubs.DefaultArtifactHandlerStub;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
-import org.eclipse.transformer.Transformer;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -71,10 +70,7 @@ public class TransformMojoTest {
 		assertEquals("war", sourceArtifacts[0].getType());
 		assertNull(sourceArtifacts[0].getClassifier());
 
-		final Transformer transformer = mojo.getTransformer();
-		assertNotNull(transformer);
-
-		mojo.transform(transformer, sourceArtifacts[0]);
+		mojo.transform(sourceArtifacts[0]);
 
 		assertEquals(1, mavenProject.getAttachedArtifacts()
 			.size());
@@ -124,11 +120,8 @@ public class TransformMojoTest {
 			assertEquals("test" + (i + 1), sourceArtifacts[i].getClassifier());
 		}
 
-		final Transformer transformer = mojo.getTransformer();
-		assertNotNull(transformer);
-
 		for (int i = 0; i < 3; i++) {
-			mojo.transform(transformer, sourceArtifacts[i]);
+			mojo.transform(sourceArtifacts[i]);
 		}
 
 		assertEquals(6, mavenProject.getAttachedArtifacts()

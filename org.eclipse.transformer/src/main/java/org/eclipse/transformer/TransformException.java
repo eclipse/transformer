@@ -11,7 +11,7 @@
 
 package org.eclipse.transformer;
 
-public class TransformException extends Exception {
+public class TransformException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
 	public TransformException() {

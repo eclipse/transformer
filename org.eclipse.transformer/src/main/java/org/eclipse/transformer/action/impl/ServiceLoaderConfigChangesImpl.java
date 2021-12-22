@@ -11,7 +11,7 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.PrintStream;
+import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.slf4j.Logger;
 
@@ -62,21 +62,10 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 	//
 
 	@Override
-	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
-		printStream.printf("Input  [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
-		printStream.printf("Output [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
-		printStream.printf("Replacements [ %s ]\n", getChangedProviders());
-	}
-
-	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if (!logger.isInfoEnabled()) {
-			return;
-		}
-
-		logger.info("Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-		logger.info("Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-		logger.info("Replacements [ {} ]", getChangedProviders());
+		logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+		logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+		logger.info(consoleMarker, "Replacements [ {} ]", getChangedProviders());
 	}
 
 }

@@ -11,13 +11,14 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.PrintStream;
+import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.slf4j.Logger;
 
 public class ChangesImpl implements Changes {
+
 	public ChangesImpl() {
 		// Empty
 	}
@@ -104,32 +105,14 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
-	public void displayTerse(PrintStream printStream, String inputPath, String outputPath) {
-		if (!inputPath.equals(outputPath)) {
-			printStream.printf("Input [ %s ] as [ %s ]: %s\n", inputPath, outputPath, getChangeTag());
-		} else {
-			printStream.printf("Input [ %s ]: %s\n", inputPath, getChangeTag());
-		}
-	}
-
-	@Override
 	public void displayTerse(Logger logger, String inputPath, String outputPath) {
-		if (!logger.isInfoEnabled()) {
-			return;
-		}
-
 		if (!inputPath.equals(outputPath)) {
 			if (!inputPath.equals(outputPath)) {
-				logger.info("Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
+				logger.info(consoleMarker, "Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
 			} else {
-				logger.info("Input [ {} ]: {}", inputPath, getChangeTag());
+				logger.info(consoleMarker, "Input [ {} ]: {}", inputPath, getChangeTag());
 			}
 		}
-	}
-
-	@Override
-	public void display(PrintStream printStream, String inputPath, String outputPath) {
-		displayTerse(printStream, inputPath, outputPath);
 	}
 
 	@Override
@@ -138,20 +121,9 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
-	public void displayVerbose(PrintStream printStream, String inputPath, String outputPath) {
-		printStream.printf("Input  [ %s ] as [ %s ]\n", getInputResourceName(), inputPath);
-		printStream.printf("Output [ %s ] as [ %s ]\n", getOutputResourceName(), outputPath);
-		printStream.printf("Replacements  [ %s ]\n", getReplacements());
-	}
-
-	@Override
 	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		if (!logger.isInfoEnabled()) {
-			return;
-		}
-
-		logger.info("Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-		logger.info("Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-		logger.info("Replacements  [ {} ]", getReplacements());
+		logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+		logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+		logger.info(consoleMarker, "Replacements  [ {} ]", getReplacements());
 	}
 }

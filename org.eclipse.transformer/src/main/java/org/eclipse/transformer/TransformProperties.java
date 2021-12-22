@@ -147,7 +147,7 @@ public class TransformProperties {
 	// packageName=vBegin\;vEnd;pname=Version;...
 	// packageName=vBegin\;vMiddle\=vEnd;pName=version;...
 
-	protected static void setPackageVersions(
+	public static void setPackageVersions(
 		String newPackageName, String newVersion,
 		Map<String, String> packageVersions,
 		Map<String, Map<String, String>> specificPackageVersions) {

@@ -47,88 +47,13 @@ Further:
 
 Core APIs consist of the following:
 
-* Class **org.eclipse.transformer.Transformer** provides a standard **main** command line entry point.
+* Class **org.eclipse.transformer.cli.TransformerCLI** provides a standard **main** command line entry point.
 
-* Class **org.eclipse.transformer.Transformer** also provides for direct invocation from java using **int Transformer.runWith(PrintStream, PrintStream, String[])**.
+* Class **org.eclipse.transformer.Transformer** also provides for direct invocation from java.
 
 A third API is provided for Jakarta type transformations:
 
-* Class **org.eclipse.transformer.jakarta.JakartaTransformer** provides an addition **main** command line entry point.  **JakartaTransformer** is packaged with default update properties files and supplies these as default property files for the several update properties files.
-
-------
-
-~~~
-package org.eclipse.transformer;
-
-public class Transformer {
-
-    public static final int SUCCESS_RC = 0;
-    public static final int PARSE_ERROR_RC = 1;
-    public static final int RULES_ERROR_RC = 2;
-    public static final int TRANSFORM_ERROR_RC = 3;
-    public static final int FILE_TYPE_ERROR_RC = 4;
-    public static final int LOGGER_SETTINGS_ERROR_RC = 5;
-    public static final int REPORT_ERROR_RC = 6;
-
-    public static String[] RC_DESCRIPTIONS = new String[] {
-        "Success",
-        "Parse Error",
-        "Rules Error",
-        "Transform Error",
-        "File Type Error",
-        "Logger Settings Error"
-    };
-
-    public static void main(String[] args) {
-        @SuppressWarnings("unused")
-        int rc = runWith(System.out, System.err, args);
-    }
-
-    public static int runWith(PrintStream sysOut, PrintStream sysErr, String...args) {
-        Transformer trans = new Transformer(sysOut, sysErr);
-        trans.setArgs(args);
-
-        int rc = trans.run();
-        if ( rc == SUCCESS_RC ) {
-            System.out.println("Return Code [ 0 ]: Success");
-        } else {
-            System.err.println("Return Code [ " + rc + " ]: Failure [ " + RC_DESCRIPTIONS[rc] + " ]");
-        }
-        return rc;
-    }
-
-    public static int runWith(PrintStream sysOut, PrintStream sysErr, String...args) {
-        Transformer trans = new Transformer(sysOut, sysErr);
-        trans.setArgs(args);
-
-        int rc = trans.run();
-        if ( rc == SUCCESS_RC ) {
-            System.out.println("Return Code [ 0 ]: Success");
-        } else {
-            System.err.println("Return Code [ " + rc + " ]: Failure [ " + RC_DESCRIPTIONS[rc] + " ]");
-        }
-        return rc;
-    }
-}
-~~~
-
-------
-
-~~~
-package org.eclipse.transformer.jakarta;
-
-public class JakartaTransformer {
-
-    public static void main(String[] args) throws Exception {
-        Transformer jTrans = new Transformer(System.out, System.err);
-        jTrans.setOptionDefaults( JakartaTransformer.class, getOptionDefaults() );
-        jTrans.setArgs(args);
-
-        @SuppressWarnings("unused")
-        int rc = jTrans.run();
-    }
-}
-~~~
+* Class **org.eclipse.transformer.cli.JakartaTransformerCLI** provides an addition **main** command line entry point.  **JakartaTransformerCLI** uses **JakartaTransform** which is packaged with default update properties files and supplies these as default property files for the several update properties files.
 
 ------
 
