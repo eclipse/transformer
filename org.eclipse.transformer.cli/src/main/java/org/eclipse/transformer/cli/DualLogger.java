@@ -31,8 +31,7 @@ class DualLogger extends SubstituteLogger {
 	private final BiConsumer<String, Throwable>	systemOut;
 	private final BiConsumer<String, Throwable>	systemErr;
 
-	DualLogger(Logger delegate, BiConsumer<String, Throwable> systemOut,
-		BiConsumer<String, Throwable> systemErr) {
+	DualLogger(Logger delegate, BiConsumer<String, Throwable> systemOut, BiConsumer<String, Throwable> systemErr) {
 		super(delegate.getName(), null, true);
 		setDelegate(delegate);
 		this.systemOut = requireNonNull(systemOut);
@@ -200,4 +199,111 @@ class DualLogger extends SubstituteLogger {
 		super.error(marker, msg, t);
 	}
 
+	@Override
+	public void trace(Marker marker, String msg) {
+		if (isTraceEnabled(marker)) {
+			if (isConsoleMarker(marker)) {
+				systemOut.accept(msg, null);
+			}
+			super.trace(marker, msg);
+		}
+	}
+
+	@Override
+	public void trace(Marker marker, String format, Object arg) {
+		if (isTraceEnabled(marker)) {
+			if (isConsoleMarker(marker)) {
+				FormattingTuple tp = MessageFormatter.format(format, arg);
+				systemOut.accept(tp.getMessage(), tp.getThrowable());
+				super.trace(marker, tp.getMessage(), tp.getThrowable());
+			} else {
+				super.trace(marker, format, arg);
+			}
+		}
+	}
+
+	@Override
+	public void trace(Marker marker, String format, Object arg1, Object arg2) {
+		if (isTraceEnabled(marker)) {
+			if (isConsoleMarker(marker)) {
+				FormattingTuple tp = MessageFormatter.format(format, arg1, arg2);
+				systemOut.accept(tp.getMessage(), tp.getThrowable());
+				super.trace(marker, tp.getMessage(), tp.getThrowable());
+			} else {
+				super.trace(marker, format, arg1, arg2);
+			}
+		}
+	}
+
+	@Override
+	public void trace(Marker marker, String format, Object... arguments) {
+		if (isTraceEnabled(marker)) {
+			if (isConsoleMarker(marker)) {
+				FormattingTuple tp = MessageFormatter.format(format, arguments);
+				systemOut.accept(tp.getMessage(), tp.getThrowable());
+				super.trace(marker, tp.getMessage(), tp.getThrowable());
+			} else {
+				super.trace(marker, format, arguments);
+			}
+		}
+	}
+
+	@Override
+	public void trace(Marker marker, String msg, Throwable t) {
+		if (isTraceEnabled(marker)) {
+			if (isConsoleMarker(marker)) {
+				systemOut.accept(msg, t);
+			}
+			super.trace(marker, msg, t);
+		}
+	}
+
+	@Override
+	public void warn(Marker marker, String msg) {
+		if (isConsoleMarker(marker)) {
+			systemErr.accept(msg, null);
+		}
+		super.warn(marker, msg);
+	}
+
+	@Override
+	public void warn(Marker marker, String format, Object arg) {
+		if (isConsoleMarker(marker)) {
+			FormattingTuple tp = MessageFormatter.format(format, arg);
+			systemErr.accept(tp.getMessage(), tp.getThrowable());
+			super.warn(marker, tp.getMessage(), tp.getThrowable());
+			return;
+		}
+		super.warn(marker, format, arg);
+	}
+
+	@Override
+	public void warn(Marker marker, String format, Object arg1, Object arg2) {
+		if (isConsoleMarker(marker)) {
+			FormattingTuple tp = MessageFormatter.format(format, arg1, arg2);
+			systemErr.accept(tp.getMessage(), tp.getThrowable());
+			super.warn(marker, tp.getMessage(), tp.getThrowable());
+			return;
+		}
+		super.warn(marker, format, arg1, arg2);
+	}
+
+	@Override
+	public void warn(Marker marker, String format, Object... arguments) {
+		if (isConsoleMarker(marker)) {
+			FormattingTuple tp = MessageFormatter.format(format, arguments);
+			systemErr.accept(tp.getMessage(), tp.getThrowable());
+			super.warn(marker, tp.getMessage(), tp.getThrowable());
+			return;
+		}
+		super.warn(marker, format, arguments);
+	}
+
+	@Override
+	public void warn(Marker marker, String msg, Throwable t) {
+		if (isConsoleMarker(marker)) {
+			systemErr.accept(msg, t);
+		}
+		super.warn(marker, msg, t);
+	}
 }
