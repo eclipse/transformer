@@ -56,6 +56,9 @@ public class TransformMojo extends AbstractMojo {
 	@Parameter(defaultValue = "true", property = "transformer-plugin.overwrite", required = true)
 	private boolean				overwrite;
 
+	@Parameter(defaultValue = "true", property = "transformer-plugin.attach", required = true)
+	private boolean				attach;
+
 	@Parameter(property = "transformer-plugin.renames", defaultValue = "")
 	private String				rulesRenamesUri;
 
@@ -193,7 +196,9 @@ public class TransformMojo extends AbstractMojo {
 			throw new MojoFailureException("Transformer failed with an error: " + rc);
 		}
 
-		projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
+		if (attach) {
+			projectHelper.attachArtifact(project, sourceArtifact.getType(), targetClassifier, targetFile);
+		}
 	}
 
 	/**
@@ -237,11 +242,16 @@ public class TransformMojo extends AbstractMojo {
 		this.projectHelper = projectHelper;
 	}
 
-	void setOverwrite(Boolean overwrite) {
+	void setOverwrite(boolean overwrite) {
 		this.overwrite = overwrite;
 	}
 
 	void setOutputDirectory(File outputDirectory) {
 		this.outputDirectory = outputDirectory;
 	}
+
+	void setAttach(boolean attach) {
+		this.attach = attach;
+	}
+
 }
