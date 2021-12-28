@@ -214,29 +214,14 @@ public class TransformerCLI implements TransformOptions {
 
 	private final PrintStream sysOut;
 
-	protected PrintStream getSystemOut() {
+	public PrintStream getSystemOut() {
 		return sysOut;
 	}
 
 	private final PrintStream sysErr;
 
-	protected PrintStream getSystemErr() {
+	public PrintStream getSystemErr() {
 		return sysErr;
-	}
-
-	public void systemPrint(PrintStream output, String message, Object... parms) {
-		if (parms.length != 0) {
-			message = String.format(message, parms);
-		}
-		output.println(message);
-	}
-
-	public void errorPrint(String message, Object... parms) {
-		systemPrint(getSystemErr(), message, parms);
-	}
-
-	public void outputPrint(String message, Object... parms) {
-		systemPrint(getSystemOut(), message, parms);
 	}
 
 	//
