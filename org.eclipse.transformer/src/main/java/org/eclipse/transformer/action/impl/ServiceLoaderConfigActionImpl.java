@@ -47,10 +47,10 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 
 	//
 
-	public ServiceLoaderConfigActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public ServiceLoaderConfigActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 	}
 
 	//
@@ -111,7 +111,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 		if (outputName == null) {
 			outputName = inputName;
 		} else {
-			verbose("Service name  [ {} ] -> [ {} ]", inputName, outputName);
+			getLogger().debug("Service name  [ {} ] -> [ {} ]", inputName, outputName);
 		}
 		setResourceNames(inputName, outputName);
 
@@ -128,14 +128,14 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 		try {
 			transform(reader, writer); // throws IOException
 		} catch (IOException e) {
-			error("Failed to transform [ {} ]", e, inputName);
+			getLogger().error("Failed to transform [ {} ]", inputName, e);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
 		} catch (IOException e) {
-			error("Failed to flush [ {} ]", e, inputName);
+			getLogger().error("Failed to flush [ {} ]", inputName, e);
 			return null;
 		}
 

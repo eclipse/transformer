@@ -116,7 +116,7 @@ public class ClassActionTest {
 		renames.put("original.provides", "transformed.provides");
 		renames.put("original.provides.impl", "transformed.provides.impl");
 		renames.put("original.main", "transformed.main");
-		Action classAction = new ClassActionImpl(logger, false, false, new InputBufferImpl(),
+		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
@@ -211,7 +211,7 @@ public class ClassActionTest {
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.host", "transformed.host");
 		renames.put("original.member", "transformed.member");
-		Action classAction = new ClassActionImpl(logger, false, false, new InputBufferImpl(),
+		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
@@ -254,7 +254,7 @@ public class ClassActionTest {
 		renames.put("original.enclosing", "transformed.enclosing");
 		renames.put("original.param", "transformed.param");
 		renames.put("original.result", "transformed.result");
-		Action classAction = new ClassActionImpl(logger, false, false, new InputBufferImpl(),
+		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		classAction.apply(testName, inputStream, inputStream.available(), outputStream);

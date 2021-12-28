@@ -21,10 +21,10 @@ import org.slf4j.Logger;
  */
 public class PropertiesActionImpl extends ActionImpl {
 
-	public PropertiesActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public PropertiesActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 	}
 
 	@Override
@@ -37,7 +37,7 @@ public class PropertiesActionImpl extends ActionImpl {
 
 		String outputName = transformBinaryType(inputName);
 		if (outputName != null) {
-			verbose("Properties file %s, relocated to %s", inputName, outputName);
+			getLogger().debug("Properties file {}, relocated to {}", inputName, outputName);
 			setResourceNames(inputName, outputName);
 			return new ByteData(outputName, inputBytes, 0, inputLength);
 		} else {

@@ -16,7 +16,7 @@ public enum LoggerProperty {
 	LOG_CACHE_OUTPUT("org.slf4j.simpleLogger.cacheOutputStream"),
 
 	LOG_LEVEL_ROOT("org.slf4j.simpleLogger.defaultLogLevel"),
-	LOG_LEVEL_CHILD("org.slf4j.simpleLogger.log.a.b.c"),
+	LOG_LEVEL_PREFIX("org.slf4j.simpleLogger.log."),
 	LOG_LEVEL_IN_BRACkETS("org.slf4j.simpleLogger.levelInBrackets"),
 
 	LOG_SHOW_DATE_TIME("org.slf4j.simpleLogger.showDateTime"),
@@ -32,7 +32,8 @@ public enum LoggerProperty {
 
 	private final String propertyName;
 
-	public String getPropertyName() {
+	@Override
+	public String toString() {
 		return propertyName;
 	}
 }

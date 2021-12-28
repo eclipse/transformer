@@ -82,7 +82,7 @@ class DualLogger extends SubstituteLogger {
 	public void debug(Marker marker, String format, Object... arguments) {
 		if (isDebugEnabled(marker)) {
 			if (isConsoleMarker(marker)) {
-				FormattingTuple tp = MessageFormatter.format(format, arguments);
+				FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
 				systemOut.accept(tp.getMessage(), tp.getThrowable());
 				super.debug(marker, tp.getMessage(), tp.getThrowable());
 			} else {
@@ -134,7 +134,7 @@ class DualLogger extends SubstituteLogger {
 	@Override
 	public void info(Marker marker, String format, Object... arguments) {
 		if (isConsoleMarker(marker)) {
-			FormattingTuple tp = MessageFormatter.format(format, arguments);
+			FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
 			systemOut.accept(tp.getMessage(), tp.getThrowable());
 			super.info(marker, tp.getMessage(), tp.getThrowable());
 			return;
@@ -183,7 +183,7 @@ class DualLogger extends SubstituteLogger {
 	@Override
 	public void error(Marker marker, String format, Object... arguments) {
 		if (isConsoleMarker(marker)) {
-			FormattingTuple tp = MessageFormatter.format(format, arguments);
+			FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
 			systemErr.accept(tp.getMessage(), tp.getThrowable());
 			super.error(marker, tp.getMessage(), tp.getThrowable());
 			return;
@@ -239,7 +239,7 @@ class DualLogger extends SubstituteLogger {
 	public void trace(Marker marker, String format, Object... arguments) {
 		if (isTraceEnabled(marker)) {
 			if (isConsoleMarker(marker)) {
-				FormattingTuple tp = MessageFormatter.format(format, arguments);
+				FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
 				systemOut.accept(tp.getMessage(), tp.getThrowable());
 				super.trace(marker, tp.getMessage(), tp.getThrowable());
 			} else {
@@ -291,7 +291,7 @@ class DualLogger extends SubstituteLogger {
 	@Override
 	public void warn(Marker marker, String format, Object... arguments) {
 		if (isConsoleMarker(marker)) {
-			FormattingTuple tp = MessageFormatter.format(format, arguments);
+			FormattingTuple tp = MessageFormatter.arrayFormat(format, arguments);
 			systemErr.accept(tp.getMessage(), tp.getThrowable());
 			super.warn(marker, tp.getMessage(), tp.getThrowable());
 			return;

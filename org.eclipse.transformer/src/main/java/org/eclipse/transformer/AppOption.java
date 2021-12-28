@@ -22,7 +22,7 @@ public enum AppOption {
 	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-	LOG_TERSE(new Settings("q", "quiet", "Display quiet output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+	LOG_QUIET(new Settings("q", "quiet", "Display quiet output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
 	LOG_VERBOSE(new Settings("v", "verbose", "Display verbose output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, Settings.NO_GROUP)),

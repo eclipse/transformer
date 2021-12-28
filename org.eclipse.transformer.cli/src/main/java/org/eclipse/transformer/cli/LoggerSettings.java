@@ -17,7 +17,7 @@ import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 
 public class LoggerSettings {
-	public final boolean	isTerse;
+	public final boolean	isQuiet;
 	public final boolean	isVerbose;
 
 	public final List<String>	properties;
@@ -28,7 +28,7 @@ public class LoggerSettings {
 	public final String		logFileName;
 
 	public LoggerSettings(TransformOptions options) {
-		this.isTerse = options.hasOption(AppOption.LOG_TERSE);
+		this.isQuiet = options.hasOption(AppOption.LOG_QUIET);
 		this.isVerbose = options.hasOption(AppOption.LOG_VERBOSE);
 
 		this.properties = options.getOptionValues(AppOption.LOG_PROPERTY);
@@ -38,20 +38,5 @@ public class LoggerSettings {
 
 		this.logLevel = options.getOptionValue(AppOption.LOG_LEVEL);
 		this.logFileName = options.normalize(options.getOptionValue(AppOption.LOG_FILE));
-
-		// System.out.println("LoggerSettings: isTerse [ " + this.isTerse +
-		// " ]");
-		// System.out.println("LoggerSettings: isVerbose [ " +
-		// this.isVerbose + " ]");
-		// System.out.println("LoggerSettings: properties [ " +
-		// this.properties + " ]");
-		// System.out.println("LoggerSettings: propertyFileName [ " +
-		// this.propertyFileName + " ]");
-		// System.out.println("LoggerSettings: logName [ " + this.logName +
-		// " ]");
-		// System.out.println("LoggerSettings: logLevel [ " + this.logLevel
-		// + " ]");
-		// System.out.println("LoggerSettings: logFileName [ " +
-		// this.logFileName + " ]");
 	}
 }

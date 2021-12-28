@@ -246,7 +246,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+			jakartaManifestAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdates(), null, getDirectStrings(),
 					Collections.emptyMap()),
@@ -261,7 +261,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaFeatureAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+			jakartaFeatureAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()),
@@ -279,7 +279,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestActionTx = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+			jakartaManifestActionTx = new ManifestActionImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()),
@@ -294,7 +294,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			specificJakartaManifestAction = new ManifestActionImpl(useLogger, false, false, new InputBufferImpl(),
+			specificJakartaManifestAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()),
@@ -671,10 +671,10 @@ public class TestTransformManifest extends CaptureTest {
 	 * Subclass which allows us to call protected methods of ManifestActionImpl
 	 */
 	class ManifestActionImpl_Test extends ManifestActionImpl {
-		public ManifestActionImpl_Test(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		public ManifestActionImpl_Test(Logger logger, InputBufferImpl buffer,
 			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule, boolean isManifest) {
 
-			super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule, isManifest);
+			super(logger, buffer, selectionRule, signatureRule, isManifest);
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {
@@ -700,7 +700,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (manifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			manifestAction_test = new ManifestActionImpl_Test(useLogger, false, false, new InputBufferImpl(),
+			manifestAction_test = new ManifestActionImpl_Test(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()),
@@ -716,7 +716,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificManifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			specificManifestAction_test = new ManifestActionImpl_Test(useLogger, false, false, new InputBufferImpl(),
+			specificManifestAction_test = new ManifestActionImpl_Test(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),

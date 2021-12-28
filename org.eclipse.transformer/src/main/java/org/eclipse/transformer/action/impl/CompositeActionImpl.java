@@ -29,10 +29,10 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 		return action;
 	}
 
-	public CompositeActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public CompositeActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 
 		this.actions = new ArrayList<>();
 		this.acceptedAction = null;
