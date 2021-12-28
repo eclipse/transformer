@@ -15,10 +15,10 @@ import org.eclipse.transformer.action.ActionType;
 import org.slf4j.Logger;
 
 public class EarActionImpl extends ContainerActionImpl {
-	public EarActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public EarActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 	}
 
 	//

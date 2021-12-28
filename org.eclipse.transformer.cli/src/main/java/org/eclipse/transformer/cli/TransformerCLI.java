@@ -359,7 +359,7 @@ public class TransformerCLI implements TransformOptions {
 			helpWriter.println("Logging Properties:");
 			for (LoggerProperty loggerProperty : LoggerProperty
 				.values()) {
-				helpWriter.println("  [ " + loggerProperty.getPropertyName() + " ]");
+				helpWriter.println("  [ " + loggerProperty + " ]");
 			}
 
 			helpWriter.flush();

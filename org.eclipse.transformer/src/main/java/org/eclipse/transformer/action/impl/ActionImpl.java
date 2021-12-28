@@ -43,12 +43,10 @@ import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
 public abstract class ActionImpl implements Action {
-	public ActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public ActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
 		this.logger = logger;
-		this.isTerse = isTerse;
-		this.isVerbose = isVerbose;
 
 		this.buffer = buffer;
 
@@ -64,81 +62,20 @@ public abstract class ActionImpl implements Action {
 	//
 
 	public interface ActionInit<A extends ActionImpl> {
-		A apply(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+		A apply(Logger logger, InputBufferImpl buffer,
 			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule);
 	}
 
 	public <A extends ActionImpl> A createUsing(ActionInit<A> init) {
-		return init.apply(getLogger(), getIsTerse(), getIsVerbose(), getBuffer(), getSelectionRule(),
+		return init.apply(getLogger(), getBuffer(), getSelectionRule(),
 			getSignatureRule());
 	}
 
 	//
 
 	private final Logger	logger;
-	private final boolean	isTerse;
-	private final boolean	isVerbose;
-
 	public Logger getLogger() {
 		return logger;
-	}
-
-	public boolean getIsTerse() {
-		return isTerse;
-	}
-
-	public boolean getIsVerbose() {
-		return isVerbose;
-	}
-
-	public void trace(String message, Object... parms) {
-		getLogger().trace(message, parms);
-	}
-
-	public void debug(String message, Object... parms) {
-		getLogger().debug(message, parms);
-	}
-
-	public boolean isDebugEnabled() {
-		return getLogger().isDebugEnabled();
-	}
-
-	public void info(String message, Object... parms) {
-		getLogger().info(message, parms);
-	}
-
-	public void terse(String message, Object... parms) {
-		if (getIsTerse()) {
-			info(message, parms);
-		}
-	}
-
-	public void verbose(String message, Object... parms) {
-		if (getIsVerbose()) {
-			info(message, parms);
-		}
-	}
-
-	public void warn(String message, Object... parms) {
-		getLogger().warn(message, parms);
-	}
-
-	public void error(String message, Object... parms) {
-		getLogger().error(message, parms);
-	}
-
-	public void error(String message, Throwable th, Object... parms) {
-		Logger useLogger = getLogger();
-		if (!useLogger.isErrorEnabled()) {
-			return;
-		}
-
-		if (parms.length != 0) {
-			message = message.replace("{}", "%s");
-			message = String.format(message, parms);
-		}
-
-		useLogger.error(message, th);
 	}
 
 	//
@@ -223,21 +160,20 @@ public abstract class ActionImpl implements Action {
 		// System.out.println("  Specific version [ " + specificVersion + " ]");
 
 		if ( (specificVersion == null) && (genericVersion == null) ) {
-			debug("Manifest attribute {}: Package {} version {} is unchanged",
+			getLogger().debug("Manifest attribute {}: Package {} version {} is unchanged",
 				attributeName, packageName, oldVersion);
 			return null;
 		} else if (specificVersion == null) {
-			verbose("Manifest attribute {}: Generic update of package {} version {} to {}",
+			getLogger().debug("Manifest attribute {}: Generic update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, genericVersion);
 			return genericVersion;
 		} else if (genericVersion == null) {
-			verbose("Manifest attribute {}: Specific update of package {} version {} to {}",
+			getLogger().debug("Manifest attribute {}: Specific update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, specificVersion);
 			return specificVersion;
 		} else {
-			verbose(
-				"Manifest attribute {}: Specific update of package {} version {} to {}" +
-					" overrides generic version update {}",
+			getLogger().debug(
+				"Manifest attribute {}: Specific update of package {} version {} to {} overrides generic version update {}",
 				attributeName, packageName, oldVersion, specificVersion, genericVersion);
 			return specificVersion;
 		}
@@ -370,9 +306,7 @@ public abstract class ActionImpl implements Action {
 	protected ChangesImpl				lastActiveChanges;
 
 	protected void startRecording(String inputName) {
-		if (getIsVerbose()) {
-			info("Start processing [ {} ] using [ {} ]", inputName, getActionType());
-		}
+		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
 
 		if (numActiveChanges == changes.size()) {
 			changes.add(activeChanges = newChanges());
@@ -384,7 +318,7 @@ public abstract class ActionImpl implements Action {
 	}
 
 	protected void stopRecording(String inputName) {
-		if (getIsVerbose()) {
+		if (getLogger().isDebugEnabled()) {
 			String changeText;
 
 			boolean nameChanged = activeChanges.hasResourceNameChange();
@@ -400,7 +334,7 @@ public abstract class ActionImpl implements Action {
 				changeText = "No changes";
 			}
 
-			info("Stop processing [ {} ] using [ {} ]: {}", inputName, getActionType(), changeText);
+			getLogger().debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getActionType(), changeText);
 		}
 
 		lastActiveChanges = activeChanges;
@@ -557,54 +491,27 @@ public abstract class ActionImpl implements Action {
 		String className = getClass().getSimpleName();
 		String methodName = "apply";
 
-		debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
+		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 		ByteData inputData = read(inputName, inputStream, inputCount); // throws
 																		// JakartaTransformException
 
-		if (isDebugEnabled()) {
-			// Issue #158: This clogs output.
-
-//			byte[] altInputData;
-//			if (inputData.length < inputData.data.length) {
-//				altInputData = new byte[inputData.length];
-//				System.arraycopy(inputData.data, 0, altInputData, 0, inputData.length);
-//			} else {
-//				altInputData = inputData.data;
-//			}
-//			debug("[ {}.{} ]: Obtained [ {} ] [ {} ] [ {} ]", className, methodName, inputName, inputData.length,
-//			    altInputData);
-
-			debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
-		}
+		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
 
 		ByteData outputData;
 		try {
 			outputData = apply(inputName, inputData.data, inputData.length);
 			// throws JakartaTransformException
 		} catch (Throwable th) {
-			error("Transform failure [ {} ]", th, inputName);
+			getLogger().error("Transform failure [ {} ]", inputName, th);
 			outputData = null;
 		}
 
 		if (outputData == null) {
-			debug("[ {}.{} ]: Null transform", className, methodName);
+			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			if (isDebugEnabled()) {
-				// Issue #158: This clogs output.
-
-//				byte[] altOutputData;
-//				if (outputData.length < outputData.data.length) {
-//					altOutputData = new byte[outputData.length];
-//					System.arraycopy(outputData.data, 0, altOutputData, 0, outputData.length);
-//				} else {
-//					altOutputData = outputData.data;
-//				}
-//				debug("[ {}.{} ]: Active transform [ {} ] [ {} ] [ {} ]", className, methodName, outputData.name,
-//						outputData.length, altOutputData);
-				debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
-						outputData.length);
-			}
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
+				outputData.length);
 		}
 
 		return new InputStreamData(outputData);
@@ -631,25 +538,25 @@ public abstract class ActionImpl implements Action {
 		String className = getClass().getSimpleName();
 		String methodName = "apply";
 
-		debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
+		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 		ByteData inputData = read(inputName, inputStream, intInputCount); // throws
 																			// JakartaTransformException
-		debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
 
 		ByteData outputData;
 		try {
 			outputData = apply(inputName, inputData.data, inputData.length);
 			// throws JakartaTransformException
 		} catch (Throwable th) {
-			error("Transform failure [ {} ]", th, inputName);
+			getLogger().error("Transform failure [ {} ]", inputName, th);
 			outputData = null;
 		}
 
 		if (outputData == null) {
-			debug("[ {}.{} ]: Null transform", className, methodName);
+			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
 				outputData.length);
 		}
 
@@ -661,7 +568,7 @@ public abstract class ActionImpl implements Action {
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
 		long inputLength = inputFile.length();
-		debug("Input [ {} ] Length [ {} ]", inputName, inputLength);
+		getLogger().debug("Input [ {} ] Length [ {} ]", inputName, inputLength);
 
 		InputStream inputStream = openInputStream(inputFile);
 		try {

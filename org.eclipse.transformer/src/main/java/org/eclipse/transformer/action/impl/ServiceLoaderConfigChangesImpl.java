@@ -62,10 +62,13 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 	//
 
 	@Override
-	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-		logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-		logger.info(consoleMarker, "Replacements [ {} ]", getChangedProviders());
+	public void log(Logger logger, String inputPath, String outputPath) {
+		if (logger.isDebugEnabled(consoleMarker)) {
+			logger.debug(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+			logger.debug(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+			logger.debug(consoleMarker, "Replacements [ {} ]", getChangedProviders());
+		} else {
+			super.log(logger, inputPath, outputPath);
+		}
 	}
-
 }

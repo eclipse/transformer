@@ -40,10 +40,10 @@ import aQute.lib.io.ByteBufferOutputStream;
 
 public class XmlActionImpl extends ActionImpl {
 
-	public XmlActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public XmlActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 	}
 
 	//
@@ -126,14 +126,14 @@ public class XmlActionImpl extends ActionImpl {
 			transformAsPlainText(inputName, reader, writer); // throws
 																// IOException
 		} catch (IOException e) {
-			error("Failed to transform [ {} ]", e, inputName);
+			getLogger().error("Failed to transform [ {} ]", inputName, e);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
 		} catch (IOException e) {
-			error("Failed to flush [ {} ]", e, inputName);
+			getLogger().error("Failed to flush [ {} ]", inputName, e);
 			return null;
 		}
 
@@ -298,19 +298,19 @@ public class XmlActionImpl extends ActionImpl {
 		}
 
 		protected void appendLine(char c) {
-			lineBuilder.append(c);
-			lineBuilder.append('\n');
+			lineBuilder.append(c)
+				.append('\n');
 		}
 
 		protected void append(String text) {
-			debug("appending [" + text + "]");
+			getLogger().debug("append [{}]", text);
 			lineBuilder.append(text);
 		}
 
 		protected void appendLine(String text) {
-			debug("appendline[" + text + "]");
-			lineBuilder.append(text);
-			lineBuilder.append('\n');
+			getLogger().debug("appendline [{}]", text);
+			lineBuilder.append(text)
+				.append('\n');
 		}
 
 		protected void emit() throws SAXException {
@@ -352,7 +352,7 @@ public class XmlActionImpl extends ActionImpl {
 			append("<?");
 			append(target);
 			if ((data != null) && data.length() > 0) {
-				debug("processingInstruction: data[" + data + "]");
+				getLogger().debug("processingInstruction: data[{}]", data);
 				append(' ');
 				append(data);
 			}
@@ -378,8 +378,8 @@ public class XmlActionImpl extends ActionImpl {
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-			debug("startElement: uri[" + uri + "] localName[" + localName + "] qName[" + qName + "] attributes["
-				+ attributes + "]");
+			getLogger().debug("startElement: uri[{}] localName[{}] qName[{}] attributes[{}]", uri, localName, qName,
+				attributes);
 			append('<' + localName);
 			append(uri);
 
@@ -388,10 +388,10 @@ public class XmlActionImpl extends ActionImpl {
 				for (int i = 0; i < numberAttributes; i++) {
 					append(' ');
 					append(attributes.getQName(i));
-					debug("startElement: attributes.getQName(" + i + ")[" + attributes.getQName(i) + "]");
+					getLogger().debug("startElement: attributes.getQName({})[{}]", i, attributes.getQName(i));
 					append("=\"");
 					append(attributes.getValue(i));
-					debug("startElement: attributes.getValue(" + i + ")[" + attributes.getValue(i) + "]");
+					getLogger().debug("startElement: attributes.getValue({})[{}]", i, attributes.getValue(i));
 					append('"');
 				}
 			}
@@ -404,7 +404,7 @@ public class XmlActionImpl extends ActionImpl {
 		@SuppressWarnings("unused")
 		@Override
 		public void endElement(String uri, String localName, String qName) throws SAXException {
-			debug("endElement: uri[" + uri + "] localName[" + localName + "] qName[" + qName + "]");
+			getLogger().debug("endElement: uri[{}] localName[{}] qName[{}]", uri, localName, qName);
 			append("</");
 			append(localName + '>');
 		}
@@ -413,7 +413,7 @@ public class XmlActionImpl extends ActionImpl {
 		@Override
 		public void characters(char[] chars, int start, int length) throws SAXException {
 			String initialText = new String(chars, start, length);
-			debug("characters: initialText[" + initialText + "]");
+			getLogger().debug("characters: initialText[{}]", initialText);
 
 			String finalText = XmlActionImpl.this.replaceText(inputName, initialText);
 			if (finalText == null) {
@@ -421,7 +421,7 @@ public class XmlActionImpl extends ActionImpl {
 				XmlActionImpl.this.addReplacement();
 			}
 
-			debug("characters:  finalText[" + finalText + "]");
+			getLogger().debug("characters:  finalText[{}]", finalText);
 			append(finalText);
 		}
 

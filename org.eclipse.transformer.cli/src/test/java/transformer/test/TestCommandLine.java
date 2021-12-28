@@ -86,11 +86,14 @@ class TestCommandLine {
 	void testSetLogLevel() throws Exception {
 		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
 			"--logName", name,
-			"--logProperty", "org.slf4j.simpleLogger.log." + name + "=debug"
+			"--quiet"
 		});
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
-		assertThat(logger.isDebugEnabled()).isTrue();
+		assertThat(logger.isDebugEnabled()).isFalse();
+		assertThat(logger.isInfoEnabled()).isFalse();
+		assertThat(logger.isWarnEnabled()).isFalse();
+		assertThat(logger.isErrorEnabled()).isTrue();
 	}
 
 	@Test
@@ -104,7 +107,7 @@ class TestCommandLine {
 		try (PrintStream out = new PrintStream(sysOut); PrintStream err = new PrintStream(sysErr)) {
 			TransformerCLI cli = new TransformerCLI(out, err, new String[] {
 				"--logName", name,
-				"--logProperty", "org.slf4j.simpleLogger.log." + name + "=debug",
+				"--verbose",
 				"--logFile", logFileName
 			});
 			Transformer transformer = new Transformer(cli.getLogger(), cli);

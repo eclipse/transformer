@@ -38,10 +38,10 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 		return action;
 	}
 
-	public ContainerActionImpl(Logger logger, boolean isTerse, boolean isVerbose, InputBufferImpl buffer,
+	public ContainerActionImpl(Logger logger, InputBufferImpl buffer,
 		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-		super(logger, isTerse, isVerbose, buffer, selectionRule, signatureRule);
+		super(logger, buffer, selectionRule, signatureRule);
 
 		this.compositeAction = createUsing(CompositeActionImpl::new);
 	}
@@ -107,19 +107,20 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	//
 
 	protected void recordUnaccepted(String resourceName) {
-		debug("Resource [ {} ]: Not accepted", resourceName);
+		getLogger().debug("Resource [ {} ]: Not accepted", resourceName);
 
 		getActiveChanges().record();
 	}
 
 	protected void recordUnselected(Action action, String resourceName) {
-		debug("Resource [ {} ] Action [ {} ]: Accepted but not selected", resourceName, action.getName());
+		getLogger().debug("Resource [ {} ] Action [ {} ]: Accepted but not selected", resourceName, action.getName());
 
 		getActiveChanges().record(action, !ContainerChanges.HAS_CHANGES);
 	}
 
 	protected void recordTransform(Action action, String resourceName) {
-		debug("Resource [ {} ] Action [ {} ]: Changes [ {} ]", resourceName, action.getName(), action.hadChanges());
+		getLogger().debug("Resource [ {} ] Action [ {} ]: Changes [ {} ]", resourceName, action.getName(),
+			action.hadChanges());
 
 		getActiveChanges().record(action);
 	}
@@ -186,7 +187,8 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 				inputName = inputEntry.getName();
 				long inputLength = inputEntry.getSize();
 
-				debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName, inputLength);
+				getLogger().debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName,
+					inputLength);
 
 				boolean selected = select(inputName);
 				Action acceptedAction = acceptAction(inputName);

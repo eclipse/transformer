@@ -38,9 +38,5 @@ public interface Changes {
 
 	void clearChanges();
 
-	void displayVerbose(Logger logger, String inputPath, String outputPath);
-
-	void display(Logger logger, String inputPath, String outputPath);
-
-	void displayTerse(Logger logger, String inputPath, String outputPath);
+	void log(Logger logger, String inputPath, String outputPath);
 }

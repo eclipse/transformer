@@ -105,25 +105,15 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
-	public void displayTerse(Logger logger, String inputPath, String outputPath) {
-		if (!inputPath.equals(outputPath)) {
+	public void log(Logger logger, String inputPath, String outputPath) {
+		if (logger.isDebugEnabled(consoleMarker)) {
+			logger.debug(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+			logger.debug(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+			logger.debug(consoleMarker, "Replacements  [ {} ]", getReplacements());
+		} else if (logger.isInfoEnabled(consoleMarker)) {
 			if (!inputPath.equals(outputPath)) {
 				logger.info(consoleMarker, "Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
-			} else {
-				logger.info(consoleMarker, "Input [ {} ]: {}", inputPath, getChangeTag());
 			}
 		}
-	}
-
-	@Override
-	public void display(Logger logger, String inputPath, String outputPath) {
-		displayTerse(logger, inputPath, outputPath);
-	}
-
-	@Override
-	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-		logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-		logger.info(consoleMarker, "Replacements  [ {} ]", getReplacements());
 	}
 }

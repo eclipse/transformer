@@ -272,91 +272,85 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		return String.format(DATA_LINE, parms);
 	}
 
-	protected void displayChanges(Logger logger) {
-		logger.info(consoleMarker,
+	private void displayChanges(Logger logger) {
+		logger.debug(consoleMarker,
 			formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
 			getAllSelected(), ""));
 
-		logger.info(consoleMarker, SMALL_DASH_LINE);
-		logger.info(consoleMarker,
+		logger.debug(consoleMarker, SMALL_DASH_LINE);
+		logger.debug(consoleMarker,
 			formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
 			getAllChanged(), ""));
 
 		for (String actionName : getActionNames()) {
 			int useUnchangedByAction = getUnchanged(actionName);
 			int useChangedByAction = getChanged(actionName);
-			logger.info(consoleMarker, formatData(actionName, useUnchangedByAction + useChangedByAction, "Unchanged",
+			logger.debug(consoleMarker, formatData(actionName, useUnchangedByAction + useChangedByAction, "Unchanged",
 				useUnchangedByAction, "Changed", useChangedByAction, ""));
 		}
 	}
 
 	@Override
-	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		// ================================================================================
-		// [ Input ] [ test.jar ]
-		// [
-		// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\test.jar
-		// ]
-		// [ Output ] [ output_test.jar ]
-		// [
-		// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\testOutput.jar
-		// ]
-		// ================================================================================
-		// [ All Resources ] [ 55 ] Unselected [ 6 ] Selected [ 49 ]
-		// ================================================================================
-		// [ Immediate changes: ]
-		// --------------------------------------------------------------------------------
-		// [ All Actions ] [ 49 ] Unchanged [ 43 ] Changed [ 6 ]
-		// [ Class Action ] [ 41 ] Unchanged [ 38 ] Changed [ 3 ]
-		// [ Manifest Action ] [ 1 ] Unchanged [ 0 ] Changed [ 1 ]
-		// [ Service Config Action ] [ 7 ] Unchanged [ 5 ] Changed [ 2 ]
-		// ================================================================================
-		// [ Nested changes: ]
-		// --------------------------------------------------------------------------------
-		// [ ... ]
-		// ================================================================================
-		logger.info(consoleMarker, DASH_LINE);
+	public void log(Logger logger, String inputPath, String outputPath) {
+		if (logger.isDebugEnabled(consoleMarker)) {
+			// ================================================================================
+			// [ Input ] [ test.jar ]
+			// [
+			// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\test.jar
+			// ]
+			// [ Output ] [ output_test.jar ]
+			// [
+			// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\testOutput.jar
+			// ]
+			// ================================================================================
+			// [ All Resources ] [ 55 ] Unselected [ 6 ] Selected [ 49 ]
+			// ================================================================================
+			// [ Immediate changes: ]
+			// --------------------------------------------------------------------------------
+			// [ All Actions ] [ 49 ] Unchanged [ 43 ] Changed [ 6 ]
+			// [ Class Action ] [ 41 ] Unchanged [ 38 ] Changed [ 3 ]
+			// [ Manifest Action ] [ 1 ] Unchanged [ 0 ] Changed [ 1 ]
+			// [ Service Config Action ] [ 7 ] Unchanged [ 5 ] Changed [ 2 ]
+			// ================================================================================
+			// [ Nested changes: ]
+			// --------------------------------------------------------------------------------
+			// [ ... ]
+			// ================================================================================
+			logger.debug(consoleMarker, DASH_LINE);
 
-		logger.info(consoleMarker, "[ Input  ] [ {} ]", getInputResourceName());
-		logger.info(consoleMarker, "           [ {} ]", inputPath);
-		logger.info(consoleMarker, "[ Output ] [ {} ]", getOutputResourceName());
-		logger.info(consoleMarker, "           [ {} ]", outputPath);
-		logger.info(consoleMarker, DASH_LINE);
+			logger.debug(consoleMarker, "[ Input  ] [ {} ]", getInputResourceName());
+			logger.debug(consoleMarker, "           [ {} ]", inputPath);
+			logger.debug(consoleMarker, "[ Output ] [ {} ]", getOutputResourceName());
+			logger.debug(consoleMarker, "           [ {} ]", outputPath);
+			logger.debug(consoleMarker, DASH_LINE);
 
-		logger.info(consoleMarker, "[ Immediate changes: ]");
-		logger.info(consoleMarker, SMALL_DASH_LINE);
-		displayChanges(logger);
-		logger.info(consoleMarker, DASH_LINE);
+			logger.debug(consoleMarker, "[ Immediate changes: ]");
+			logger.debug(consoleMarker, SMALL_DASH_LINE);
+			displayChanges(logger);
+			logger.debug(consoleMarker, DASH_LINE);
 
-		if (allNestedChanges != null) {
-			logger.info(consoleMarker, "[ Nested changes: ]");
-			logger.info(consoleMarker, SMALL_DASH_LINE);
-			allNestedChanges.displayChanges(logger);
-			logger.info(consoleMarker, DASH_LINE);
-		}
-	}
-
-	@Override
-	public void displayTerse(Logger logger, String inputPath, String outputPath) {
-		if (!inputPath.equals(outputPath)) {
+			if (allNestedChanges != null) {
+				logger.debug(consoleMarker, "[ Nested changes: ]");
+				logger.debug(consoleMarker, SMALL_DASH_LINE);
+				allNestedChanges.displayChanges(logger);
+				logger.debug(consoleMarker, DASH_LINE);
+			}
+		} else if (logger.isInfoEnabled(consoleMarker)) {
 			if (!inputPath.equals(outputPath)) {
 				logger.info(consoleMarker, "Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
-			} else {
-				logger.info(consoleMarker, "Input [ {} ]: {}", inputPath, getChangeTag());
 			}
-		}
 
-		logger.info(consoleMarker,
-			formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(), "Selected",
-			getAllSelected(), ""));
-		logger.info(consoleMarker,
-			formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(), "Changed",
-			getAllChanged(), ""));
-		if (allNestedChanges != null) {
-			logger.info(consoleMarker, formatData("Nested Resources", allNestedChanges.getAllResources(), "Unselected",
-				allNestedChanges.getAllUnselected(), "Selected", allNestedChanges.getAllSelected(), ""));
-			logger.info(consoleMarker, formatData("Nested Actions", allNestedChanges.getAllSelected(), "Unchanged",
-				allNestedChanges.getAllUnchanged(), "Changed", allNestedChanges.getAllChanged(), ""));
+			logger.info(consoleMarker, formatData("All Resources", getAllResources(), "Unselected", getAllUnselected(),
+				"Selected", getAllSelected(), ""));
+			logger.info(consoleMarker, formatData("All Actions", getAllSelected(), "Unchanged", getAllUnchanged(),
+				"Changed", getAllChanged(), ""));
+			if (allNestedChanges != null) {
+				logger.info(consoleMarker,
+					formatData("Nested Resources", allNestedChanges.getAllResources(), "Unselected",
+						allNestedChanges.getAllUnselected(), "Selected", allNestedChanges.getAllSelected(), ""));
+				logger.info(consoleMarker, formatData("Nested Actions", allNestedChanges.getAllSelected(), "Unchanged",
+					allNestedChanges.getAllUnchanged(), "Changed", allNestedChanges.getAllChanged(), ""));
+			}
 		}
 	}
 }

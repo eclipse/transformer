@@ -99,12 +99,7 @@ public class Transformer {
 	public Transformer(Logger logger, TransformOptions options) {
 		this.logger = requireNonNull(logger);
 		this.options = requireNonNull(options);
-		isTerse = options.hasOption(AppOption.LOG_TERSE);
-		isVerbose = options.hasOption(AppOption.LOG_VERBOSE);
 	}
-
-	public boolean							isVerbose;
-	public boolean							isTerse;
 
 	public Set<String>						includes;
 	public Set<String>						excludes;
@@ -169,9 +164,7 @@ public class Transformer {
 			getLogger().error(consoleMarker, "Transformation rules cannot be used");
 			return ResultCode.RULES_ERROR_RC;
 		}
-		if (isVerbose) {
-			logRules();
-		}
+		logRules();
 
 		setActions();
 
@@ -884,91 +877,94 @@ public class Transformer {
 	// }
 
 	public void logRules() {
-		getLogger().info("Includes:");
+		if (!getLogger().isDebugEnabled()) {
+			return;
+		}
+		getLogger().debug("Includes:");
 		if ((includes == null) || includes.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (String include : includes) {
-				getLogger().info("  [ {} ]", include);
+				getLogger().debug("  [ {} ]", include);
 			}
 		}
 
-		getLogger().info("Excludes:");
+		getLogger().debug("Excludes:");
 		if ((excludes == null) || excludes.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (String exclude : excludes) {
-				getLogger().info("  [ {} ]", exclude);
+				getLogger().debug("  [ {} ]", exclude);
 			}
 		}
 
 		if (invert) {
-			getLogger().info("Package Renames: [ ** INVERTED ** ]");
+			getLogger().debug("Package Renames: [ ** INVERTED ** ]");
 		} else {
-			getLogger().info("Package Renames:");
+			getLogger().debug("Package Renames:");
 		}
 
 		if ((packageRenames == null) || packageRenames.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (Map.Entry<String, String> renameEntry : packageRenames.entrySet()) {
-				getLogger().info("  [ {} ]: [ {} ]", renameEntry.getKey(), renameEntry.getValue());
+				getLogger().debug("  [ {} ]: [ {} ]", renameEntry.getKey(), renameEntry.getValue());
 			}
 		}
 
-		getLogger().info("Package Versions:");
+		getLogger().debug("Package Versions:");
 		if ((packageVersions == null) || packageVersions.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (Map.Entry<String, String> versionEntry : packageVersions.entrySet()) {
-				getLogger().info("  [ {} ]: [ {} ]", versionEntry.getKey(), versionEntry.getValue());
+				getLogger().debug("  [ {} ]: [ {} ]", versionEntry.getKey(), versionEntry.getValue());
 			}
 		}
 
-		getLogger().info("Bundle Updates:");
+		getLogger().debug("Bundle Updates:");
 		if ((bundleUpdates == null) || bundleUpdates.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (Map.Entry<String, BundleData> updateEntry : bundleUpdates.entrySet()) {
 				BundleData updateData = updateEntry.getValue();
 
-				getLogger().info("  [ {} ]: [ {} ]", updateEntry.getKey(), updateData.getSymbolicName());
+				getLogger().debug("  [ {} ]: [ {} ]", updateEntry.getKey(), updateData.getSymbolicName());
 
-				getLogger().info("    [ Version ]: [ {} ]", updateData.getVersion());
+				getLogger().debug("    [ Version ]: [ {} ]", updateData.getVersion());
 
 				if (updateData.getAddName()) {
-					getLogger().info("    [ Name ]: [ " + BundleData.ADDITIVE_CHAR + "{} ]", updateData.getName());
+					getLogger().debug("    [ Name ]: [ " + BundleData.ADDITIVE_CHAR + "{} ]", updateData.getName());
 				} else {
-					getLogger().info("    [ Name ]: [ {} ]", updateData.getName());
+					getLogger().debug("    [ Name ]: [ {} ]", updateData.getName());
 				}
 
 				if (updateData.getAddDescription()) {
-					getLogger().info(
+					getLogger().debug(
 						"    [ Description ]: [ " + BundleData.ADDITIVE_CHAR + "{} ]", updateData.getDescription());
 				} else {
-					getLogger().info("    [ Description ]: [ {} ]", updateData.getDescription());
+					getLogger().debug("    [ Description ]: [ {} ]", updateData.getDescription());
 				}
 			}
 		}
 
-		getLogger().info("Java string substitutions:");
+		getLogger().debug("Java string substitutions:");
 		if ((directStrings == null) || directStrings.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (Map.Entry<String, String> directEntry : directStrings.entrySet()) {
-				getLogger().info("  [ {} ]: [ {} ]", directEntry.getKey(), directEntry.getValue());
+				getLogger().debug("  [ {} ]: [ {} ]", directEntry.getKey(), directEntry.getValue());
 			}
 		}
 
-		getLogger().info("Text substitutions:");
+		getLogger().debug("Text substitutions:");
 		if ((masterTextUpdates == null) || masterTextUpdates.isEmpty()) {
-			getLogger().info("  [ ** NONE ** ]");
+			getLogger().debug("  [ ** NONE ** ]");
 		} else {
 			for (Map.Entry<String, Map<String, String>> masterTextEntry : masterTextUpdates.entrySet()) {
-				getLogger().info("  Pattern [ {} ]", masterTextEntry.getKey());
+				getLogger().debug("  Pattern [ {} ]", masterTextEntry.getKey());
 				for (Map.Entry<String, String> substitution : masterTextEntry.getValue()
 					.entrySet()) {
-					getLogger().info("    [ {} ]: [ {} ]", substitution.getKey(), substitution.getValue());
+					getLogger().debug("    [ {} ]: [ {} ]", substitution.getKey(), substitution.getValue());
 				}
 			}
 		}
@@ -1044,10 +1040,8 @@ public class Transformer {
 
 		if (putIntoDirectory) {
 			useOutputName = useOutputName + '/' + inputName;
-			if (isVerbose) {
-				getLogger().info(consoleMarker, "Output generated using input name and output directory [ {} ]",
-					useOutputName);
-			}
+			getLogger().debug(consoleMarker, "Output generated using input name and output directory [ {} ]",
+				useOutputName);
 
 			useOutputFile = new File(useOutputName);
 			useOutputPath = useOutputFile.getAbsolutePath();
@@ -1085,10 +1079,8 @@ public class Transformer {
 			}
 		} else {
 			if (allowOverwrite) {
-				if (isVerbose) {
-					getLogger().info(consoleMarker, "Overwritten specified, but output [ {} ] does not exist",
-						useOutputPath);
-				}
+				getLogger().debug(consoleMarker, "Overwritten specified, but output [ {} ] does not exist",
+					useOutputPath);
 			}
 		}
 
@@ -1110,9 +1102,8 @@ public class Transformer {
 
 	public CompositeActionImpl getRootAction() {
 		if (rootAction == null) {
-			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), isTerse,
-				isVerbose,
-				getBuffer(), getSelectionRule(), getSignatureRule());
+			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), getBuffer(), getSelectionRule(),
+				getSignatureRule());
 
 			DirectoryActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
 
@@ -1260,16 +1251,8 @@ public class Transformer {
 
 		acceptedAction.apply(inputName, inputFile, outputFile);
 
-		if (isTerse) {
-			acceptedAction.getLastActiveChanges()
-				.displayTerse(getLogger(), inputPath, outputPath);
-		} else if (isVerbose) {
-			acceptedAction.getLastActiveChanges()
-				.displayVerbose(getLogger(), inputPath, outputPath);
-		} else {
-			acceptedAction.getLastActiveChanges()
-				.display(getLogger(), inputPath, outputPath);
-		}
+		acceptedAction.getLastActiveChanges()
+			.log(getLogger(), inputPath, outputPath);
 	}
 
 	public Changes getLastActiveChanges() {

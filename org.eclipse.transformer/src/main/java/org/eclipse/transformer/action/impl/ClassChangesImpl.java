@@ -163,21 +163,25 @@ public class ClassChangesImpl extends ChangesImpl {
 	//
 
 	@Override
-	public void displayVerbose(Logger logger, String inputPath, String outputPath) {
-		logger.info(consoleMarker, "Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+	public void log(Logger logger, String inputPath, String outputPath) {
+		if (logger.isDebugEnabled(consoleMarker)) {
+			logger.debug(consoleMarker, "Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 
-		logger.info(consoleMarker, "Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+			logger.debug(consoleMarker, "Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
 
-		logger.info(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
+			logger.debug(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
 
-		String useInputSuperName = getInputSuperName();
-		if (useInputSuperName != null) {
-			logger.info(consoleMarker, "Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
+			String useInputSuperName = getInputSuperName();
+			if (useInputSuperName != null) {
+				logger.debug(consoleMarker, "Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
+			}
+
+			logger.debug(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());
+			logger.debug(consoleMarker, "Modified fields     [ {} ]", getModifiedFields());
+			logger.debug(consoleMarker, "Modified methods    [ {} ]", getModifiedMethods());
+			logger.debug(consoleMarker, "Modified constants  [ {} ]", getModifiedConstants());
+		} else {
+			super.log(logger, inputPath, outputPath);
 		}
-
-		logger.info(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());
-		logger.info(consoleMarker, "Modified fields     [ {} ]", getModifiedFields());
-		logger.info(consoleMarker, "Modified methods    [ {} ]", getModifiedMethods());
-		logger.info(consoleMarker, "Modified constants  [ {} ]", getModifiedConstants());
 	}
 }
