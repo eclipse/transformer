@@ -27,7 +27,7 @@ Project contents are currently managed as two maven modules:
 | org.eclipse.transformer         | Core transformer library                        |
 | org.eclipse.transformer.jakarta | Jakarta EE ruleset                              |
 | org.eclipse.transformer.cli     | Jakarta command line interface                  |
-| org.eclipse.transformer.maven   | Maven plugin                                    |
+| transformer-maven-plugin        | Maven plugin                                    |
 
 ## Build
 
