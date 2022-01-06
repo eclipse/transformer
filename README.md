@@ -10,7 +10,11 @@ We operate under the [Eclipse Code of Conduct](https://eclipse.org/org/documents
 
 ## Build Status
 
-![CI Build](https://github.com/eclipse/transformer/workflows/CI%20Build/badge.svg)
+[![CI Build](https://github.com/eclipse/transformer/actions/workflows/cibuild.yml/badge.svg)](https://github.com/eclipse/transformer/actions/workflows/cibuild.yml)
+
+## Latest release
+
+[![Maven Central](https://img.shields.io/maven-central/v/org.eclipse.transformer/org.eclipse.transformer.parent.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22org.eclipse.transformer%22)
 
 ## Project licence
 
@@ -83,9 +87,15 @@ Possible secondary use cases are as follows:
 
 ## Usage
 
+The transformer CLI can be invoked by using `java -jar org.eclipse.transformer.cli-<version>.jar` from now on referred as `TransformerCLI`. This file can be found in the `org.eclipse.transformer.cli/target` folder when you build this project by yourself or you can download and extract the `org.eclipse.transformer.cli-<version>-distribution.jar` into a directory of your choice and start it from there.
+
 The primary use of the Eclipse Transformer is to create an updated copy an input file or directory.  Generally:
 
-    TransformerCLI inputFile outputFile [ options ... ]
+    TransformerCLI input [ output ] [ options ... ]
+
+To get more informations on available options use:
+
+    TransformerCLI --help
 
 For simplicity, the transformer does not perform any "in-place" updates.  Replacement of an input file with an output file must be performed as an operation external to the transformer.
 
@@ -153,7 +163,7 @@ Immediate options may be used with or without specifying a corresponding propert
 
 The Eclipse Transformer artifacts are released to Maven Central.
 
-Snapshot artifacts are released to the Sonatype OSS repository: <https://oss.sonatype.org/content/repositories/snapshots/>.
+Snapshot artifacts are released to the Sonatype OSS repository: [https://oss.sonatype.org/content/repositories/snapshots/](https://oss.sonatype.org/content/repositories/snapshots/org/eclipse/transformer/).
 
 To use the snapshot artifacts in your Maven build, you can configure the Sonatype OSS snapshot repository.
 
