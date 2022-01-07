@@ -20,7 +20,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>org.eclipse.transformer.maven</artifactId>
+	<artifactId>transformer-maven-plugin</artifactId>
 	<description>Eclipse Transformer Maven Plugin</description>
 	<packaging>maven-plugin</packaging>
 	<name>${project.groupId}:${project.artifactId}</name>
@@ -126,9 +126,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
-				<configuration>
-					<goalPrefix>transform</goalPrefix>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
