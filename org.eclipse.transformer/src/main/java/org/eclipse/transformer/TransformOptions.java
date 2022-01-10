@@ -83,14 +83,18 @@ public interface TransformOptions {
 	 *
 	 * @return The input file for the transformation.
 	 */
-	String getInputFileName();
+	default String getInputFileName() {
+		throw new UnsupportedOperationException("method not implemented");
+	}
 
 	/**
 	 * Returns the output file for the transformation.
 	 *
 	 * @return The output file for the transformation.
 	 */
-	String getOutputFileName();
+	default String getOutputFileName() {
+		throw new UnsupportedOperationException("method not implemented");
+	}
 
 	/**
 	 * Normalize the specified value.
