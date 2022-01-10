@@ -15,8 +15,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
@@ -56,8 +56,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		this.selectionRule = selectionRule;
 		this.signatureRule = signatureRule;
 
-		this.changes = new ArrayList<>();
-		this.numActiveChanges = 0;
+		this.changes = new ArrayDeque<>();
 		this.activeChanges = null;
 		this.lastActiveChanges = null;
 	}
@@ -303,21 +302,15 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		return (CHANGES) new ChangesImpl();
 	}
 
-	protected final List<CHANGES>	changes;
-	protected int						numActiveChanges;
+	protected final Deque<CHANGES>	changes;
 	protected CHANGES				activeChanges;
 	protected CHANGES				lastActiveChanges;
 
 	protected void startRecording(String inputName) {
 		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
 
-		if (numActiveChanges == changes.size()) {
-			changes.add(activeChanges = newChanges());
-		} else {
-			activeChanges = changes.get(numActiveChanges);
-			activeChanges.clearChanges();
-		}
-		numActiveChanges++;
+		activeChanges = newChanges();
+		changes.addLast(activeChanges);
 	}
 
 	protected void stopRecording(String inputName) {
@@ -341,13 +334,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		}
 
 		lastActiveChanges = activeChanges;
-
-		numActiveChanges--;
-		if (numActiveChanges == 0) {
-			activeChanges = null;
-		} else {
-			activeChanges = changes.get(numActiveChanges);
-		}
+		activeChanges = changes.pollLast();
 	}
 
 	//
