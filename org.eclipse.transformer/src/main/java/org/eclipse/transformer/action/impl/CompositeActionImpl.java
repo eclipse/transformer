@@ -16,21 +16,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.CompositeAction;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
-public class CompositeActionImpl extends ActionImpl implements CompositeAction {
+public class CompositeActionImpl extends ActionImpl<Changes> implements CompositeAction {
 
-	public <A extends ActionImpl> A addUsing(ActionInit<A> init) {
+	public <A extends Action> A addUsing(ActionInit<A> init) {
 		A action = createUsing(init);
 		addAction(action);
 		return action;
 	}
 
-	public CompositeActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public CompositeActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 
@@ -51,32 +56,32 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 	}
 
 	@Override
-	public ChangesImpl getLastActiveChanges() {
+	public Changes getLastActiveChanges() {
 		return ((acceptedAction == null) ? null : acceptedAction.getLastActiveChanges());
 	}
 
 	@Override
-	public ChangesImpl getActiveChanges() {
+	public Changes getActiveChanges() {
 		return ((acceptedAction == null) ? null : acceptedAction.getActiveChanges());
 	}
 
 	@Override
-	protected ChangesImpl newChanges() {
+	protected Changes newChanges() {
 		// Invoked by 'ActionImpl.init(): A return value must be provided.
 		return null;
 	}
 
 	//
 
-	private final List<ActionImpl>	actions;
-	private ActionImpl				acceptedAction;
+	private final List<Action>	actions;
+	private Action				acceptedAction;
 
 	@Override
-	public List<ActionImpl> getActions() {
+	public List<Action> getActions() {
 		return actions;
 	}
 
-	protected void addAction(ActionImpl action) {
+	protected void addAction(Action action) {
 		getActions().add(action);
 	}
 
@@ -86,8 +91,8 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 	}
 
 	@Override
-	public ActionImpl acceptAction(String resourceName, File resourceFile) {
-		for (ActionImpl action : getActions()) {
+	public Action acceptAction(String resourceName, File resourceFile) {
+		for (Action action : getActions()) {
 			if (action.accept(resourceName, resourceFile)) {
 				acceptedAction = action;
 				return action;
@@ -103,7 +108,7 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 	}
 
 	@Override
-	public ActionImpl getAcceptedAction() {
+	public Action getAcceptedAction() {
 		return ((acceptedAction == null) ? null : acceptedAction);
 	}
 
@@ -111,7 +116,6 @@ public class CompositeActionImpl extends ActionImpl implements CompositeAction {
 
 	@Override
 	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
-
-		return getAcceptedAction().apply(inputName, inputBytes, inputLength);
+		return ((ActionImpl<?>) getAcceptedAction()).apply(inputName, inputBytes, inputLength);
 	}
 }

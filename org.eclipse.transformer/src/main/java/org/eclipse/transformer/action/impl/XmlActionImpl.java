@@ -28,6 +28,10 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 import org.xml.sax.Attributes;
@@ -38,10 +42,9 @@ import org.xml.sax.helpers.DefaultHandler;
 import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class XmlActionImpl extends ActionImpl {
+public class XmlActionImpl extends ActionImpl<Changes> {
 
-	public XmlActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public XmlActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}

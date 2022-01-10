@@ -23,7 +23,7 @@ public interface ContainerAction extends Action {
 
 	CompositeAction getAction();
 
-	List<? extends Action> getActions();
+	List<Action> getActions();
 
 	Action acceptAction(String resourceName);
 

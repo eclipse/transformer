@@ -13,16 +13,20 @@ package org.eclipse.transformer.action.impl;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
 /**
  * @author jdenise
  */
-public class PropertiesActionImpl extends ActionImpl {
+public class PropertiesActionImpl extends ActionImpl<Changes> {
 
-	public PropertiesActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public PropertiesActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}

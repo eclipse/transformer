@@ -15,13 +15,16 @@ import java.io.File;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
-public class NullActionImpl extends ActionImpl {
+public class NullActionImpl extends ActionImpl<Changes> {
 
-	public NullActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public NullActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}

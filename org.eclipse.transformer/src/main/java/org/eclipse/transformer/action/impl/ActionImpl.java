@@ -22,6 +22,10 @@ import java.util.Map;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
@@ -42,9 +46,8 @@ import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
-public abstract class ActionImpl implements Action {
-	public ActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+public abstract class ActionImpl<CHANGES extends Changes> implements Action {
+	public ActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		this.logger = logger;
 
@@ -61,12 +64,11 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	public interface ActionInit<A extends ActionImpl> {
-		A apply(Logger logger, InputBufferImpl buffer,
-			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule);
+	public interface ActionInit<A extends Action> {
+		A apply(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule);
 	}
 
-	public <A extends ActionImpl> A createUsing(ActionInit<A> init) {
+	public <A extends Action> A createUsing(ActionInit<A> init) {
 		return init.apply(getLogger(), getBuffer(), getSelectionRule(),
 			getSignatureRule());
 	}
@@ -80,10 +82,10 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final InputBufferImpl buffer;
+	private final InputBuffer buffer;
 
 	@Override
-	public InputBufferImpl getBuffer() {
+	public InputBuffer getBuffer() {
 		return buffer;
 	}
 
@@ -99,9 +101,9 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final SelectionRuleImpl selectionRule;
+	private final SelectionRule selectionRule;
 
-	public SelectionRuleImpl getSelectionRule() {
+	public SelectionRule getSelectionRule() {
 		return selectionRule;
 	}
 
@@ -120,10 +122,10 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	protected final SignatureRuleImpl signatureRule;
+	protected final SignatureRule signatureRule;
 
 	@Override
-	public SignatureRuleImpl getSignatureRule() {
+	public SignatureRule getSignatureRule() {
 		return signatureRule;
 	}
 
@@ -296,14 +298,15 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	protected ChangesImpl newChanges() {
-		return new ChangesImpl();
+	@SuppressWarnings("unchecked")
+	protected CHANGES newChanges() {
+		return (CHANGES) new ChangesImpl();
 	}
 
-	protected final List<ChangesImpl>	changes;
+	protected final List<CHANGES>	changes;
 	protected int						numActiveChanges;
-	protected ChangesImpl				activeChanges;
-	protected ChangesImpl				lastActiveChanges;
+	protected CHANGES				activeChanges;
+	protected CHANGES				lastActiveChanges;
 
 	protected void startRecording(String inputName) {
 		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
@@ -350,12 +353,12 @@ public abstract class ActionImpl implements Action {
 	//
 
 	@Override
-	public ChangesImpl getActiveChanges() {
+	public CHANGES getActiveChanges() {
 		return activeChanges;
 	}
 
 	protected void setResourceNames(String inputResourceName, String outputResourceName) {
-		ChangesImpl useChanges = getActiveChanges();
+		CHANGES useChanges = getActiveChanges();
 		useChanges.setInputResourceName(inputResourceName);
 		useChanges.setOutputResourceName(outputResourceName);
 	}
@@ -390,7 +393,7 @@ public abstract class ActionImpl implements Action {
 	//
 
 	@Override
-	public ChangesImpl getLastActiveChanges() {
+	public CHANGES getLastActiveChanges() {
 		return lastActiveChanges;
 	}
 

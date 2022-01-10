@@ -23,6 +23,10 @@ import java.util.jar.Manifest;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.ManifestWriter;
 import org.slf4j.Logger;
@@ -32,7 +36,7 @@ import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class ManifestActionImpl extends ActionImpl {
+public class ManifestActionImpl extends ActionImpl<Changes> {
 	public static final String	META_INF				= "META-INF/";
 	public static final String	MANIFEST_MF				= "MANIFEST.MF";
 	public static final String	META_INF_MANIFEST_MF	= "META-INF/MANIFEST.MF";
@@ -42,20 +46,20 @@ public class ManifestActionImpl extends ActionImpl {
 	public static final boolean	IS_MANIFEST				= true;
 	public static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
-	public static ManifestActionImpl newManifestAction(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public static ManifestActionImpl newManifestAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_MANIFEST);
 	}
 
-	public static ManifestActionImpl newFeatureAction(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public static ManifestActionImpl newFeatureAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_FEATURE);
 	}
 
-	public ManifestActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule, boolean isManifest) {
+	public ManifestActionImpl(Logger logger, InputBuffer buffer,
+		SelectionRule selectionRule, SignatureRule signatureRule, boolean isManifest) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 

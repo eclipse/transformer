@@ -16,12 +16,15 @@ import java.io.File;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
 public class DirectoryActionImpl extends ContainerActionImpl {
 
-	public DirectoryActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public DirectoryActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}

@@ -27,12 +27,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.CompositeAction;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.CompositeActionImpl;
+import org.eclipse.transformer.action.impl.ContainerActionImpl;
 import org.eclipse.transformer.action.impl.DirectoryActionImpl;
 import org.eclipse.transformer.action.impl.EarActionImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
@@ -116,8 +121,8 @@ public class Transformer {
 	public Map<String, String>				directStrings;
 
 	public boolean							widenArchiveNesting;
-	public CompositeActionImpl				rootAction;
-	public ActionImpl						acceptedAction;
+	public CompositeAction					rootAction;
+	public Action							acceptedAction;
 
 	public String							inputName;
 	public String							inputPath;
@@ -188,9 +193,9 @@ public class Transformer {
 		return outputName;
 	}
 
-	private InputBufferImpl buffer;
+	private InputBuffer buffer;
 
-	protected InputBufferImpl getBuffer() {
+	protected InputBuffer getBuffer() {
 		if (buffer == null) {
 			buffer = new InputBufferImpl();
 		}
@@ -970,17 +975,18 @@ public class Transformer {
 		}
 	}
 
-	private SelectionRuleImpl selectionRules;
+	private SelectionRule selectionRules;
 
-	protected SelectionRuleImpl getSelectionRule() {
+	protected SelectionRule getSelectionRule() {
 		if (selectionRules == null) {
 			selectionRules = new SelectionRuleImpl(getLogger(), includes, excludes);
 		}
 		return selectionRules;
 	}
 
-	private SignatureRuleImpl signatureRules;
-	protected SignatureRuleImpl getSignatureRule() {
+	private SignatureRule signatureRules;
+
+	protected SignatureRule getSignatureRule() {
 		if (signatureRules == null) {
 			signatureRules = new SignatureRuleImpl(
 				getLogger(),
@@ -1100,33 +1106,33 @@ public class Transformer {
 		}
 	}
 
-	public CompositeActionImpl getRootAction() {
+	public CompositeAction getRootAction() {
 		if (rootAction == null) {
 			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), getBuffer(), getSelectionRule(),
 				getSignatureRule());
 
-			DirectoryActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
+			ContainerActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
 
-			ClassActionImpl classAction = useRootAction.addUsing(ClassActionImpl::new);
-			JavaActionImpl javaAction = useRootAction.addUsing(JavaActionImpl::new);
-			ServiceLoaderConfigActionImpl serviceConfigAction = useRootAction
+			Action classAction = useRootAction.addUsing(ClassActionImpl::new);
+			Action javaAction = useRootAction.addUsing(JavaActionImpl::new);
+			Action serviceConfigAction = useRootAction
 				.addUsing(ServiceLoaderConfigActionImpl::new);
-			ManifestActionImpl manifestAction = useRootAction.addUsing(ManifestActionImpl::newManifestAction);
-			ManifestActionImpl featureAction = useRootAction.addUsing(ManifestActionImpl::newFeatureAction);
-			PropertiesActionImpl propertiesAction = useRootAction.addUsing(PropertiesActionImpl::new);
+			Action manifestAction = useRootAction.addUsing(ManifestActionImpl::newManifestAction);
+			Action featureAction = useRootAction.addUsing(ManifestActionImpl::newFeatureAction);
+			Action propertiesAction = useRootAction.addUsing(PropertiesActionImpl::new);
 
-			JarActionImpl jarAction = useRootAction.addUsing(JarActionImpl::new);
-			WarActionImpl warAction = useRootAction.addUsing(WarActionImpl::new);
-			RarActionImpl rarAction = useRootAction.addUsing(RarActionImpl::new);
-			EarActionImpl earAction = useRootAction.addUsing(EarActionImpl::new);
+			ContainerActionImpl jarAction = useRootAction.addUsing(JarActionImpl::new);
+			ContainerActionImpl warAction = useRootAction.addUsing(WarActionImpl::new);
+			ContainerActionImpl rarAction = useRootAction.addUsing(RarActionImpl::new);
+			ContainerActionImpl earAction = useRootAction.addUsing(EarActionImpl::new);
 
-			TextActionImpl textAction = useRootAction.addUsing(TextActionImpl::new);
-			// XmlActionImpl xmlAction =
+			Action textAction = useRootAction.addUsing(TextActionImpl::new);
+			// Action xmlAction =
 			// useRootAction.addUsing( XmlActionImpl::new );
 
-			ZipActionImpl zipAction = useRootAction.addUsing(ZipActionImpl::new);
+			ContainerActionImpl zipAction = useRootAction.addUsing(ZipActionImpl::new);
 
-			NullActionImpl nullAction = useRootAction.addUsing(NullActionImpl::new);
+			Action nullAction = useRootAction.addUsing(NullActionImpl::new);
 
 			// Directory actions know about all actions except for directory
 			// actions.
@@ -1223,7 +1229,7 @@ public class Transformer {
 	public boolean acceptAction() {
 		String actionName = options.getOptionValue(AppOption.FILE_TYPE);
 		if (actionName != null) {
-			for (ActionImpl action : getRootAction().getActions()) {
+			for (Action action : getRootAction().getActions()) {
 				if (action.getActionType()
 					.matches(actionName)) {
 					getLogger().info(consoleMarker, "Forced action [ {} ] [ {} ]", actionName, action.getName());

@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.util.InputStreamData;
 
 public interface Action {
@@ -230,7 +229,7 @@ public interface Action {
 
 	//
 
-	InputBufferImpl getBuffer();
+	InputBuffer getBuffer();
 
 	byte[] getInputBuffer();
 

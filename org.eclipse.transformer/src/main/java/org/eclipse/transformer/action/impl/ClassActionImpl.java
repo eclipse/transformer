@@ -18,6 +18,8 @@ import java.util.ListIterator;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.ByteData;
@@ -86,7 +88,7 @@ import aQute.lib.io.ByteBufferDataOutput;
 /**
  * Transform class bytes.
  */
-public class ClassActionImpl extends ActionImpl {
+public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	public static String resourceNameToClassName(String resourceName) {
 		String className = resourceName.substring(resourceName.length() - ".class".length());
@@ -203,8 +205,8 @@ public class ClassActionImpl extends ActionImpl {
 		return line;
 	}
 
-	public ClassActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public ClassActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}
@@ -226,16 +228,6 @@ public class ClassActionImpl extends ActionImpl {
 	@Override
 	protected ClassChangesImpl newChanges() {
 		return new ClassChangesImpl();
-	}
-
-	@Override
-	public ClassChangesImpl getLastActiveChanges() {
-		return (ClassChangesImpl) super.getLastActiveChanges();
-	}
-
-	@Override
-	public ClassChangesImpl getActiveChanges() {
-		return (ClassChangesImpl) super.getActiveChanges();
 	}
 
 	protected void setClassNames(String inputClassName, String outputClassName) {

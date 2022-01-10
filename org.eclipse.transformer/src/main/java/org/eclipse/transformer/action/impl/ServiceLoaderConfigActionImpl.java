@@ -23,6 +23,9 @@ import java.io.OutputStreamWriter;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
@@ -41,14 +44,14 @@ import aQute.lib.io.ByteBufferOutputStream;
  * all characters following the first comment character are ignored. The file
  * must be encoded in UTF-8.
  */
-public class ServiceLoaderConfigActionImpl extends ActionImpl {
+public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfigChangesImpl> {
 	public static final String	META_INF			= "META-INF/";
 	public static final String	META_INF_SERVICES	= "META-INF/services/";
 
 	//
 
-	public ServiceLoaderConfigActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public ServiceLoaderConfigActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}
@@ -70,16 +73,6 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl {
 	@Override
 	protected ServiceLoaderConfigChangesImpl newChanges() {
 		return new ServiceLoaderConfigChangesImpl();
-	}
-
-	@Override
-	public ServiceLoaderConfigChangesImpl getLastActiveChanges() {
-		return (ServiceLoaderConfigChangesImpl) super.getLastActiveChanges();
-	}
-
-	@Override
-	public ServiceLoaderConfigChangesImpl getActiveChanges() {
-		return (ServiceLoaderConfigChangesImpl) super.getActiveChanges();
 	}
 
 	protected void addUnchangedProvider() {
