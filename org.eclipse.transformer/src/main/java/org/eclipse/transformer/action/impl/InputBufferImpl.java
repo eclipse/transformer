@@ -11,22 +11,30 @@
 
 package org.eclipse.transformer.action.impl;
 
+import java.nio.ByteBuffer;
+
 import org.eclipse.transformer.action.InputBuffer;
 
 public class InputBufferImpl implements InputBuffer {
+	/** Usual disk page size. */
+	private static final int	PAGE_SIZE	= 4096;
+
+	/** Size for allocating read buffers. */
+	private static final int	BUFFER_SIZE	= PAGE_SIZE * 16;
+
+	private ThreadLocal<ByteBuffer>	inputBuffer;
+
 	public InputBufferImpl() {
-		this.inputBuffer = null;
-	}
-
-	private byte[] inputBuffer;
-
-	@Override
-	public byte[] getInputBuffer() {
-		return inputBuffer;
+		inputBuffer = ThreadLocal.withInitial(() -> ByteBuffer.allocate(BUFFER_SIZE));
 	}
 
 	@Override
-	public void setInputBuffer(byte[] inputBuffer) {
-		this.inputBuffer = inputBuffer;
+	public ByteBuffer getInputBuffer() {
+		return inputBuffer.get();
+	}
+
+	@Override
+	public void setInputBuffer(ByteBuffer buffer) {
+		inputBuffer.set(buffer);
 	}
 }

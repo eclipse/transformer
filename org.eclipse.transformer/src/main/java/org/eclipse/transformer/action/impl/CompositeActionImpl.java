@@ -18,12 +18,12 @@ import java.util.List;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.CompositeAction;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
 public class CompositeActionImpl extends ActionImpl<Changes> implements CompositeAction {
@@ -115,7 +115,7 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 	//
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
-		return ((ActionImpl<?>) getAcceptedAction()).apply(inputName, inputBytes, inputLength);
+	public ByteData apply(ByteData inputData) throws TransformException {
+		return getAcceptedAction().apply(inputData);
 	}
 }

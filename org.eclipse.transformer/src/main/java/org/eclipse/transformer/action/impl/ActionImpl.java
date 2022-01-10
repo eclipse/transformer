@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
@@ -22,14 +23,13 @@ import java.util.Map;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.slf4j.Logger;
 
 import aQute.bnd.signatures.ArrayTypeSignature;
@@ -88,13 +88,11 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		return buffer;
 	}
 
-	@Override
-	public byte[] getInputBuffer() {
+	public ByteBuffer getInputBuffer() {
 		return getBuffer().getInputBuffer();
 	}
 
-	@Override
-	public void setInputBuffer(byte[] inputBuffer) {
+	public void setInputBuffer(ByteBuffer inputBuffer) {
 		getBuffer().setInputBuffer(inputBuffer);
 	}
 
@@ -417,21 +415,21 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	 * @return Byte data from the read.
 	 * @throws TransformException Indicates a read failure.
 	 */
-	protected ByteData read(String inputName, InputStream inputStream, int inputCount) throws TransformException {
-		byte[] readBytes = getInputBuffer();
+	protected ByteData read(String inputName, InputStream inputStream, int inputCount)
+		throws TransformException {
 
-		ByteData readData;
+		ByteBuffer readData = getInputBuffer();
 		try {
-			readData = FileUtils.read(inputName, inputStream, readBytes, inputCount); // throws
+			readData = FileUtils.read(inputName, inputStream, readData, inputCount); // throws
 																						// IOException
 		} catch (IOException e) {
 			throw new TransformException("Failed to read raw bytes [ " + inputName + " ] count [ " + inputCount + " ]",
 				e);
 		}
 
-		setInputBuffer(readData.data);
+		setInputBuffer(readData);
 
-		return readData;
+		return new ByteDataImpl(inputName, readData);
 	}
 
 	/**
@@ -444,38 +442,30 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	 */
 	protected void write(ByteData outputData, OutputStream outputStream) throws TransformException {
 		try {
-			outputStream.write(outputData.data, outputData.offset, outputData.length); // throws
-																						// IOException
-
+			IO.copy(outputData.buffer(), outputStream);
 		} catch (IOException e) {
-			throw new TransformException("Failed to write [ " + outputData.name + " ]" + " at [ " + outputData.offset
-				+ " ]" + " count [ " + outputData.length + " ]", e);
+			throw new TransformException("Failed to write [ " + outputData.name() + " ]" +  " count [ " + outputData.length() + " ]", e);
 		}
 	}
 
 	//
 
 	@Override
-	public InputStreamData apply(String inputName, InputStream inputStream) throws TransformException {
-
-		return apply(inputName, inputStream, InputStreamData.UNKNOWN_LENGTH); // throws
-																				// JakartaTransformException
+	public ByteData apply(String inputName, InputStream inputStream) throws TransformException {
+		return apply(inputName, inputStream, -1);
 	}
 
 	@Override
-	public InputStreamData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
-
+	public ByteData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
 		startRecording(inputName);
 		try {
-			return basicApply(inputName, inputStream, inputCount); // throws
-																	// TransformException
-																	// {
+			return basicApply(inputName, inputStream, inputCount);
 		} finally {
 			stopRecording(inputName);
 		}
 	}
 
-	public InputStreamData basicApply(String inputName, InputStream inputStream, int inputCount)
+	public ByteData basicApply(String inputName, InputStream inputStream, int inputCount)
 		throws TransformException {
 
 		String className = getClass().getSimpleName();
@@ -485,11 +475,11 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		ByteData inputData = read(inputName, inputStream, inputCount); // throws
 																		// JakartaTransformException
 
-		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length());
 
 		ByteData outputData;
 		try {
-			outputData = apply(inputName, inputData.data, inputData.length);
+			outputData = apply(inputData);
 			// throws JakartaTransformException
 		} catch (Throwable th) {
 			getLogger().error("Transform failure [ {} ]", inputName, th);
@@ -500,11 +490,11 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
-				outputData.length);
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
+				outputData.length());
 		}
 
-		return new InputStreamData(outputData);
+		return outputData;
 	}
 
 	@Override
@@ -531,11 +521,14 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 		ByteData inputData = read(inputName, inputStream, intInputCount); // throws
 																			// JakartaTransformException
-		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+																			getLogger().debug(
+																				"[ {}.{} ]: Obtained [ {} ] [ {} ]",
+																				className, methodName, inputName,
+																				inputData.length());
 
 		ByteData outputData;
 		try {
-			outputData = apply(inputName, inputData.data, inputData.length);
+			outputData = apply(inputName, inputData.stream(), inputData.length());
 			// throws JakartaTransformException
 		} catch (Throwable th) {
 			getLogger().error("Transform failure [ {} ]", inputName, th);
@@ -546,14 +539,12 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
-				outputData.length);
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
+				outputData.length());
 		}
 
 		write(outputData, outputStream); // throws JakartaTransformException
 	}
-
-	protected abstract ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException;
 
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {

@@ -25,9 +25,9 @@ import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.ManifestWriter;
 import org.slf4j.Logger;
 
@@ -98,51 +98,50 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	//
 
 	@Override
-	public ByteData apply(String initialName, byte[] initialBytes, int initialCount) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 
 		String className = getClass().getSimpleName();
 		String methodName = "apply";
 
-		getLogger().debug("[ {}.{} ]: [ {} ] Initial bytes [ {} ]", className, methodName, initialName, initialCount);
+		getLogger().debug("[ {}.{} ]: [ {} ] Initial bytes [ {} ]", className, methodName, inputData.name(),
+			inputData.length());
 
-		setResourceNames(initialName, initialName);
-
-		ByteData initialData = new ByteData(initialName, initialBytes, 0, initialCount);
+		setResourceNames(inputData.name(), inputData.name());
 
 		Manifest initialManifest;
 		try {
-			initialManifest = new Manifest(initialData.asStream());
+			initialManifest = new Manifest(inputData.stream());
 		} catch (IOException e) {
-			getLogger().error("Failed to parse manifest [ {} ]", initialName, e);
+			getLogger().error("Failed to parse manifest [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		Manifest finalManifest = new Manifest();
 
-		transform(initialName, initialManifest, finalManifest);
+		transform(inputData.name(), initialManifest, finalManifest);
 
 		// info("[ {}.{} ]: [ {} ] Replacements [ {} ]",
 		// getClass().getSimpleName(), "transform",
 		// initialName, getActiveChanges().getReplacements());
 
 		if (!hasNonResourceNameChanges()) {
-			getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, initialName);
+			getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, inputData.name());
 			return null;
 		}
 
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(initialCount);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 		try {
 			write(finalManifest, outputStream); // throws IOException
 		} catch (IOException e) {
-			getLogger().error("Failed to write manifest [ {} ]", initialName, e);
+			getLogger().error("Failed to write manifest [ {} ]", inputData.name(), e);
 			return null;
 		}
 
-		byte[] finalBytes = outputStream.toByteArray();
-		getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName, initialName,
-			finalBytes.length);
+		ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+		getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName,
+			outputData.name(), outputData.length());
 
-		return new ByteData(initialName, finalBytes);
+		return outputData;
 	}
 
 	protected void transform(String inputName, Manifest initialManifest, Manifest finalManifest) {

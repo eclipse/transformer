@@ -35,13 +35,13 @@ import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.ClassChangesImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.jakarta.JakartaTransform;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -507,12 +507,12 @@ public class TestTransformClass extends CaptureTest {
 
 		display("Transforming class [ %s ]", resourceName);
 		ByteArrayInputStream internalInputStream = new ByteArrayInputStream(inputBytes);
-		InputStreamData outputStreamData = classAction.apply(resourceName, internalInputStream); // throws
+		ByteData outputStreamData = classAction.apply(resourceName, internalInputStream); // throws
 																									// TransformException
 		display(classAction.getLastActiveChanges());
 
 		ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
-		FileUtils.transfer(outputStreamData.stream, capturedOutput); // throws
+		FileUtils.transfer(outputStreamData.stream(), capturedOutput); // throws
 																		// IOException
 		byte[] outputBytes = capturedOutput.toByteArray();
 		display("Output class size [ %s ]", outputBytes.length);
@@ -806,7 +806,7 @@ public class TestTransformClass extends CaptureTest {
 																	// IOException
 
 		@SuppressWarnings("unused")
-		InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws
+		ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws
 																							// TransformException
 		display(classAction.getLastActiveChanges());
 
@@ -827,7 +827,7 @@ public class TestTransformClass extends CaptureTest {
 			InputStream inputStream = getResourceStream(resourceName); // throws IOException
 
 			@SuppressWarnings("unused")
-			InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
 			display(classAction.getLastActiveChanges());
 
 			// 2 to pass although should be 1. Both UTF8 and ConstantString are counted.
@@ -842,7 +842,7 @@ public class TestTransformClass extends CaptureTest {
 			InputStream inputStream = getResourceStream(resourceName); // throws IOException
 
 			@SuppressWarnings("unused")
-			InputStreamData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
 			display(classAction.getLastActiveChanges());
 
 			int expectedChanges = 0;

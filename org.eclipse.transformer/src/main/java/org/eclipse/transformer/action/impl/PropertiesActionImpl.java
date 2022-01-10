@@ -13,11 +13,11 @@ package org.eclipse.transformer.action.impl;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
 /**
@@ -37,16 +37,15 @@ public class PropertiesActionImpl extends ActionImpl<Changes> {
 	}
 
 	@Override
-	protected ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
-
-		String outputName = transformBinaryType(inputName);
+	public ByteData apply(ByteData inputData) throws TransformException {
+		String outputName = transformBinaryType(inputData.name());
 		if (outputName != null) {
-			getLogger().debug("Properties file {}, relocated to {}", inputName, outputName);
-			setResourceNames(inputName, outputName);
-			return new ByteData(outputName, inputBytes, 0, inputLength);
+			getLogger().debug("Properties file {}, relocated to {}", inputData.name(), outputName);
+			setResourceNames(inputData.name(), outputName);
+			return new ByteDataImpl(outputName, inputData.buffer());
 		} else {
-			setResourceNames(inputName, inputName);
-			return new ByteData(inputName, inputBytes, 0, inputLength);
+			setResourceNames(inputData.name(), inputData.name());
+			return inputData;
 		}
 	}
 

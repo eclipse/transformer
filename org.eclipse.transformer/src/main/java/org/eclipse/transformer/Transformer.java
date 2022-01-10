@@ -193,12 +193,9 @@ public class Transformer {
 		return outputName;
 	}
 
-	private InputBuffer buffer;
+	private final InputBuffer buffer = new InputBufferImpl();
 
 	protected InputBuffer getBuffer() {
-		if (buffer == null) {
-			buffer = new InputBufferImpl();
-		}
 		return buffer;
 	}
 

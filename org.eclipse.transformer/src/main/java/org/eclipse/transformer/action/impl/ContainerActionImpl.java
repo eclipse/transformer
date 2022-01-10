@@ -26,11 +26,10 @@ import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.slf4j.Logger;
 
 public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImpl> implements ContainerAction {
@@ -126,7 +125,7 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -266,7 +265,7 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 							intInputLength = FileUtils.verifyArray(0, inputLength);
 						}
 
-						InputStreamData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
+						ByteData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
 						recordTransform(acceptedAction, inputName);
 
 						// TODO: Should more of the entry details be
@@ -276,7 +275,7 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 							.getOutputResourceName());
 						zipOutputStream.putNextEntry(outputEntry); // throws
 																	// IOException
-						FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws
+						FileUtils.transfer(outputData.stream(), zipOutputStream, buffer); // throws
 																						// IOException
 						zipOutputStream.closeEntry(); // throws IOException
 					}

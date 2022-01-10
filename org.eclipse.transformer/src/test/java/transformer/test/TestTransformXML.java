@@ -21,11 +21,11 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
-import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -174,9 +174,9 @@ public class TestTransformXML extends CaptureTest {
 		List<String> finalLines;
 		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) { // throws
 																						// IOException
-			InputStreamData xmlOutput = useTextAction.apply(resourceRef, resourceInput); // throws
+			ByteData xmlOutput = useTextAction.apply(resourceRef, resourceInput); // throws
 																						// JakartaTransformException
-			finalLines = display(resourceRef, xmlOutput.stream);
+			finalLines = display(resourceRef, xmlOutput.stream());
 		}
 
 		verify(resourceRef, "initial lines", initialOccurrences, initialLines);

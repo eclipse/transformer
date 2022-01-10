@@ -11,10 +11,38 @@
 
 package org.eclipse.transformer.action;
 
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-public interface InputBuffer {
-	ByteBuffer getInputBuffer();
+/**
+ * A type representing data having a name.
+ */
+public interface ByteData {
+	/**
+	 * The name associated with the data.
+	 *
+	 * @return The name associated with the data.
+	 */
+	String name();
 
-	void setInputBuffer(ByteBuffer inputBuffer);
+	/**
+	 * The ByteBuffer associated with the data.
+	 *
+	 * @return The buffer associated with the data.
+	 */
+	ByteBuffer buffer();
+
+	/**
+	 * The length of the data.
+	 *
+	 * @return The length of the data.
+	 */
+	int length();
+
+	/**
+	 * A new InputStream stream to read the data.
+	 *
+	 * @return The stream containing data.
+	 */
+	InputStream stream();
 }

@@ -11,23 +11,24 @@
 
 package transformer.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.Vector;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
+
+import aQute.lib.io.ByteBufferInputStream;
 
 public class TransformClassLoader extends ClassLoader {
 
@@ -71,10 +72,10 @@ public class TransformClassLoader extends ClassLoader {
 
 	public InputStream applyClass(String resourceName, InputStream inputStream) throws TransformException {
 
-		InputStreamData outputData = getClassAction().apply(resourceName, inputStream);
+		ByteData outputData = getClassAction().apply(resourceName, inputStream);
 		// 'apply' throws JakartaTransformException
 
-		return outputData.stream;
+		return outputData.stream();
 	}
 
 	//
@@ -91,10 +92,10 @@ public class TransformClassLoader extends ClassLoader {
 
 	public InputStream applyServiceConfig(String resourceName, InputStream inputStream) throws TransformException {
 
-		InputStreamData outputData = getServiceConfigAction().apply(resourceName, inputStream);
+		ByteData outputData = getServiceConfigAction().apply(resourceName, inputStream);
 		// 'apply' throws JakartaTransformException
 
-		return outputData.stream;
+		return outputData.stream();
 	}
 
 	//
@@ -144,9 +145,9 @@ public class TransformClassLoader extends ClassLoader {
 			InputStream baseStream = useBaseConnection.getInputStream(); // throws
 																			// IOException
 
-			ByteData inputData = FileUtils.read(baseName, baseStream);
+			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 
-			return new ByteArrayInputStream(inputData.data, 0, inputData.length);
+			return new ByteBufferInputStream(inputData);
 		}
 	}
 
@@ -195,9 +196,9 @@ public class TransformClassLoader extends ClassLoader {
 			InputStream baseStream = useBaseConnection.getInputStream(); // throws
 																			// IOException
 
-			ByteData inputData = FileUtils.read(baseName, baseStream);
+			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 
-			return new ByteArrayInputStream(inputData.data, 0, inputData.length);
+			return new ByteBufferInputStream(inputData);
 		}
 	}
 
@@ -360,7 +361,7 @@ public class TransformClassLoader extends ClassLoader {
 		}
 
 		System.out.println("Find [ " + className + " ]: Reading class stream.");
-		ByteData classData;
+		ByteBuffer classData;
 		try {
 			classData = FileUtils.read(className, classStream);
 		} catch (IOException e) {
@@ -368,6 +369,6 @@ public class TransformClassLoader extends ClassLoader {
 		}
 
 		System.out.println("Find [ " + className + " ]: Define class.");
-		return super.defineClass(classData.name, classData.data, 0, classData.length);
+		return super.defineClass(className, classData.array(), classData.arrayOffset(), classData.limit());
 	}
 }

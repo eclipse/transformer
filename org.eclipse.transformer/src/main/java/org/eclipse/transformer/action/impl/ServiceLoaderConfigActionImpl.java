@@ -24,9 +24,9 @@ import java.io.OutputStreamWriter;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
 import aQute.lib.io.ByteBufferInputStream;
@@ -98,22 +98,22 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 	//
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 
-		String outputName = renameInput(inputName);
+		String outputName = renameInput(inputData.name());
 		if (outputName == null) {
-			outputName = inputName;
+			outputName = inputData.name();
 		} else {
-			getLogger().debug("Service name  [ {} ] -> [ {} ]", inputName, outputName);
+			getLogger().debug("Service name  [ {} ] -> [ {} ]", inputData.name(), outputName);
 		}
-		setResourceNames(inputName, outputName);
+		setResourceNames(inputData.name(), outputName);
 
-		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
 		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputLength);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
 		BufferedWriter writer = new BufferedWriter(outputWriter);
@@ -121,14 +121,14 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 		try {
 			transform(reader, writer); // throws IOException
 		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputName, e);
+			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
 		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputName, e);
+			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
 		}
 
@@ -136,8 +136,8 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 			return null;
 		}
 
-		byte[] outputBytes = outputStream.toByteArray();
-		return new ByteData(inputName, outputBytes, 0, outputBytes.length);
+		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+		return outputData;
 	}
 
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {

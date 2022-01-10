@@ -17,9 +17,9 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ByteData;
 import org.slf4j.Logger;
 
 public class NullActionImpl extends ActionImpl<Changes> {
@@ -54,9 +54,9 @@ public class NullActionImpl extends ActionImpl<Changes> {
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 
-		setResourceNames(inputName, inputName);
-		return new ByteData(inputName, inputBytes, 0, inputLength);
+		setResourceNames(inputData.name(), inputData.name());
+		return inputData;
 	}
 }

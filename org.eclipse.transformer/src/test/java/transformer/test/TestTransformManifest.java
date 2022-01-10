@@ -27,13 +27,13 @@ import java.util.Set;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -398,12 +398,12 @@ public class TestTransformManifest extends CaptureTest {
 			}
 		}
 
-		InputStreamData manifestOutput;
+		ByteData manifestOutput;
 		try (InputStream input = TestUtils.getResourceStream(inputPath)) { // throws IOException
 			manifestOutput = manifestAction.apply(inputPath, input); // throws JakartaTransformException
 		}
 
-		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream);
+		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
 
 		System.out.println("Verify output [ " + inputPath + " ]");
 

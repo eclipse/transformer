@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.util.InputStreamData;
 
 public interface Action {
 	/**
@@ -92,6 +91,17 @@ public interface Action {
 	//
 
 	/**
+	 * Apply this action on an input data. Answer a data structure containing
+	 * output data. The output data will be the original data if the input
+	 * stream if this action declined to process the input data.
+	 *
+	 * @param inputData The input data.
+	 * @return Transformed input data.
+	 * @throws TransformException Thrown if the transform failed.
+	 */
+	ByteData apply(ByteData inputData) throws TransformException;
+
+	/**
 	 * Apply this action onto an input file, writing output onto an output file.
 	 *
 	 * @param inputName A name associated with the input file.
@@ -111,14 +121,14 @@ public interface Action {
 	 * @return Transformed input data.
 	 * @throws TransformException Thrown if the transform failed.
 	 */
-	InputStreamData apply(String inputName, InputStream inputStream) throws TransformException;
+	ByteData apply(String inputName, InputStream inputStream) throws TransformException;
 
 	/**
 	 * Apply this action on an input stream. Answer a data structure containing
 	 * output data. The output data will be the original data if the input
 	 * stream if this action declined to process the input data. The input count
-	 * may be {@link InputStreamData#UNKNOWN_LENGTH}, in which case all
-	 * available data will be read from the input stream.
+	 * may be {@code -1}, in which case all available data will be read from the
+	 * input stream.
 	 *
 	 * @param inputName A name associated with the input data.
 	 * @param inputStream A stream containing input data.
@@ -126,13 +136,12 @@ public interface Action {
 	 * @return Transformed input data.
 	 * @throws TransformException Thrown if the transform failed.
 	 */
-	InputStreamData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException;
+	ByteData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException;
 
 	/**
 	 * Apply this action on an input stream. Write transformed data to the
-	 * output stream. The input count may be
-	 * {@link InputStreamData#UNKNOWN_LENGTH}, in which case all available data
-	 * will be read from the input stream.
+	 * output stream. The input count may be {@code -1}, in which case all
+	 * available data will be read from the input stream.
 	 *
 	 * @param inputName A name associated with the input data.
 	 * @param inputStream A stream containing input data.
@@ -230,8 +239,4 @@ public interface Action {
 	//
 
 	InputBuffer getBuffer();
-
-	byte[] getInputBuffer();
-
-	void setInputBuffer(byte[] inputBuffer);
 }
