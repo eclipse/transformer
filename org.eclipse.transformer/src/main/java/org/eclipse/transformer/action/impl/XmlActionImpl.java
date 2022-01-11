@@ -28,7 +28,11 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.util.ByteData;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -38,10 +42,9 @@ import org.xml.sax.helpers.DefaultHandler;
 import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class XmlActionImpl extends ActionImpl {
+public class XmlActionImpl extends ActionImpl<Changes> {
 
-	public XmlActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public XmlActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}
@@ -84,56 +87,54 @@ public class XmlActionImpl extends ActionImpl {
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputCount) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 		if (XML_AS_PLAIN_TEXT) {
-			return applyAsPlainText(inputName, inputBytes, inputCount);
+			return applyAsPlainText(inputData);
 		}
 
-		setResourceNames(inputName, inputName);
+		setResourceNames(inputData.name(), inputData.name());
 
-		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputCount);
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputCount);
+		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-		transformUsingSaxParser(inputName, inputStream, outputStream);
+		transformUsingSaxParser(inputData.name(), inputStream, outputStream);
 
 		if (!hasNonResourceNameChanges()) {
 			return null;
-
-		} else {
-			byte[] outputBytes = outputStream.toByteArray();
-			return new ByteData(inputName, outputBytes, 0, outputBytes.length);
 		}
+		ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+		return outputData;
 	}
 
 	@SuppressWarnings("unused")
-	public ByteData applyAsPlainText(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData applyAsPlainText(ByteData inputData) throws TransformException {
 
-		String outputName = inputName;
+		String outputName = inputData.name();
 
-		setResourceNames(inputName, outputName);
+		setResourceNames(inputData.name(), outputName);
 
-		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
 		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transformAsPlainText(inputName, reader, writer); // throws
+			transformAsPlainText(inputData.name(), reader, writer); // throws
 																// IOException
 		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputName, e);
+			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
 		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputName, e);
+			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
 		}
 
@@ -141,8 +142,8 @@ public class XmlActionImpl extends ActionImpl {
 			return null;
 		}
 
-		byte[] outputBytes = outputStream.toByteArray();
-		return new ByteData(inputName, outputBytes, 0, outputBytes.length);
+		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+		return outputData;
 	}
 
 	//

@@ -11,21 +11,38 @@
 
 package org.eclipse.transformer.action;
 
-import java.io.File;
-import java.util.List;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 
-public interface ContainerAction extends Action {
-	@Override
-	ContainerChanges getActiveChanges();
+/**
+ * A type representing data having a name.
+ */
+public interface ByteData {
+	/**
+	 * The name associated with the data.
+	 *
+	 * @return The name associated with the data.
+	 */
+	String name();
 
-	@Override
-	ContainerChanges getLastActiveChanges();
+	/**
+	 * The ByteBuffer associated with the data.
+	 *
+	 * @return The buffer associated with the data.
+	 */
+	ByteBuffer buffer();
 
-	CompositeAction getAction();
+	/**
+	 * The length of the data.
+	 *
+	 * @return The length of the data.
+	 */
+	int length();
 
-	List<Action> getActions();
-
-	Action acceptAction(String resourceName);
-
-	Action acceptAction(String resourceName, File resourceFile);
+	/**
+	 * A new InputStream stream to read the data.
+	 *
+	 * @return The stream containing data.
+	 */
+	InputStream stream();
 }

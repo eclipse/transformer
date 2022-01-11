@@ -15,17 +15,21 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.slf4j.Logger;
 
 import aQute.bnd.signatures.ArrayTypeSignature;
@@ -42,9 +46,8 @@ import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
-public abstract class ActionImpl implements Action {
-	public ActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+public abstract class ActionImpl<CHANGES extends Changes> implements Action {
+	public ActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		this.logger = logger;
 
@@ -53,20 +56,18 @@ public abstract class ActionImpl implements Action {
 		this.selectionRule = selectionRule;
 		this.signatureRule = signatureRule;
 
-		this.changes = new ArrayList<>();
-		this.numActiveChanges = 0;
+		this.changes = new ArrayDeque<>();
 		this.activeChanges = null;
 		this.lastActiveChanges = null;
 	}
 
 	//
 
-	public interface ActionInit<A extends ActionImpl> {
-		A apply(Logger logger, InputBufferImpl buffer,
-			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule);
+	public interface ActionInit<A extends Action> {
+		A apply(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule);
 	}
 
-	public <A extends ActionImpl> A createUsing(ActionInit<A> init) {
+	public <A extends Action> A createUsing(ActionInit<A> init) {
 		return init.apply(getLogger(), getBuffer(), getSelectionRule(),
 			getSignatureRule());
 	}
@@ -80,28 +81,26 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final InputBufferImpl buffer;
+	private final InputBuffer buffer;
 
 	@Override
-	public InputBufferImpl getBuffer() {
+	public InputBuffer getBuffer() {
 		return buffer;
 	}
 
-	@Override
-	public byte[] getInputBuffer() {
+	public ByteBuffer getInputBuffer() {
 		return getBuffer().getInputBuffer();
 	}
 
-	@Override
-	public void setInputBuffer(byte[] inputBuffer) {
+	public void setInputBuffer(ByteBuffer inputBuffer) {
 		getBuffer().setInputBuffer(inputBuffer);
 	}
 
 	//
 
-	private final SelectionRuleImpl selectionRule;
+	private final SelectionRule selectionRule;
 
-	public SelectionRuleImpl getSelectionRule() {
+	public SelectionRule getSelectionRule() {
 		return selectionRule;
 	}
 
@@ -120,10 +119,10 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	protected final SignatureRuleImpl signatureRule;
+	protected final SignatureRule signatureRule;
 
 	@Override
-	public SignatureRuleImpl getSignatureRule() {
+	public SignatureRule getSignatureRule() {
 		return signatureRule;
 	}
 
@@ -296,25 +295,20 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	protected ChangesImpl newChanges() {
-		return new ChangesImpl();
+	@SuppressWarnings("unchecked")
+	protected CHANGES newChanges() {
+		return (CHANGES) new ChangesImpl();
 	}
 
-	protected final List<ChangesImpl>	changes;
-	protected int						numActiveChanges;
-	protected ChangesImpl				activeChanges;
-	protected ChangesImpl				lastActiveChanges;
+	protected final Deque<CHANGES>	changes;
+	protected CHANGES				activeChanges;
+	protected CHANGES				lastActiveChanges;
 
 	protected void startRecording(String inputName) {
 		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
 
-		if (numActiveChanges == changes.size()) {
-			changes.add(activeChanges = newChanges());
-		} else {
-			activeChanges = changes.get(numActiveChanges);
-			activeChanges.clearChanges();
-		}
-		numActiveChanges++;
+		activeChanges = newChanges();
+		changes.addLast(activeChanges);
 	}
 
 	protected void stopRecording(String inputName) {
@@ -338,24 +332,18 @@ public abstract class ActionImpl implements Action {
 		}
 
 		lastActiveChanges = activeChanges;
-
-		numActiveChanges--;
-		if (numActiveChanges == 0) {
-			activeChanges = null;
-		} else {
-			activeChanges = changes.get(numActiveChanges);
-		}
+		activeChanges = changes.pollLast();
 	}
 
 	//
 
 	@Override
-	public ChangesImpl getActiveChanges() {
+	public CHANGES getActiveChanges() {
 		return activeChanges;
 	}
 
 	protected void setResourceNames(String inputResourceName, String outputResourceName) {
-		ChangesImpl useChanges = getActiveChanges();
+		CHANGES useChanges = getActiveChanges();
 		useChanges.setInputResourceName(inputResourceName);
 		useChanges.setOutputResourceName(outputResourceName);
 	}
@@ -390,7 +378,7 @@ public abstract class ActionImpl implements Action {
 	//
 
 	@Override
-	public ChangesImpl getLastActiveChanges() {
+	public CHANGES getLastActiveChanges() {
 		return lastActiveChanges;
 	}
 
@@ -427,21 +415,21 @@ public abstract class ActionImpl implements Action {
 	 * @return Byte data from the read.
 	 * @throws TransformException Indicates a read failure.
 	 */
-	protected ByteData read(String inputName, InputStream inputStream, int inputCount) throws TransformException {
-		byte[] readBytes = getInputBuffer();
+	protected ByteData read(String inputName, InputStream inputStream, int inputCount)
+		throws TransformException {
 
-		ByteData readData;
+		ByteBuffer readData = getInputBuffer();
 		try {
-			readData = FileUtils.read(inputName, inputStream, readBytes, inputCount); // throws
+			readData = FileUtils.read(inputName, inputStream, readData, inputCount); // throws
 																						// IOException
 		} catch (IOException e) {
 			throw new TransformException("Failed to read raw bytes [ " + inputName + " ] count [ " + inputCount + " ]",
 				e);
 		}
 
-		setInputBuffer(readData.data);
+		setInputBuffer(readData);
 
-		return readData;
+		return new ByteDataImpl(inputName, readData);
 	}
 
 	/**
@@ -454,38 +442,30 @@ public abstract class ActionImpl implements Action {
 	 */
 	protected void write(ByteData outputData, OutputStream outputStream) throws TransformException {
 		try {
-			outputStream.write(outputData.data, outputData.offset, outputData.length); // throws
-																						// IOException
-
+			IO.copy(outputData.buffer(), outputStream);
 		} catch (IOException e) {
-			throw new TransformException("Failed to write [ " + outputData.name + " ]" + " at [ " + outputData.offset
-				+ " ]" + " count [ " + outputData.length + " ]", e);
+			throw new TransformException("Failed to write [ " + outputData.name() + " ]" +  " count [ " + outputData.length() + " ]", e);
 		}
 	}
 
 	//
 
 	@Override
-	public InputStreamData apply(String inputName, InputStream inputStream) throws TransformException {
-
-		return apply(inputName, inputStream, InputStreamData.UNKNOWN_LENGTH); // throws
-																				// JakartaTransformException
+	public ByteData apply(String inputName, InputStream inputStream) throws TransformException {
+		return apply(inputName, inputStream, -1);
 	}
 
 	@Override
-	public InputStreamData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
-
+	public ByteData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
 		startRecording(inputName);
 		try {
-			return basicApply(inputName, inputStream, inputCount); // throws
-																	// TransformException
-																	// {
+			return basicApply(inputName, inputStream, inputCount);
 		} finally {
 			stopRecording(inputName);
 		}
 	}
 
-	public InputStreamData basicApply(String inputName, InputStream inputStream, int inputCount)
+	public ByteData basicApply(String inputName, InputStream inputStream, int inputCount)
 		throws TransformException {
 
 		String className = getClass().getSimpleName();
@@ -495,11 +475,11 @@ public abstract class ActionImpl implements Action {
 		ByteData inputData = read(inputName, inputStream, inputCount); // throws
 																		// JakartaTransformException
 
-		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length());
 
 		ByteData outputData;
 		try {
-			outputData = apply(inputName, inputData.data, inputData.length);
+			outputData = apply(inputData);
 			// throws JakartaTransformException
 		} catch (Throwable th) {
 			getLogger().error("Transform failure [ {} ]", inputName, th);
@@ -510,11 +490,11 @@ public abstract class ActionImpl implements Action {
 			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
-				outputData.length);
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
+				outputData.length());
 		}
 
-		return new InputStreamData(outputData);
+		return outputData;
 	}
 
 	@Override
@@ -541,11 +521,14 @@ public abstract class ActionImpl implements Action {
 		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 		ByteData inputData = read(inputName, inputStream, intInputCount); // throws
 																			// JakartaTransformException
-		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length);
+																			getLogger().debug(
+																				"[ {}.{} ]: Obtained [ {} ] [ {} ]",
+																				className, methodName, inputName,
+																				inputData.length());
 
 		ByteData outputData;
 		try {
-			outputData = apply(inputName, inputData.data, inputData.length);
+			outputData = apply(inputName, inputData.stream(), inputData.length());
 			// throws JakartaTransformException
 		} catch (Throwable th) {
 			getLogger().error("Transform failure [ {} ]", inputName, th);
@@ -556,14 +539,12 @@ public abstract class ActionImpl implements Action {
 			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
 			outputData = inputData;
 		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name,
-				outputData.length);
+			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
+				outputData.length());
 		}
 
 		write(outputData, outputStream); // throws JakartaTransformException
 	}
-
-	protected abstract ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException;
 
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {

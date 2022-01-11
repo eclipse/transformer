@@ -23,16 +23,19 @@ import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.util.ByteData;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
 import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class JavaActionImpl extends ActionImpl {
+public class JavaActionImpl extends ActionImpl<Changes> {
 
-	public JavaActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public JavaActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}
@@ -131,24 +134,24 @@ public class JavaActionImpl extends ActionImpl {
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 
 		String outputName = null;
 		// String outputName = renameInput(inputName); // TODO
 		// if ( outputName == null ) {
-		outputName = inputName;
+		outputName = inputData.name();
 		// } else {
 		// info("Input class name [ {} ]", inputName);
 		// info("Output class name [ {} ]", outputName);
 		// }
-		setResourceNames(inputName, outputName);
+		setResourceNames(inputData.name(), outputName);
 
-		InputStream inputStream = new ByteBufferInputStream(inputBytes, 0, inputLength);
+		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
 		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
 		BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputBytes.length);
+		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
 		BufferedWriter writer = new BufferedWriter(outputWriter);
@@ -156,14 +159,14 @@ public class JavaActionImpl extends ActionImpl {
 		try {
 			transform(reader, writer); // throws IOException
 		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputName, e);
+			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
 			writer.flush(); // throws
 		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputName, e);
+			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
 		}
 
@@ -171,8 +174,8 @@ public class JavaActionImpl extends ActionImpl {
 			return null;
 		}
 
-		byte[] outputBytes = outputStream.toByteArray();
-		return new ByteData(inputName, outputBytes, 0, outputBytes.length);
+		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+		return outputData;
 	}
 
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {

@@ -36,6 +36,8 @@ public interface SignatureRule {
 
 	Map<String, String> getPackageVersions();
 
+	Map<String, Map<String, String>> getSpecificPackageVersions();
+
 	//
 
 	public enum SignatureType {
@@ -80,6 +82,8 @@ public interface SignatureRule {
 	String replacePackages(String text, Map<String, String> packageRenames);
 
 	String replacePackages(String text);
+
+	String replaceText(String inputFileName, String text);
 
 	String transformConstantAsBinaryType(String inputConstant);
 
@@ -145,4 +149,5 @@ public interface SignatureRule {
 
 	String getDirectString(String initialValue, String clazz);
 
+	Map<String, String> getTextSubstitutions(String inputFileName);
 }

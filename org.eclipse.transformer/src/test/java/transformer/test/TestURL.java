@@ -11,21 +11,22 @@
 
 package transformer.test;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.nio.ByteBuffer;
 import java.util.Properties;
 
 import org.assertj.core.api.Assertions;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import aQute.lib.io.ByteBufferInputStream;
 
 public class TestURL {
 	private Properties prior;
@@ -98,9 +99,9 @@ public class TestURL {
 			InputStream baseStream = useBaseConnection.getInputStream(); // throws
 																			// IOException
 
-			ByteData inputData = FileUtils.read(baseName, baseStream);
+			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 
-			return new ByteArrayInputStream(inputData.data, 0, inputData.length);
+			return new ByteBufferInputStream(inputData);
 		}
 	}
 
@@ -127,33 +128,33 @@ public class TestURL {
 
 		System.out.println("As xForm URL [ " + xformURL + " ]");
 
-		ByteData directData;
+		ByteBuffer directData;
 		try {
-			directData = FileUtils.read(urlTestURLName, urlTestURL.openStream(), -1);
+			directData = FileUtils.read(urlTestURLName, urlTestURL.openStream());
 		} catch (IOException e) {
 			Assertions.fail("Failed to read direct URL [ " + urlTestURLName + " ]: " + e);
 			return;
 		}
 
-		ByteData indirectData;
+		ByteBuffer indirectData;
 		try {
-			indirectData = FileUtils.read(urlTestURLName, xformURL.openStream(), -1);
+			indirectData = FileUtils.read(urlTestURLName, xformURL.openStream());
 		} catch (IOException e) {
 			Assertions.fail("Failed to read indirect URL [ " + urlTestURLName + " ]: " + e);
 			return;
 		}
 
 		if ((directData != null) && (indirectData != null)) {
-			if (directData.length != indirectData.length) {
-				Assertions.fail("Length change [ " + urlTestURLName + " ] Direct [ " + directData.length
-					+ " ] Indirect [ " + indirectData.length + " ]");
+			if (directData.limit() != indirectData.limit()) {
+				Assertions.fail("Length change [ " + urlTestURLName + " ] Direct [ " + directData.limit()
+					+ " ] Indirect [ " + indirectData.limit() + " ]");
 			} else {
-				int firstChange = firstDifference(directData.data, indirectData.data, directData.length);
+				int firstChange = firstDifference(directData.array(), indirectData.array(), directData.limit());
 				if (firstChange != -1) {
 					Assertions.fail("Data change [ " + urlTestURLName + " ] at [ " + firstChange + " ]");
 				} else {
 					System.out.println(
-						"Direct matches indirect [ " + urlTestURLName + " ] to length [ " + directData.length + " ]");
+						"Direct matches indirect [ " + urlTestURLName + " ] to length [ " + directData.limit() + " ]");
 				}
 			}
 		}

@@ -11,8 +11,10 @@
 
 package org.eclipse.transformer.action;
 
-public interface InputBuffer {
-	byte[] getInputBuffer();
+import java.nio.ByteBuffer;
 
-	void setInputBuffer(byte[] inputBuffer);
+public interface InputBuffer {
+	ByteBuffer getInputBuffer();
+
+	void setInputBuffer(ByteBuffer inputBuffer);
 }

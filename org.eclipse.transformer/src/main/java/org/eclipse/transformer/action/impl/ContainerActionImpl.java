@@ -25,21 +25,23 @@ import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
-import org.eclipse.transformer.util.ByteData;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.SelectionRule;
+import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.InputStreamData;
 import org.slf4j.Logger;
 
-public abstract class ContainerActionImpl extends ActionImpl implements ContainerAction {
+public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImpl> implements ContainerAction {
 
-	public <A extends ActionImpl> A addUsing(ActionInit<A> init) {
+	public <A extends Action> A addUsing(ActionInit<A> init) {
 		A action = createUsing(init);
 		addAction(action);
 		return action;
 	}
 
-	public ContainerActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public ContainerActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 
@@ -55,12 +57,12 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 		return compositeAction;
 	}
 
-	public void addAction(ActionImpl action) {
+	public void addAction(Action action) {
 		getAction().addAction(action);
 	}
 
 	@Override
-	public List<ActionImpl> getActions() {
+	public List<Action> getActions() {
 		return getAction().getActions();
 	}
 
@@ -70,12 +72,12 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	}
 
 	@Override
-	public ActionImpl acceptAction(String resourceName) {
+	public Action acceptAction(String resourceName) {
 		return acceptAction(resourceName, null);
 	}
 
 	@Override
-	public ActionImpl acceptAction(String resourceName, File resourceFile) {
+	public Action acceptAction(String resourceName, File resourceFile) {
 		return getAction().acceptAction(resourceName, resourceFile);
 	}
 
@@ -92,16 +94,6 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	@Override
 	protected ContainerChangesImpl newChanges() {
 		return new ContainerChangesImpl();
-	}
-
-	@Override
-	public ContainerChangesImpl getLastActiveChanges() {
-		return (ContainerChangesImpl) super.getLastActiveChanges();
-	}
-
-	@Override
-	public ContainerChangesImpl getActiveChanges() {
-		return (ContainerChangesImpl) super.getActiveChanges();
 	}
 
 	//
@@ -133,7 +125,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	}
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 		throw new UnsupportedOperationException();
 	}
 
@@ -273,7 +265,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 							intInputLength = FileUtils.verifyArray(0, inputLength);
 						}
 
-						InputStreamData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
+						ByteData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
 						recordTransform(acceptedAction, inputName);
 
 						// TODO: Should more of the entry details be
@@ -283,7 +275,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 							.getOutputResourceName());
 						zipOutputStream.putNextEntry(outputEntry); // throws
 																	// IOException
-						FileUtils.transfer(outputData.stream, zipOutputStream, buffer); // throws
+						FileUtils.transfer(outputData.stream(), zipOutputStream, buffer); // throws
 																						// IOException
 						zipOutputStream.closeEntry(); // throws IOException
 					}

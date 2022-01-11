@@ -28,13 +28,13 @@ import java.util.zip.ZipInputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.CompositeActionImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.util.InputStreamData;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -271,14 +271,14 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 		InputStream inputStream = TestUtils.getResourceStream(inputName);
 
-		InputStreamData transformedData;
+		ByteData transformedData;
 		try {
 			transformedData = action.apply(inputName, inputStream);
 		} finally {
 			inputStream.close();
 		}
 
-		List<String> transformedLines = TestUtils.loadLines(transformedData.stream);
+		List<String> transformedLines = TestUtils.loadLines(transformedData.stream());
 		TestUtils.filter(transformedLines);
 		TestUtils.verify(inputName, expectedLines, transformedLines);
 	}

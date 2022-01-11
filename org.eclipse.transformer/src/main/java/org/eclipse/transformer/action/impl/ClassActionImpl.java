@@ -18,9 +18,11 @@ import java.util.ListIterator;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.InputBuffer;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
-import org.eclipse.transformer.util.ByteData;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
 
@@ -86,7 +88,7 @@ import aQute.lib.io.ByteBufferDataOutput;
 /**
  * Transform class bytes.
  */
-public class ClassActionImpl extends ActionImpl {
+public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	public static String resourceNameToClassName(String resourceName) {
 		String className = resourceName.substring(resourceName.length() - ".class".length());
@@ -203,8 +205,8 @@ public class ClassActionImpl extends ActionImpl {
 		return line;
 	}
 
-	public ClassActionImpl(Logger logger, InputBufferImpl buffer,
-		SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
+	public ClassActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
+		SignatureRule signatureRule) {
 
 		super(logger, buffer, selectionRule, signatureRule);
 	}
@@ -226,16 +228,6 @@ public class ClassActionImpl extends ActionImpl {
 	@Override
 	protected ClassChangesImpl newChanges() {
 		return new ClassChangesImpl();
-	}
-
-	@Override
-	public ClassChangesImpl getLastActiveChanges() {
-		return (ClassChangesImpl) super.getLastActiveChanges();
-	}
-
-	@Override
-	public ClassChangesImpl getActiveChanges() {
-		return (ClassChangesImpl) super.getActiveChanges();
 	}
 
 	protected void setClassNames(String inputClassName, String outputClassName) {
@@ -280,23 +272,23 @@ public class ClassActionImpl extends ActionImpl {
 	//
 
 	@Override
-	public ByteData apply(String inputName, byte[] inputBytes, int inputLength) throws TransformException {
+	public ByteData apply(ByteData inputData) throws TransformException {
 
-		getLogger().debug("Read [ {} ] Bytes [ {} ]", inputName, inputLength);
+		getLogger().debug("Read [ {} ] Bytes [ {} ]", inputData.name(), inputData.length());
 		// Issue #158: This clogs output.
 		// debugDump(inputBytes, 0, inputLength);
 
 		ClassFile inputClass;
 		try {
-			DataInput inputClassData = ByteBufferDataInput.wrap(inputBytes, 0, inputLength);
+			DataInput inputClassData = ByteBufferDataInput.wrap(inputData.buffer());
 			inputClass = ClassFile.parseClassFile(inputClassData); // throws
 																	// IOException
 		} catch (IOException e) {
-			getLogger().error("Failed to parse raw class bytes [ {} ]", inputName, e);
+			getLogger().error("Failed to parse raw class bytes [ {} ]", inputData.name(), e);
 			return null;
 		}
 
-		getLogger().debug("Class [ {} ] as [ {} ] ", inputName, inputClass.this_class);
+		getLogger().debug("Class [ {} ] as [ {} ] ", inputData.name(), inputClass.this_class);
 		getLogger().debug("  Super [ {} ]", inputClass.super_class);
 		if (inputClass.interfaces != null) {
 			getLogger().debug("  Interfaces [ {} ]", inputClass.interfaces.length);
@@ -327,15 +319,15 @@ public class ClassActionImpl extends ActionImpl {
 		String outputName;
 		if (outputClassName != null) {
 			classBuilder.this_class(outputClassName);
-			outputName = relocateClass(getLogger(), inputName, inputClassName, outputClassName);
-			getLogger().debug("Class name [ {} ] -> [ {} ]", inputName, outputName);
+			outputName = relocateClass(getLogger(), inputData.name(), inputClassName, outputClassName);
+			getLogger().debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
 		} else {
 			outputClassName = inputClassName;
-			outputName = inputName;
+			outputName = inputData.name();
 		}
 
 		setClassNames(inputClassName, outputClassName);
-		setResourceNames(inputName, outputName);
+		setResourceNames(inputData.name(), outputName);
 
 		getLogger().debug("{}", classBuilder);
 
@@ -378,7 +370,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (fields.hasNext()) {
 			FieldInfo inputField = fields.next();
-			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputName);
+			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputData.name());
 			if (outputField != null) {
 				fields.set(outputField);
 				addModifiedField();
@@ -393,7 +385,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (methods.hasNext()) {
 			MethodInfo inputMethod = methods.next();
-			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD, inputName);
+			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD, inputData.name());
 			if (outputMethod != null) {
 				methods.set(outputMethod);
 				addModifiedMethod();
@@ -412,7 +404,7 @@ public class ClassActionImpl extends ActionImpl {
 		}
 		while (attributes.hasNext()) {
 			Attribute inputAttribute = attributes.next();
-			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputName);
+			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputData.name());
 			if (outputAttribute != null) {
 				attributes.set(outputAttribute);
 				addModifiedAttribute();
@@ -423,29 +415,29 @@ public class ClassActionImpl extends ActionImpl {
 		MutableConstantPool constants = classBuilder.constant_pool();
 		getLogger().debug("  Constant pool: {}", constants.size());
 
-		int modifiedConstants = transform(constants, inputName);
+		int modifiedConstants = transform(constants, inputData.name());
 		if (modifiedConstants > 0) {
 			setModifiedConstants(modifiedConstants);
 		}
 
 		if (!hasNonResourceNameChanges()) {
-			getLogger().debug("  Class bytes: {} {}", inputName, inputLength);
+			getLogger().debug("  Class bytes: {} {}", inputData.name(), inputData.length());
 			return null;
 		}
 
 		ClassFile outputClass = classBuilder.build();
 
-		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputLength + FileUtils.PAGE_SIZE);
+		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputData.length() + FileUtils.PAGE_SIZE);
 		try {
 			outputClass.write(outputClassData); // throws IOException
 		} catch (IOException e) {
 			throw new TransformException("Failed to write transformed class bytes", e);
 		}
 
-		byte[] outputBytes = outputClassData.toByteArray();
-		getLogger().debug("  Class size: {}: {} -> {}", inputName, inputLength, outputBytes.length);
+		ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer());
+		getLogger().debug("  Class size: {}: {} -> {}", inputData.name(), inputData.length(), outputData.length());
 
-		return new ByteData(outputName, outputBytes, 0, outputBytes.length);
+		return outputData;
 	}
 
 	//
