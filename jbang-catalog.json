@@ -1,0 +1,20 @@
+{
+  "catalogs": {},
+  "aliases": {
+    "transformer": {
+      "script-ref": "org.eclipse.transformer:org.eclipse.transformer.cli:0.3.0-SNAPSHOT",
+      "repositories": [
+        "https://oss.sonatype.org/content/repositories/snapshots"
+      ],
+      "main": "org.eclipse.transformer.cli.TransformerCLI"
+    },
+    "jakartatransformer": {
+      "script-ref": "org.eclipse.transformer:org.eclipse.transformer.cli:0.3.0-SNAPSHOT",
+      "repositories": [
+        "https://oss.sonatype.org/content/repositories/snapshots"
+      ],
+      "main": "org.eclipse.transformer.cli.JakartaTransformerCLI"
+    }
+  },
+  "templates": {}
+}
