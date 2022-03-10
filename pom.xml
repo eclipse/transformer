@@ -29,7 +29,7 @@
 		<java.release>8</java.release>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<bnd.version>6.1.0</bnd.version>
+		<bnd.version>6.2.0</bnd.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
 		<assertj.version>3.22.0</assertj.version>
 		<maven.target.version>3.3.9</maven.target.version>
@@ -314,7 +314,8 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<dependency>
 			<groupId>org.osgi</groupId>
 			<artifactId>osgi.annotation</artifactId>
-			<version>8.0.1</version>
+			<version>8.1.0</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 
@@ -323,7 +324,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
-				<version>1.7.35</version>
+				<version>1.7.36</version>
 			</dependency>
 			<dependency>
 				<groupId>biz.aQute.bnd</groupId>
@@ -340,7 +341,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-simple</artifactId>
-				<version>1.7.35</version>
+				<version>1.7.36</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
@@ -544,7 +545,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>6.2.0-SNAPSHOT</bnd.version>
+				<bnd.version>6.3.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>
