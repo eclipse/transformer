@@ -434,12 +434,6 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 			</dependency>
 			<dependency>
 				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-compat</artifactId>
-				<version>${maven.target.version}</version>
-				<scope>provided</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.maven</groupId>
 				<artifactId>maven-plugin-api</artifactId>
 				<version>${maven.target.version}</version>
 				<scope>provided</scope>
@@ -460,6 +454,12 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				<groupId>org.apache.maven.plugin-testing</groupId>
 				<artifactId>maven-plugin-testing-harness</artifactId>
 				<version>3.3.0</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven</groupId>
+				<artifactId>maven-compat</artifactId>
+				<version>3.8.4</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
