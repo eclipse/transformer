@@ -95,6 +95,10 @@ public abstract class TestTransformerBase {
 		System.setProperties(prior);
 	}
 
+	protected String getName() {
+		return name;
+	}
+
 	/** Control parameter: Enable debug logging. */
 	public static final boolean DO_DEBUG_LOGGING = true;
 
@@ -118,7 +122,7 @@ public abstract class TestTransformerBase {
 		throws Exception, AssertionFailedError {
 
 		SubstituteLoggerFactory loggerFactory = new SubstituteLoggerFactory();
-		Logger logger = loggerFactory.getLogger(name);
+		Logger logger = loggerFactory.getLogger(getName());
 
 		Transformer transformer = new Transformer(logger, new TransformOptions() {
 			@Override
