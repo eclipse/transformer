@@ -85,77 +85,43 @@ public class FileUtils {
 	 */
 	public static ByteBuffer read(String inputName, InputStream inputStream, ByteBuffer buffer, int count)
 		throws IOException {
-
-		if (count == -1) {
-			return read(inputName, inputStream, buffer);
-		}
-
-		count = verifyArray(0, count);
-
-		if ((count > buffer.limit())) {
-			buffer = ByteBuffer.allocate(count);
-		} else {
-			buffer.clear();
-		}
-
-		int offset = 0;
-		int remaining = count;
-
-		while (remaining > 0) {
-			int actual = inputStream.read(buffer.array(), offset, remaining);
-			if (actual == -1) {
-				throw new IOException("Premature end-of-stream [ " + inputName + " at [ " + offset + " ] requested [ "
-					+ remaining + " ]");
+		if (count != -1) {
+			verifyArray(0, count);
+			if (count > buffer.capacity()) {
+				buffer = ByteBuffer.allocate(count);
 			}
-
-			// System.out.println("Read requested [ " + inputName + " ] [ "
-			// + remaining + " ] actual [ " + actual + " ]");
-			offset += actual;
-			remaining -= actual;
 		}
-
-		buffer.limit(count);
-		return buffer;
-	}
-
-	//
-
-	public static ByteBuffer read(String inputName, InputStream inputStream) throws IOException {
-		return read(inputName, inputStream, ByteBuffer.allocate(BUFFER_ADJUSTMENT));
-	}
-
-	public static ByteBuffer read(String inputName, InputStream inputStream, ByteBuffer buffer) throws IOException {
 		buffer.clear();
-		int bytesUsed = 0;
-		int bytesRemaining = buffer.remaining();
-
-		for (int bytesRead; (bytesRead = inputStream.read(buffer.array(), bytesUsed, bytesRemaining)) != -1;) {
-			bytesUsed += bytesRead;
-			bytesRemaining -= bytesRead;
-
-			if (bytesRemaining == 0) {
-				int bytesAdded = MAX_ARRAY_LENGTH - bytesUsed;
-				if (bytesAdded == 0) {
+		for (int bytesRead; (bytesRead = inputStream.read(buffer.array(), buffer.arrayOffset() + buffer.position(),
+			buffer.remaining())) != -1;) {
+			buffer.position(buffer.position() + bytesRead);
+			if (!buffer.hasRemaining()) {
+				if (buffer.position() == count) {
+					break; // don't grow, we have all the data
+				}
+				if (buffer.capacity() >= MAX_ARRAY_LENGTH) {
 					if (inputStream.read() == -1) {
 						break;
-					} else {
-						throw new IOException(
-							"Overflow of [ " + inputName + " ] after reading [ " + bytesUsed + " ] bytes");
 					}
-				} else if (bytesAdded > BUFFER_ADJUSTMENT) {
-					bytesAdded = BUFFER_ADJUSTMENT;
+					throw new IOException(
+						"Overflow of [ " + inputName + " ] after reading [ " + buffer.position() + " ] bytes");
 				}
-
-				int nextLength = bytesUsed + BUFFER_ADJUSTMENT;
-				bytesRemaining = BUFFER_ADJUSTMENT;
-
+				int capacity = Math.min(MAX_ARRAY_LENGTH, buffer.capacity() + BUFFER_ADJUSTMENT);
 				buffer.flip();
-				buffer = ByteBuffer.allocate(nextLength)
+				buffer = ByteBuffer.allocate(capacity)
 					.put(buffer);
 			}
 		}
-		buffer.limit(bytesUsed);
+		buffer.flip();
 		return buffer;
+	}
+
+	public static ByteBuffer read(String inputName, InputStream inputStream, ByteBuffer buffer) throws IOException {
+		return read(inputName, inputStream, buffer, -1);
+	}
+
+	public static ByteBuffer read(String inputName, InputStream inputStream) throws IOException {
+		return read(inputName, inputStream, ByteBuffer.allocate(BUFFER_ADJUSTMENT));
 	}
 
 	public static long transfer(InputStream inputStream, OutputStream outputStream) throws IOException {
