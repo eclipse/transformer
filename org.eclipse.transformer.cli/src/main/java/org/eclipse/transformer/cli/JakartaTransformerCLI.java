@@ -21,10 +21,8 @@ import org.osgi.annotation.bundle.Header;
 public class JakartaTransformerCLI extends TransformerCLI {
 	public static void main(String[] args) throws Exception {
 		JakartaTransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, args);
-		cli.setOptionDefaults(JakartaTransform.getRuleLoader(), JakartaTransform.getOptionDefaults());
-		@SuppressWarnings("unused")
 		ResultCode rc = runWith(cli);
-		// System.exit(rc); // TODO: How should this code be returned?
+		System.exit(rc.ordinal());
 	}
 
 	/**
@@ -34,5 +32,6 @@ public class JakartaTransformerCLI extends TransformerCLI {
 	 */
 	public JakartaTransformerCLI(PrintStream sysOut, PrintStream sysErr, String... args) {
 		super(sysOut, sysErr, args);
+		setOptionDefaults(JakartaTransform.getRuleLoader(), JakartaTransform.getOptionDefaults());
 	}
 }

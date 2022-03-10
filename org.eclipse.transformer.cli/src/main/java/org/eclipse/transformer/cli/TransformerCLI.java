@@ -48,15 +48,13 @@ import org.slf4j.Logger;
 public class TransformerCLI implements TransformOptions {
 
 	public static void main(String[] args) throws Exception {
-		@SuppressWarnings("unused")
 		TransformerCLI cli = new TransformerCLI(System.out, System.out, args);
 		ResultCode rc = runWith(cli);
-		// System.exit(rc); // TODO: How should this code be returned?
+		System.exit(rc.ordinal());
 	}
 
 	public static ResultCode runWith(TransformerCLI cli) {
 		ResultCode rc = cli.run();
-		System.out.println("Return Code [ " + rc.ordinal() + " ]: " + rc);
 		return rc;
 	}
 
