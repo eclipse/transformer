@@ -104,6 +104,14 @@
 							<goals>
 								<goal>bnd-process</goal>
 							</goals>
+							<configuration>
+								<bnd><![CDATA[
+SPDX-License-Identifier: ${project.licenses[0].name}
+-includeresource.legal:\
+ "META-INF/=${project.parent.basedir}/LICENSE",\
+ "META-INF/=${project.parent.basedir}/NOTICE"
+]]></bnd>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
@@ -139,9 +147,6 @@
 							<manifest>
 								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 							</manifest>
-							<manifestEntries>
-								<SPDX-License-Identifier>${project.licenses[0].name}</SPDX-License-Identifier>
-							</manifestEntries>
 						</archive>
 					</configuration>
 				</plugin>
