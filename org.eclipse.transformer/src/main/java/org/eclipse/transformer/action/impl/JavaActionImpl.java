@@ -23,9 +23,9 @@ import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;

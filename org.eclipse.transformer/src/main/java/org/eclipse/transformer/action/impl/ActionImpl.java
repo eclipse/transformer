@@ -420,8 +420,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 		ByteBuffer readData = getInputBuffer();
 		try {
-			readData = FileUtils.read(inputName, inputStream, readData, inputCount); // throws
-																						// IOException
+			readData = FileUtils.read(inputName, inputStream, readData, inputCount);
 		} catch (IOException e) {
 			throw new TransformException("Failed to read raw bytes [ " + inputName + " ] count [ " + inputCount + " ]",
 				e);
@@ -457,93 +456,56 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	@Override
 	public ByteData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
+		return basicApply(inputName, inputStream, inputCount);
+	}
+
+	private void basicApply(String inputName, InputStream inputStream, long inputCount, OutputStream outputStream) {
+		int intInputCount;
+		if (inputCount == -1L) {
+			intInputCount = -1;
+		} else {
+			intInputCount = FileUtils.verifyArray(0, inputCount);
+		}
+		ByteData outputData = basicApply(inputName, inputStream, intInputCount);
+		write(outputData, outputStream);
+	}
+
+	private ByteData basicApply(String inputName, InputStream inputStream, int inputCount) {
 		startRecording(inputName);
 		try {
-			return basicApply(inputName, inputStream, inputCount);
+			String className = getClass().getSimpleName();
+			String methodName = "apply";
+
+			getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
+			ByteData inputData = read(inputName, inputStream, inputCount);
+			getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName,
+				inputData.length());
+
+			ByteData outputData;
+			try {
+				outputData = apply(inputData);
+			} catch (Throwable th) {
+				getLogger().error("Transform failure [ {} ]", inputName, th);
+				outputData = null;
+			}
+
+			if (outputData == null) {
+				getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
+				outputData = inputData;
+			} else {
+				getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
+					outputData.length());
+			}
+			return outputData;
 		} finally {
 			stopRecording(inputName);
 		}
-	}
-
-	public ByteData basicApply(String inputName, InputStream inputStream, int inputCount)
-		throws TransformException {
-
-		String className = getClass().getSimpleName();
-		String methodName = "apply";
-
-		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
-		ByteData inputData = read(inputName, inputStream, inputCount); // throws
-																		// JakartaTransformException
-
-		getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName, inputData.length());
-
-		ByteData outputData;
-		try {
-			outputData = apply(inputData);
-			// throws JakartaTransformException
-		} catch (Throwable th) {
-			getLogger().error("Transform failure [ {} ]", inputName, th);
-			outputData = null;
-		}
-
-		if (outputData == null) {
-			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
-			outputData = inputData;
-		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
-				outputData.length());
-		}
-
-		return outputData;
 	}
 
 	@Override
 	public void apply(String inputName, InputStream inputStream, long inputCount, OutputStream outputStream)
 		throws TransformException {
-
-		startRecording(inputName);
-		try {
-			basicApply(inputName, inputStream, inputCount, outputStream); // throws
-																			// TransformException
-		} finally {
-			stopRecording(inputName);
-		}
-	}
-
-	public void basicApply(String inputName, InputStream inputStream, long inputCount, OutputStream outputStream)
-		throws TransformException {
-
-		int intInputCount = FileUtils.verifyArray(0, inputCount);
-
-		String className = getClass().getSimpleName();
-		String methodName = "apply";
-
-		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
-		ByteData inputData = read(inputName, inputStream, intInputCount); // throws
-																			// JakartaTransformException
-																			getLogger().debug(
-																				"[ {}.{} ]: Obtained [ {} ] [ {} ]",
-																				className, methodName, inputName,
-																				inputData.length());
-
-		ByteData outputData;
-		try {
-			outputData = apply(inputName, inputData.stream(), inputData.length());
-			// throws JakartaTransformException
-		} catch (Throwable th) {
-			getLogger().error("Transform failure [ {} ]", inputName, th);
-			outputData = null;
-		}
-
-		if (outputData == null) {
-			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
-			outputData = inputData;
-		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
-				outputData.length());
-		}
-
-		write(outputData, outputStream); // throws JakartaTransformException
+		basicApply(inputName, inputStream, inputCount, outputStream);
 	}
 
 	@Override

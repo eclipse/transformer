@@ -16,13 +16,22 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import org.eclipse.transformer.AppOption;
 import org.junit.jupiter.api.Test;
+
+import aQute.bnd.exceptions.Exceptions;
+import aQute.lib.io.IO;
 
 // Initial:
 // The quick brown fox jumps over the lazy dog.
@@ -62,8 +71,6 @@ import org.junit.jupiter.api.Test;
 
 public class TestTransformerMultiText extends TestTransformerBase {
 
-	private static final String DYNAMIC_CONTENT_DIR = "target/test/data/multi-text";
-
 	@Override
 	public String getStaticContentDir() {
 		return null;
@@ -71,7 +78,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	@Override
 	public String getDynamicContentDir() {
-		return DYNAMIC_CONTENT_DIR;
+		return "target/test/data/" + getName();
 	}
 
 	// Rules data ...
@@ -113,11 +120,11 @@ public class TestTransformerMultiText extends TestTransformerBase {
 			new TextRulesData("ext1.properties", "quick=fast", "brown=blue"),
 			new TextRulesData("ext2.properties", "fox=hen", "over=under"),
 
-			new TextRulesData("tier1.master.properties", "*.ext1=ext11.properties", "*.ext4=ext4.properties"),
+			new TextRulesData(TIER1_MASTER_PROPERTIES, "*.ext1=ext11.properties", "*.ext4=ext4.properties"),
 			new TextRulesData("ext11.properties", "quick=lethargic", "lazy=energetic"),
 			new TextRulesData("ext4.properties", "jumps=walks", "dog=meadow"),
 
-			new TextRulesData("tier2.master.properties", "*.ext2=ext22.properties", "*.ext5=ext5.properties"),
+			new TextRulesData(TIER2_MASTER_PROPERTIES, "*.ext2=ext22.properties", "*.ext5=ext5.properties"),
 			new TextRulesData("ext22.properties", "fox=elephant", "over=beside"),
 			new TextRulesData("ext5.properties", "jumps=strolls", "over=behind")
 		};
@@ -176,36 +183,112 @@ public class TestTransformerMultiText extends TestTransformerBase {
 	//
 
 	@Test
-	void testMultiText() throws Exception {
-		String dynamicContentDir = getDynamicContentDir();
+	void testMultiTextDir() throws Exception {
+		File dynamicContentDir = new File(getDynamicContentDir());
+		IO.deleteContent(dynamicContentDir);
 
-		String propertiesDir = dynamicContentDir + '/' + "properties";
+		File propertiesDir = new File(dynamicContentDir, "properties");
 
-		String inputDir = dynamicContentDir + '/' + "input";
-		String outputDir = dynamicContentDir + '/' + "output";
+		File inputDir = new File(dynamicContentDir, "input");
+		File outputDir = new File(dynamicContentDir, "output");
 
-		(new File(propertiesDir)).mkdir();
-		writeRulesData(propertiesDir);
+		IO.mkdirs(propertiesDir);
+		writeRulesData(propertiesDir.getPath());
 
-		(new File(inputDir)).mkdir();
-
+		IO.mkdirs(inputDir);
 		TestUtils.writeInputData(
-			inputDir, NUM_FILES, NUM_EXTS,
+			inputDir.getPath(), NUM_FILES, NUM_EXTS,
 			TestTransformerMultiText::getInputName,
 			INPUT_TEXT); // throws IOException
 
 		Map<AppOption, List<String>> options = new HashMap<>();
 		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
 		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
-		options.put(AppOption.RULES_MASTER_TEXT, Arrays.asList(propertiesDir + '/' + TIER0_MASTER_PROPERTIES, //
-			propertiesDir + '/' + TIER1_MASTER_PROPERTIES, //
-			propertiesDir + '/' + TIER2_MASTER_PROPERTIES));
-		runTransformer(inputDir, outputDir, options, getLogFragments());
+		options.put(AppOption.RULES_MASTER_TEXT,
+			Arrays.asList(new File(propertiesDir, TIER0_MASTER_PROPERTIES).getPath(), //
+				new File(propertiesDir, TIER1_MASTER_PROPERTIES).getPath(), //
+				new File(propertiesDir, TIER2_MASTER_PROPERTIES).getPath()));
+		runTransformer(inputDir.getPath(), outputDir.getPath(), options, getLogFragments());
 
 		TestUtils.verifyOutput(
-			outputDir, NUM_FILES, NUM_EXTS,
+			outputDir.getPath(), NUM_FILES, NUM_EXTS,
 			TestTransformerMultiText::getInputName,
 			TestTransformerMultiText::getExtension,
 			OUTPUT_TEXT_MAP); // throws IOException,
+	}
+
+	static void zip(File sourceDir, File zipFile) throws IOException {
+		Path in = sourceDir.toPath();
+		Path out = zipFile.toPath();
+		IO.mkdirs(out.getParent());
+		try (ZipOutputStream zip = new ZipOutputStream(IO.outputStream(out));
+			Stream<Path> paths = Files.walk(in)) {
+			paths.filter(path -> !Files.isDirectory(path))
+				.forEach(path -> {
+					ZipEntry zipEntry = new ZipEntry(in.relativize(path)
+						.toString());
+					try {
+						zip.putNextEntry(zipEntry);
+						IO.copy(path, zip);
+						zip.closeEntry();
+					} catch (IOException e) {
+						throw Exceptions.duck(e);
+					}
+				});
+		}
+	}
+
+	static void unzip(File zipFile, File outputDir) throws IOException {
+		Path out = IO.mkdirs(outputDir.toPath());
+		try (ZipFile zip = new ZipFile(zipFile)) {
+			zip.stream()
+				.filter(entry -> !entry.isDirectory())
+				.forEach(entry -> {
+					Path resolved = out.resolve(entry.getName());
+					try {
+						IO.mkdirs(resolved.getParent());
+						IO.copy(zip.getInputStream(entry), resolved);
+					} catch (IOException e) {
+						throw Exceptions.duck(e);
+					}
+				});
+		}
+	}
+
+	@Test
+	void testMultiTextZip() throws Exception {
+		File dynamicContentDir = new File(getDynamicContentDir());
+		IO.deleteContent(dynamicContentDir);
+
+		File propertiesDir = new File(dynamicContentDir, "properties");
+
+		File inputDir = new File(dynamicContentDir, "input");
+		File outputDir = new File(dynamicContentDir, "output");
+
+		IO.mkdirs(propertiesDir);
+		writeRulesData(propertiesDir.getPath());
+
+		IO.mkdirs(inputDir);
+		TestUtils.writeInputData(inputDir.getPath(), NUM_FILES, NUM_EXTS, TestTransformerMultiText::getInputName,
+			INPUT_TEXT); // throws
+																														// IOException
+
+		Map<AppOption, List<String>> options = new HashMap<>();
+		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
+		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
+		options.put(AppOption.RULES_MASTER_TEXT,
+			Arrays.asList(new File(propertiesDir, TIER0_MASTER_PROPERTIES).getPath(), //
+				new File(propertiesDir, TIER1_MASTER_PROPERTIES).getPath(), //
+				new File(propertiesDir, TIER2_MASTER_PROPERTIES).getPath()));
+
+		File inputZip = new File(dynamicContentDir, "input.zip");
+		File outputZip = new File(dynamicContentDir, "output.zip");
+		zip(inputDir, inputZip);
+		runTransformer(inputZip.getPath(), outputZip.getPath(), options, getLogFragments());
+
+		unzip(outputZip, outputDir);
+		TestUtils.verifyOutput(outputDir.getPath(), NUM_FILES, NUM_EXTS, TestTransformerMultiText::getInputName,
+			TestTransformerMultiText::getExtension, OUTPUT_TEXT_MAP); // throws
+																		// IOException,
 	}
 }
