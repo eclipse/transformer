@@ -382,7 +382,7 @@ public class Transformer {
 
 				Properties substitutions = PropertiesUtils.createProperties();
 				if ( masterDirect == null ) {
-					substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]",
+					substitutions = loadInternalProperties("Substitutions matching [ " + classSelector + " ]",
 						substitutionsRef);
 				}
 				Map<String, String> substitutionsMap =
@@ -701,7 +701,7 @@ public class Transformer {
 		Properties substitutions;
 		if ( masterRef == null ) {
 			substitutions = loadInternalProperties(
-				"Substitions matching [ " + selector + " ]", substitutionsRef);
+				"Substitutions matching [ " + selector + " ]", substitutionsRef);
 			// throws IOException
 		} else {
 			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
@@ -711,7 +711,7 @@ public class Transformer {
 			}
 
 			substitutions = loadExternalProperties(
-				"Substitions matching [ " + selector + " ]", relativeSubstitutionsRef);
+				"Substitutions matching [ " + selector + " ]", relativeSubstitutionsRef);
 			// throws URISyntaxException, IOException
 		}
 
