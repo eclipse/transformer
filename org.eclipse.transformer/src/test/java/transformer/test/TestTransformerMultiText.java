@@ -138,7 +138,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	protected void writeRulesData(String propertiesDir) throws IOException{
 		for ( TextRulesData rulesData : RULES_DATA ) {
-			rulesData.write(propertiesDir); // throws IOException
+			rulesData.write(propertiesDir);
 		}
 	}
 
@@ -199,7 +199,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		TestUtils.writeInputData(
 			inputDir.getPath(), NUM_FILES, NUM_EXTS,
 			TestTransformerMultiText::getInputName,
-			INPUT_TEXT); // throws IOException
+			INPUT_TEXT);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
 		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
@@ -214,7 +214,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 			outputDir.getPath(), NUM_FILES, NUM_EXTS,
 			TestTransformerMultiText::getInputName,
 			TestTransformerMultiText::getExtension,
-			OUTPUT_TEXT_MAP); // throws IOException,
+			OUTPUT_TEXT_MAP);
 	}
 
 	static void zip(File sourceDir, File zipFile) throws IOException {
@@ -270,8 +270,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 		IO.mkdirs(inputDir);
 		TestUtils.writeInputData(inputDir.getPath(), NUM_FILES, NUM_EXTS, TestTransformerMultiText::getInputName,
-			INPUT_TEXT); // throws
-																														// IOException
+			INPUT_TEXT);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
 		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
@@ -288,7 +287,6 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 		unzip(outputZip, outputDir);
 		TestUtils.verifyOutput(outputDir.getPath(), NUM_FILES, NUM_EXTS, TestTransformerMultiText::getInputName,
-			TestTransformerMultiText::getExtension, OUTPUT_TEXT_MAP); // throws
-																		// IOException,
+			TestTransformerMultiText::getExtension, OUTPUT_TEXT_MAP);
 	}
 }

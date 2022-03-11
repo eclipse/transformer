@@ -179,8 +179,7 @@ public class ManifestWriter {
 				version = attributes.getValue(vername);
 			}
 			if (version != null) {
-				writeAttribute(vername, version, out, builder); // throws
-																// IOException
+				writeAttribute(vername, version, out, builder);
 			}
 		} else {
 			vername = null;
@@ -212,7 +211,7 @@ public class ManifestWriter {
 
 		make72Safe(builder);
 
-		out.writeBytes(builder.toString()); // 'writeBytes' throws IOException
+		out.writeBytes(builder.toString());
 		builder.setLength(0);
 	}
 

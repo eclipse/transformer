@@ -187,8 +187,8 @@ public class TestUtils {
 
 		Manifest manifest = new Manifest();
 
-		try ( InputStream manifestStream = new FileInputStream(manifestPath) ) { // throws IOException
-			manifest.read(manifestStream); // throws IOException
+		try ( InputStream manifestStream = new FileInputStream(manifestPath) ) {
+			manifest.read(manifestStream);
 		}
 
 		Map<String, String> packageData = new HashMap<String, String>();
@@ -225,9 +225,8 @@ public class TestUtils {
 		List<String> errors = verifyPackageVersions(
 			loadPackageVersions(description, actualFileName, attributeName),
 			expected );
-		// 'loadPackageVersions' throws IOException
 
-		processErrors(description, errors); // throws AssertionFailedError
+		processErrors(description, errors);
 	}
 
 	public static List<String> verifyPackageVersions(Map<String, String> actual, Map<String, String> expected) {
@@ -281,9 +280,8 @@ public class TestUtils {
 		Collection<? extends LoggingEvent> logEvents)
 		throws IOException, AssertionFailedError {
 
-		List<String> errors = verifyLog(expectedFragments, logEvents); // throws
-																		// IOException
-		processErrors(description, errors); // throws AssertionFailedError
+		List<String> errors = verifyLog(expectedFragments, logEvents);
+		processErrors(description, errors);
 	}
 
 	/**
@@ -367,11 +365,11 @@ public class TestUtils {
 	//
 
 	public static String readOutputFile(String outputPath) throws IOException {
-		try ( InputStream inputStream = new FileInputStream(outputPath) ) { // throws FileNotFoundException
+		try ( InputStream inputStream = new FileInputStream(outputPath) ) {
 			BufferedReader inputReader = new BufferedReader( new InputStreamReader(inputStream) );
-			String outputLine = inputReader.readLine(); // throws IOException
+			String outputLine = inputReader.readLine();
 			return outputLine;
-		} // 'close' throws IOException
+		}
 	}
 
 	public static List<String> verifyOutputFiles(
@@ -388,7 +386,7 @@ public class TestUtils {
 			for ( int extNo = 0; extNo < numExts; extNo++ ) {
 				String outputName = getInputName.apply(fileNo, extNo);
 				String outputPath = outputDir + '/' + outputName;
-				String outputLine = readOutputFile(outputPath); // throws IOException
+				String outputLine = readOutputFile(outputPath);
 
 				String outputExt = getExtension.apply(extNo);
 
@@ -412,8 +410,8 @@ public class TestUtils {
 		Map<String, String> outputMap)
 		throws IOException, AssertionFailedError {
 
-		List<String> outputErrors = verifyOutputFiles(outputDir, numFiles, numExts, getInputName, getExtension, outputMap); // throws IOException
-		processErrors("expected output", outputErrors); // throws AssertionFailedError
+		List<String> outputErrors = verifyOutputFiles(outputDir, numFiles, numExts, getInputName, getExtension, outputMap);
+		processErrors("expected output", outputErrors);
 	}
 
 	//
@@ -428,16 +426,16 @@ public class TestUtils {
 			for ( int extNo = 0; extNo < numExts; extNo++ ) {
 				String inputName = getInputName.apply(fileNo, extNo);
 				String inputPath = inputDir + '/' + inputName;
-				writeInputFile(inputPath, text); // throws IOException
+				writeInputFile(inputPath, text);
 			}
 		}
 	}
 
 	public static void writeInputFile(String inputPath, String text) throws IOException {
-		try ( OutputStream outputStream = new FileOutputStream(inputPath, true) ) { // throws FileNotFoundException
+		try ( OutputStream outputStream = new FileOutputStream(inputPath, true) ) {
 			PrintWriter outputWriter = new PrintWriter(outputStream);
 			outputWriter.println(text);
 			outputWriter.flush();
-		} // 'close' throws IOException
+		}
 	}
 }

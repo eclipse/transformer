@@ -13,6 +13,7 @@ package org.eclipse.transformer.action.impl;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ListIterator;
 
@@ -176,28 +177,26 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	//
 
-	protected static final int DUMP_WIDTH = 16;
+	private static final int DUMP_WIDTH = 16;
 
-	protected void debugDump(byte[] bytes, int offset, int length) {
-		if (!getLogger().isDebugEnabled()) {
+	private void traceDump(ByteData inputData) {
+		if (!getLogger().isTraceEnabled()) {
 			return;
 		}
 
 		StringBuilder outputBuilder = new StringBuilder();
 
-		while (length > 0) {
-			int nextWidth = ((length > DUMP_WIDTH) ? DUMP_WIDTH : length);
-			String nextLine = debugDumpLine(outputBuilder, bytes, offset, nextWidth);
-			getLogger().debug(nextLine);
-
-			offset += nextWidth;
-			length -= nextWidth;
+		ByteBuffer buffer = inputData.buffer();
+		while (buffer.hasRemaining()) {
+			int nextWidth = (buffer.remaining() > DUMP_WIDTH) ? DUMP_WIDTH : buffer.remaining();
+			String nextLine = traceDumpLine(outputBuilder, buffer, nextWidth);
+			getLogger().trace(nextLine);
 		}
 	}
 
-	private String debugDumpLine(StringBuilder builder, byte[] bytes, int offset, int width) {
+	private String traceDumpLine(StringBuilder builder, ByteBuffer buffer, int width) {
 		for (int byteNo = 0; byteNo < width; byteNo++) {
-			byte nextByte = bytes[offset + byteNo];
+			byte nextByte = buffer.get();
 			builder.append(String.format("%02x ", nextByte));
 		}
 		String line = builder.toString();
@@ -275,39 +274,18 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	public ByteData apply(ByteData inputData) throws TransformException {
 
 		getLogger().debug("Read [ {} ] Bytes [ {} ]", inputData.name(), inputData.length());
-		// Issue #158: This clogs output.
-		// debugDump(inputBytes, 0, inputLength);
+		traceDump(inputData);
 
 		ClassFile inputClass;
 		try {
 			DataInput inputClassData = ByteBufferDataInput.wrap(inputData.buffer());
-			inputClass = ClassFile.parseClassFile(inputClassData); // throws
-																	// IOException
+			inputClass = ClassFile.parseClassFile(inputClassData);
 		} catch (IOException e) {
 			getLogger().error("Failed to parse raw class bytes [ {} ]", inputData.name(), e);
 			return null;
 		}
 
-		getLogger().debug("Class [ {} ] as [ {} ] ", inputData.name(), inputClass.this_class);
-		getLogger().debug("  Super [ {} ]", inputClass.super_class);
-		if (inputClass.interfaces != null) {
-			getLogger().debug("  Interfaces [ {} ]", inputClass.interfaces.length);
-			for (String interfaceName : inputClass.interfaces) {
-				getLogger().debug("    [ {} ]", interfaceName);
-			}
-		}
-		if (inputClass.fields != null) {
-			getLogger().debug("  Fields [ {} ]", inputClass.fields.length);
-			for (FieldInfo field : inputClass.fields) {
-				getLogger().debug("    [ {} ] [ {} ]", field.name, field.descriptor);
-			}
-		}
-		if (inputClass.methods != null) {
-			getLogger().debug("  Methods [ {} ]", inputClass.methods.length);
-			for (MethodInfo method : inputClass.methods) {
-				getLogger().debug("    [ {} ] [ {} ]", method.name, method.descriptor);
-			}
-		}
+		displayClass(inputData.name(), inputClass);
 
 		ClassFileBuilder classBuilder = new ClassFileBuilder(inputClass);
 
@@ -329,7 +307,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		setClassNames(inputClassName, outputClassName);
 		setResourceNames(inputData.name(), outputName);
 
-		getLogger().debug("{}", classBuilder);
+		getLogger().trace("{}", classBuilder);
 
 		String inputSuperName = classBuilder.super_class();
 		if (inputSuperName != null) {
@@ -343,7 +321,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			setSuperClassNames(inputSuperName, outputSuperName);
 
 			if (!outputSuperName.equals("java/lang/Object")) {
-				getLogger().debug("  extends {}", outputSuperName);
+				getLogger().trace("  extends {}", outputSuperName);
 			}
 		}
 
@@ -351,64 +329,54 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		if (!interfaces.isEmpty()) {
 			ListIterator<String> interfaceNames = interfaces.listIterator();
 			while (interfaceNames.hasNext()) {
-				String interfaceName = transformBinaryType(interfaceNames.next());
-				if (interfaceName != null) {
-					interfaceNames.set(interfaceName);
+				String inputInterfaceName = interfaceNames.next();
+				String outputInterfaceName = transformBinaryType(inputInterfaceName);
+				if (outputInterfaceName != null) {
+					interfaceNames.set(outputInterfaceName);
 					addModifiedInterface();
+					getLogger().debug("Interface {} -> {}", inputInterfaceName, outputInterfaceName);
 				}
 			}
-
-			getLogger().debug("  implements {}", interfaces);
+			getLogger().trace("  implements {}", interfaces);
 		}
 
 		// Transform members ...
 
 		ListIterator<FieldInfo> fields = classBuilder.fields()
 			.listIterator();
-		if (fields.hasNext()) {
-			getLogger().debug("  Fields:");
-		}
 		while (fields.hasNext()) {
 			FieldInfo inputField = fields.next();
 			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputData.name());
 			if (outputField != null) {
 				fields.set(outputField);
 				addModifiedField();
-				getLogger().debug("       {}    -> {}", inputField, outputField);
+				getLogger().debug("Field  {} -> {}", inputField, outputField);
 			}
 		}
 
 		ListIterator<MethodInfo> methods = classBuilder.methods()
 			.listIterator();
-		if (methods.hasNext()) {
-			getLogger().debug("  Methods:");
-		}
 		while (methods.hasNext()) {
 			MethodInfo inputMethod = methods.next();
 			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD, inputData.name());
 			if (outputMethod != null) {
 				methods.set(outputMethod);
 				addModifiedMethod();
-				getLogger().debug("       {}    -> {}", inputMethod, outputMethod);
+				getLogger().debug("Method {} -> {}", inputMethod, outputMethod);
 			}
 		}
-
-		// verbose(" <<class>>");
 
 		// Transform attributes ...
 
 		ListIterator<Attribute> attributes = classBuilder.attributes()
 			.listIterator();
-		if (attributes.hasNext()) {
-			getLogger().debug("  Attributes:");
-		}
 		while (attributes.hasNext()) {
 			Attribute inputAttribute = attributes.next();
 			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputData.name());
 			if (outputAttribute != null) {
 				attributes.set(outputAttribute);
 				addModifiedAttribute();
-				getLogger().debug("       {}    -> {}", inputAttribute, outputAttribute);
+				getLogger().debug("Attribute {} -> {}", inputAttribute, outputAttribute);
 			}
 		}
 
@@ -429,7 +397,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputData.length() + FileUtils.PAGE_SIZE);
 		try {
-			outputClass.write(outputClassData); // throws IOException
+			outputClass.write(outputClassData);
 		} catch (IOException e) {
 			throw new TransformException("Failed to write transformed class bytes", e);
 		}
@@ -440,6 +408,32 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		return outputData;
 	}
 
+	private void displayClass(String inputName, ClassFile inputClass) {
+		getLogger().debug("Class [ {} ] as [ {} ] ", inputName, inputClass.this_class);
+		if (!getLogger().isTraceEnabled()) {
+			return;
+		}
+		getLogger().trace("  Super [ {} ]", inputClass.super_class);
+		if (inputClass.interfaces != null) {
+			getLogger().trace("  Interfaces [ {} ]", inputClass.interfaces.length);
+			for (String interfaceName : inputClass.interfaces) {
+				getLogger().trace("    [ {} ]", interfaceName);
+			}
+		}
+		if (inputClass.fields != null) {
+			getLogger().trace("  Fields [ {} ]", inputClass.fields.length);
+			for (FieldInfo field : inputClass.fields) {
+				getLogger().trace("    [ {} ] [ {} ]", field.name, field.descriptor);
+			}
+		}
+		if (inputClass.methods != null) {
+			getLogger().trace("  Methods [ {} ]", inputClass.methods.length);
+			for (MethodInfo method : inputClass.methods) {
+				getLogger().trace("    [ {} ] [ {} ]", method.name, method.descriptor);
+			}
+		}
+	}
+
 	//
 
 	private <MEMBERINFO extends MemberInfo> MEMBERINFO transform(MEMBERINFO member,
@@ -448,7 +442,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		String inputDescriptor = member.descriptor;
 		String outputDescriptor = transformDescriptor(inputDescriptor);
 		if (outputDescriptor != null) {
-			getLogger().debug("    {}       {}    -> {}", member.name, member.descriptor, outputDescriptor);
+			getLogger().debug("Member {}.{} > {}", member.name, member.descriptor, outputDescriptor);
 		}
 
 		Attribute[] inputAttributes = member.attributes;
@@ -475,7 +469,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				}
 				outputAttributes[attributeNo] = outputAttribute;
 
-				getLogger().debug("       {}    -> {}", inputAttribute, outputAttribute);
+				getLogger().debug("Attribute [ {} ] [ {} ] -> [ {} ]", attributeNo, inputAttribute, outputAttribute);
 			}
 		}
 
@@ -546,26 +540,35 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			case EnclosingMethodAttribute.NAME : {
 				EnclosingMethodAttribute attribute = (EnclosingMethodAttribute) attr;
 
+				String methodName = attribute.method_name;
+
+				String inputClassName = attribute.class_name; // Never null
+				String outputClassName = transformBinaryType(inputClassName);
+
 				String inputDescriptor = attribute.method_descriptor;
+				String outputDescriptor = ((inputDescriptor == null) ? null : transformDescriptor(inputDescriptor));
 
-				String className = transformBinaryType(attribute.class_name);
-
-				if (inputDescriptor == null && className == null) {
+				if ((outputClassName == null) && (outputDescriptor == null)) {
+					getLogger().trace("Enclosing method [ {} ] Class [ {} ] Descriptor [ {} ]", methodName,
+						inputClassName, inputDescriptor);
 					return null;
 				}
 
-				String outputDescriptor = null;
-
-				if (inputDescriptor != null) {
-					outputDescriptor = transformDescriptor(inputDescriptor);
+				if (outputClassName != null) {
+					getLogger().debug("Enclosing method [ {} ] Class [ {} ] -> [ {} ]", methodName, inputClassName,
+						outputClassName);
+				} else {
+					outputClassName = inputClassName;
 				}
 
-				if (outputDescriptor == null && className == null) {
-					return null;
+				if (outputDescriptor != null) {
+					getLogger().debug("Enclosing method [ {} ] Descriptor [ {} ] -> [ {} ]", methodName,
+						inputDescriptor, outputDescriptor);
+				} else {
+					outputDescriptor = inputDescriptor;
 				}
 
-				return new EnclosingMethodAttribute(className == null ? attribute.class_name : className,
-					attribute.method_name, outputDescriptor == null ? inputDescriptor : outputDescriptor);
+				return new EnclosingMethodAttribute(outputClassName, methodName, outputDescriptor);
 			}
 
 			case StackMapTableAttribute.NAME : {
@@ -652,13 +655,23 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					String outputOuterClass = ((inputOuterClass == null) ? null : transformBinaryType(inputOuterClass));
 
 					if ((outputInnerClass != null) || (outputOuterClass != null)) {
+						if (outputInnerClass != null) {
+							getLogger().debug("Inner class attribute [ {} ] Inner [ {} ] -> [ {} ]", classNo,
+								inputInnerClass, outputInnerClass);
+						} else {
+							outputInnerClass = inputInnerClass;
+						}
+						if (outputOuterClass != null) {
+							getLogger().debug("Inner class attribute [ {} ] Outer [ {} ] -> [ {} ]", classNo,
+								inputOuterClass, outputOuterClass);
+						} else {
+							outputOuterClass = inputOuterClass;
+						}
 						if (outputClasses == null) {
 							outputClasses = inputClasses.clone();
 						}
-						outputClasses[classNo] = new InnerClass(
-							((outputInnerClass == null) ? inputInnerClass : outputInnerClass),
-							((outputOuterClass == null) ? inputOuterClass : outputOuterClass), inputClass.inner_name,
-							inputClass.inner_access);
+						outputClasses[classNo] = new InnerClass(outputInnerClass, outputOuterClass,
+							inputClass.inner_name, inputClass.inner_access);
 					}
 				}
 
@@ -967,7 +980,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		}
 
 		if (outputString == null) {
-			getLogger().debug("    String {}: {} (unchanged)", caseText, inputString);
+			getLogger().trace("    String {}: {} (unchanged)", caseText, inputString);
 		} else {
 			getLogger().debug("    String {}: {} -> {} ({})", caseText, inputString, outputString, transformCase);
 		}
@@ -979,7 +992,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		if (inputValue instanceof String) {
 			return transformString("ConstantValue", (String) inputValue, inputName);
 		} else {
-			getLogger().debug("    Non-String ConstantValue: {} (unchanged)", inputValue);
+			getLogger().trace("    Non-String ConstantValue: {} (unchanged)", inputValue);
 			return null;
 		}
 	}
@@ -1202,9 +1215,9 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 		int numConstants = constants.size();
 		for (int constantNo = 1; constantNo < numConstants; constantNo++) {
-			if (getLogger().isDebugEnabled()) {
+			if (getLogger().isTraceEnabled()) {
 				getLogger()
-					.debug(String.format("Constant [ %3s ] [ %16s ] [ %s ]", constantNo, constants.tag(constantNo),
+					.trace(String.format("Constant [ %3s ] [ %16s ] [ %s ]", constantNo, constants.tag(constantNo),
 					constants.entry(constantNo)));
 			}
 
@@ -1216,7 +1229,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputClassName != null) {
 						constants.entry(constantNo, new ClassInfo(constants.utf8Info(outputClassName)));
 						modifiedConstants++;
-						getLogger().debug("    Class: {}        -> {}", inputClassName, outputClassName);
+						getLogger().debug("Class Reference: {} -> {}", inputClassName, outputClassName);
 					} else {
 						getLogger().debug("Skip class {} (unchanged)", inputClassName);
 					}
@@ -1231,9 +1244,9 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 						constants.entry(constantNo,
 							new NameAndTypeInfo(info.name_index, constants.utf8Info(outputDescriptor)));
 						modifiedConstants++;
-						getLogger().debug("    NameAndType: {}              -> {}", inputDescriptor, outputDescriptor);
+						getLogger().debug("NameAndType: {} -> {}", inputDescriptor, outputDescriptor);
 					} else {
-						getLogger().debug("Skip name-and-type {} (unchanged)", inputDescriptor);
+						getLogger().trace("Skip name-and-type {} (unchanged)", inputDescriptor);
 					}
 					break;
 				}
@@ -1245,9 +1258,9 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputDescriptor != null) {
 						constants.entry(constantNo, new MethodTypeInfo(constants.utf8Info(outputDescriptor)));
 						modifiedConstants++;
-						getLogger().debug("    MethodType: {} -> {}", inputDescriptor, outputDescriptor);
+						getLogger().debug("MethodType: {} -> {}", inputDescriptor, outputDescriptor);
 					} else {
-						getLogger().debug("Skip method-type {} (unchanged)", inputDescriptor);
+						getLogger().trace("Skip method-type {} (unchanged)", inputDescriptor);
 					}
 					break;
 				}
@@ -1258,9 +1271,9 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputUtf8 != null) {
 						constants.entry(constantNo, outputUtf8);
 						modifiedConstants++;
-						getLogger().debug("    UTF8: {} -> {}", inputUtf8, outputUtf8);
+						getLogger().debug("UTF8: {} -> {}", inputUtf8, outputUtf8);
 					} else {
-						getLogger().debug("Skip UTF8 {} (unchanged)", inputUtf8);
+						getLogger().trace("Skip UTF8 {} (unchanged)", inputUtf8);
 					}
 
 					break;
@@ -1273,9 +1286,9 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputString != null) {
 						constants.entry(constantNo, new StringInfo(constants.utf8Info(outputString)));
 						modifiedConstants++;
-						getLogger().debug("    String: {} -> {}", inputString, outputString);
+						getLogger().debug("String: {} -> {}", inputString, outputString);
 					} else {
-						getLogger().debug("Skip string {} (unchanged)", inputString);
+						getLogger().trace("Skip string {} (unchanged)", inputString);
 					}
 					break;
 				}
@@ -1290,15 +1303,15 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				case ConstantPool.CONSTANT_Package :
 				case ConstantPool.CONSTANT_Integer :
 				case ConstantPool.CONSTANT_Float :
-					getLogger().debug("Skip other (ignored)");
+					getLogger().trace("Skip other (ignored)");
 					break;
 
 				case ConstantPool.CONSTANT_Long :
 				case ConstantPool.CONSTANT_Double :
-					getLogger().debug("Skip floating point value +1 (ignored)");
+					getLogger().trace("Skip floating point value +1 (ignored)");
 					// For some insane optimization reason, the Long(5) and
-					// Double(6)
-					// entries take two slots in the constant pool. See 4.4.5
+					// Double(6) entries take two slots in the constant pool.
+					// See 4.4.5
 					constantNo++;
 					break;
 

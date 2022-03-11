@@ -73,7 +73,6 @@ public class TransformClassLoader extends ClassLoader {
 	public InputStream applyClass(String resourceName, InputStream inputStream) throws TransformException {
 
 		ByteData outputData = getClassAction().apply(resourceName, inputStream);
-		// 'apply' throws JakartaTransformException
 
 		return outputData.stream();
 	}
@@ -93,7 +92,6 @@ public class TransformClassLoader extends ClassLoader {
 	public InputStream applyServiceConfig(String resourceName, InputStream inputStream) throws TransformException {
 
 		ByteData outputData = getServiceConfigAction().apply(resourceName, inputStream);
-		// 'apply' throws JakartaTransformException
 
 		return outputData.stream();
 	}
@@ -109,8 +107,7 @@ public class TransformClassLoader extends ClassLoader {
 
 		@Override
 		protected URLConnection openConnection(URL u) throws IOException {
-			return new TransformClassURLConnection(baseURL); // throws
-																// IOException
+			return new TransformClassURLConnection(baseURL);
 		}
 	}
 
@@ -119,7 +116,7 @@ public class TransformClassLoader extends ClassLoader {
 			super(baseURL);
 
 			this.baseConnection = this.getURL()
-				.openConnection(); // 'openConnection' throws IOException
+				.openConnection();
 		}
 
 		//
@@ -134,7 +131,7 @@ public class TransformClassLoader extends ClassLoader {
 
 		@Override
 		public void connect() throws IOException {
-			getBaseConnection().connect(); // 'connect' throws IOException
+			getBaseConnection().connect();
 		}
 
 		@Override
@@ -142,8 +139,7 @@ public class TransformClassLoader extends ClassLoader {
 			URLConnection useBaseConnection = getBaseConnection();
 			String baseName = useBaseConnection.getURL()
 				.toString();
-			InputStream baseStream = useBaseConnection.getInputStream(); // throws
-																			// IOException
+			InputStream baseStream = useBaseConnection.getInputStream();
 
 			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 
@@ -160,8 +156,7 @@ public class TransformClassLoader extends ClassLoader {
 
 		@Override
 		protected URLConnection openConnection(URL u) throws IOException {
-			return new TransformConfigURLConnection(baseURL); // throws
-																// IOException
+			return new TransformConfigURLConnection(baseURL);
 		}
 	}
 
@@ -170,7 +165,7 @@ public class TransformClassLoader extends ClassLoader {
 			super(baseURL);
 
 			this.baseConnection = this.getURL()
-				.openConnection(); // 'openConnection' throws IOException
+				.openConnection();
 		}
 
 		//
@@ -185,7 +180,7 @@ public class TransformClassLoader extends ClassLoader {
 
 		@Override
 		public void connect() throws IOException {
-			getBaseConnection().connect(); // 'connect' throws IOException
+			getBaseConnection().connect();
 		}
 
 		@Override
@@ -193,8 +188,7 @@ public class TransformClassLoader extends ClassLoader {
 			URLConnection useBaseConnection = getBaseConnection();
 			String baseName = useBaseConnection.getURL()
 				.toString();
-			InputStream baseStream = useBaseConnection.getInputStream(); // throws
-																			// IOException
+			InputStream baseStream = useBaseConnection.getInputStream();
 
 			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 
@@ -218,8 +212,7 @@ public class TransformClassLoader extends ClassLoader {
 		} else if (acceptClass(resourceName)) {
 			System.out.println("Get resource stream: " + resourceName + ": Accepted as class");
 			try {
-				return applyClass(resourceName, baseStream); // throws
-																// JakartaTransformException
+				return applyClass(resourceName, baseStream);
 
 			} catch (TransformException e) {
 				System.err.println("Class transform failure [ " + resourceName + " ]");
@@ -232,8 +225,7 @@ public class TransformClassLoader extends ClassLoader {
 			System.out.println("Get resource stream: " + resourceName + ": Accepted as service config");
 
 			try {
-				return applyServiceConfig(resourceName, baseStream); // throws
-																		// JakartaTransformException
+				return applyServiceConfig(resourceName, baseStream);
 
 			} catch (TransformException e) {
 				System.err.println("Servic configuration transform failure [ " + resourceName + " ]");
@@ -317,14 +309,13 @@ public class TransformClassLoader extends ClassLoader {
 
 		if (!selectResource(resourceName)) {
 			System.out.println("Load [ " + className + " ]: Not selected");
-			return super.loadClass(className, resolveClass); // throws
-																// ClassNotFoundException
+			return super.loadClass(className, resolveClass);
 		}
 
 		Class<?> loadedClass = findLoadedClass(className);
 		if (loadedClass == null) {
 			System.out.println("Load [ " + className + " ]: Not previously loaded: Find");
-			loadedClass = findClass(className); // throws ClassNotFoundException
+			loadedClass = findClass(className);
 		} else {
 			System.out.println("Load [ " + className + " ]: Previously loaded");
 		}
@@ -345,7 +336,7 @@ public class TransformClassLoader extends ClassLoader {
 
 		if (!selectResource(resourceName)) {
 			System.out.println("Find [ " + className + " ]: Not selected");
-			return super.findClass(className); // throws ClassNotFoundException
+			return super.findClass(className);
 		}
 
 		Class<?> loadedClass = findLoadedClass(className);

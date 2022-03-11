@@ -452,12 +452,11 @@ public class TestTransformClass extends CaptureTest {
 
 	public static Map<String, String> loadRenames(String resourceRef) throws IOException {
 		InputStream renamesInputStream = getResourceStream(resourceRef);
-		// throws IOException
 
 		Reader renamesReader = new InputStreamReader(renamesInputStream);
 
 		Properties renameProperties = new Properties();
-		renameProperties.load(renamesReader); // throws IOException
+		renameProperties.load(renamesReader);
 
 		Map<String, String> renames = new HashMap<>(renameProperties.size());
 		for (Map.Entry<Object, Object> renameEntry : renameProperties.entrySet()) {
@@ -490,42 +489,37 @@ public class TestTransformClass extends CaptureTest {
 		Map<String, String> packagePrefixes = getToJakartaPrefixes();
 		display(packagePrefixes);
 
-		ClassActionImpl classAction = createToJakartaClassAction(); // throws
-																	// IOException
+		ClassActionImpl classAction = createToJakartaClassAction();
 
 		String resourceName = TEST_DATA_RESOURCE_NAME + '/' + simpleClassName;
 		display("Reading class [ %s ]", resourceName);
-		InputStream inputStream = getResourceStream(resourceName); // throws
-																	// IOException
+		InputStream inputStream = getResourceStream(resourceName);
 
 		ByteArrayOutputStream capturedInput = new ByteArrayOutputStream();
-		FileUtils.transfer(inputStream, capturedInput); // throws IOException
+		FileUtils.transfer(inputStream, capturedInput);
 		byte[] inputBytes = capturedInput.toByteArray();
 		display("Input class size [ %s ]", inputBytes.length);
-		ClassFile inputClass = parse(inputBytes); // throws IOException
+		ClassFile inputClass = parse(inputBytes);
 		display(inputClass);
 
 		display("Transforming class [ %s ]", resourceName);
 		ByteArrayInputStream internalInputStream = new ByteArrayInputStream(inputBytes);
-		ByteData outputStreamData = classAction.apply(resourceName, internalInputStream); // throws
-																									// TransformException
+		ByteData outputStreamData = classAction.apply(resourceName, internalInputStream);
 		display(classAction.getLastActiveChanges());
 
 		ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
-		FileUtils.transfer(outputStreamData.stream(), capturedOutput); // throws
-																		// IOException
+		FileUtils.transfer(outputStreamData.stream(), capturedOutput);
 		byte[] outputBytes = capturedOutput.toByteArray();
 		display("Output class size [ %s ]", outputBytes.length);
-		ClassFile outputClass = parse(outputBytes); // throws IOException
+		ClassFile outputClass = parse(outputBytes);
 		display(outputClass);
 
 		validateAnnotations(packageRenames, packagePrefixes, inputClass, outputClass);
 
 		File outputFile = new File("build" + '/' + simpleClassName);
 		display("Writing transformed class [ %s ]", outputFile.getAbsolutePath());
-		try (OutputStream outputStream = new FileOutputStream(outputFile)) { // throws
-																				// FileNotFoundException
-			capturedOutput.writeTo(outputStream); // throws IOException
+		try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+			capturedOutput.writeTo(outputStream);
 		}
 
 		display("Transform to Jakarta [ %s ] ... done", simpleClassName);
@@ -533,7 +527,7 @@ public class TestTransformClass extends CaptureTest {
 
 	protected ClassFile parse(byte[] classBytes) throws IOException {
 		DataInput inputClassData = ByteBufferDataInput.wrap(classBytes);
-		return ClassFile.parseClassFile(inputClassData); // throws IOException
+		return ClassFile.parseClassFile(inputClassData);
 	}
 
 	protected void display(String msg, Object... parms) {
@@ -715,14 +709,12 @@ public class TestTransformClass extends CaptureTest {
 	// @Test
 	// public void testAnnotatedServlet() throws TransformException, IOException
 	// {
-	// toJakartaRewrite(ANNOTATED_SERVLET_SIMPLE_CLASS_NAME); // throws
-	// TransformException, IOException
+	// toJakartaRewrite(ANNOTATED_SERVLET_SIMPLE_CLASS_NAME);
 	// }
 
 	// @Test
 	// public void testMixedServlet() throws TransformException, IOException {
-	// toJakartaRewrite(MIXED_SERVLET_SIMPLE_CLASS_NAME); // throws
-	// TransformException, IOException
+	// toJakartaRewrite(MIXED_SERVLET_SIMPLE_CLASS_NAME);
 	// }
 
 	//
@@ -802,12 +794,10 @@ public class TestTransformClass extends CaptureTest {
 		ClassActionImpl classAction = createDirectClassAction();
 
 		String resourceName = TEST_DATA_RESOURCE_NAME + '/' + DIRECT_STRINGS_RESOURCE_NAME;
-		InputStream inputStream = getResourceStream(resourceName); // throws
-																	// IOException
+		InputStream inputStream = getResourceStream(resourceName);
 
 		@SuppressWarnings("unused")
-		ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws
-																							// TransformException
+		ByteData outputStreamData = classAction.apply(resourceName, inputStream);
 		display(classAction.getLastActiveChanges());
 
 		int expectedChanges = 5;
@@ -824,10 +814,10 @@ public class TestTransformClass extends CaptureTest {
 
 		{
 			String resourceName = TEST_DATA_RESOURCE_NAME + '/' + PER_CLASS_RESOURCE_NAME;
-			InputStream inputStream = getResourceStream(resourceName); // throws IOException
+			InputStream inputStream = getResourceStream(resourceName);
 
 			@SuppressWarnings("unused")
-			ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			ByteData outputStreamData = classAction.apply(resourceName, inputStream);
 			display(classAction.getLastActiveChanges());
 
 			// 2 to pass although should be 1. Both UTF8 and ConstantString are counted.
@@ -839,10 +829,10 @@ public class TestTransformClass extends CaptureTest {
 
 		{
 			String resourceName = TEST_DATA_RESOURCE_NAME + '/' + DIRECT_STRINGS_RESOURCE_NAME;
-			InputStream inputStream = getResourceStream(resourceName); // throws IOException
+			InputStream inputStream = getResourceStream(resourceName);
 
 			@SuppressWarnings("unused")
-			ByteData outputStreamData = classAction.apply(resourceName, inputStream); // throws TransformException
+			ByteData outputStreamData = classAction.apply(resourceName, inputStream);
 			display(classAction.getLastActiveChanges());
 
 			int expectedChanges = 0;
@@ -1080,6 +1070,5 @@ public class TestTransformClass extends CaptureTest {
 		return new ClassActionImpl(useLogger, createBuffer(),
 			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
 			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
-		// 'getStandardRenames' throws IOException
 	}
 }

@@ -124,15 +124,14 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transformAsPlainText(inputData.name(), reader, writer); // throws
-																// IOException
+			transformAsPlainText(inputData.name(), reader, writer);
 		} catch (IOException e) {
 			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
-			writer.flush(); // throws
+			writer.flush();
 		} catch (IOException e) {
 			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
@@ -168,13 +167,12 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		SAXParser parser;
 		try {
 			parser = getParserFactory().newSAXParser();
-			// 'newSAXParser' throws ParserConfigurationException, SAXException
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
 
 		try {
-			parser.parse(input, handler); // throws SAXException, IOException
+			parser.parse(input, handler);
 		} catch (Exception e) {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}
@@ -190,13 +188,12 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		SAXParser parser;
 		try {
 			parser = getParserFactory().newSAXParser();
-			// 'newSAXParser' throws ParserConfigurationException, SAXException
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
 
 		try {
-			parser.parse(input, handler); // throws SAXException, IOException
+			parser.parse(input, handler);
 		} catch (Exception e) {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}
@@ -304,12 +301,12 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		}
 
 		protected void append(String text) {
-			getLogger().debug("append [{}]", text);
+			getLogger().trace("append [{}]", text);
 			lineBuilder.append(text);
 		}
 
 		protected void appendLine(String text) {
-			getLogger().debug("appendline [{}]", text);
+			getLogger().trace("appendline [{}]", text);
 			lineBuilder.append(text)
 				.append('\n');
 		}
@@ -318,7 +315,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 			String nextLine = lineBuilder.toString();
 			lineBuilder.setLength(0);
 
-			write(nextLine); // throws SAXException
+			write(nextLine);
 		}
 
 		@SuppressWarnings("unused")
@@ -326,7 +323,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 			String nextLine = lineBuilder.toString();
 			lineBuilder.setLength(0);
 
-			writeUTF8(nextLine); // throws SAXException
+			writeUTF8(nextLine);
 		}
 
 		//
@@ -353,7 +350,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 			append("<?");
 			append(target);
 			if ((data != null) && data.length() > 0) {
-				getLogger().debug("processingInstruction: data[{}]", data);
+				getLogger().trace("processingInstruction [ {} ]", data);
 				append(' ');
 				append(data);
 			}
@@ -379,20 +376,23 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		@Override
 		public void startElement(String uri, String localName, String qName, Attributes attributes)
 			throws SAXException {
-			getLogger().debug("startElement: uri[{}] localName[{}] qName[{}] attributes[{}]", uri, localName, qName,
-				attributes);
+			getLogger().trace("startElement: uri [ {} ] localName [ {} ] qName [ {} ] attributes [ {} ]", uri,
+				localName, qName, attributes);
 			append('<' + localName);
 			append(uri);
 
 			if (attributes != null) {
 				int numberAttributes = attributes.getLength();
 				for (int i = 0; i < numberAttributes; i++) {
+					String attrQName = attributes.getQName(i);
+					String attrValue = attributes.getValue(i);
+
+					getLogger().trace("startElement getQName({}) [ {} ]", i, attrQName);
+					getLogger().trace("startElement getValue({}) [ {} ]", i, attrValue);
 					append(' ');
-					append(attributes.getQName(i));
-					getLogger().debug("startElement: attributes.getQName({})[{}]", i, attributes.getQName(i));
+					append(attrQName);
 					append("=\"");
-					append(attributes.getValue(i));
-					getLogger().debug("startElement: attributes.getValue({})[{}]", i, attributes.getValue(i));
+					append(attrValue);
 					append('"');
 				}
 			}
@@ -405,7 +405,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		@SuppressWarnings("unused")
 		@Override
 		public void endElement(String uri, String localName, String qName) throws SAXException {
-			getLogger().debug("endElement: uri[{}] localName[{}] qName[{}]", uri, localName, qName);
+			getLogger().trace("endElement: uri [ {} ] localName [ {} ] qName [ {} ]", uri, localName, qName);
 			append("</");
 			append(localName + '>');
 		}
@@ -414,15 +414,14 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		@Override
 		public void characters(char[] chars, int start, int length) throws SAXException {
 			String initialText = new String(chars, start, length);
-			getLogger().debug("characters: initialText[{}]", initialText);
-
-			String finalText = XmlActionImpl.this.replaceText(inputName, initialText);
+			String finalText = replaceText(inputName, initialText);
 			if (finalText == null) {
 				finalText = initialText;
-				XmlActionImpl.this.addReplacement();
+				getLogger().trace("characters [ {} ] (unchanged)", initialText);
+			} else {
+				getLogger().debug("characters [ {} ] -> [ {} ]", initialText, finalText);
+				addReplacement();
 			}
-
-			getLogger().debug("characters:  finalText[{}]", finalText);
 			append(finalText);
 		}
 
@@ -437,8 +436,4 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		// super.skippedEntity(name);
 		// }
 	}
-
-	// protected void debug(String s) {
-	// System.out.println(s);
-	// }
 }

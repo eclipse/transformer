@@ -83,16 +83,58 @@ class TestCommandLine {
 	}
 
 	@Test
-	void testSetLogLevel() throws Exception {
+	void testSetLogLevelQuiet() throws Exception {
 		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
-			"--logName", name,
-			"--quiet"
+			"--logName", name, "--quiet"
 		});
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
+		assertThat(logger.isTraceEnabled()).isFalse();
 		assertThat(logger.isDebugEnabled()).isFalse();
 		assertThat(logger.isInfoEnabled()).isFalse();
 		assertThat(logger.isWarnEnabled()).isFalse();
+		assertThat(logger.isErrorEnabled()).isTrue();
+	}
+
+	@Test
+	void testSetLogLevelDefault() throws Exception {
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
+			"--logName", name
+		});
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+		Logger logger = transformer.getLogger();
+		assertThat(logger.isTraceEnabled()).isFalse();
+		assertThat(logger.isDebugEnabled()).isFalse();
+		assertThat(logger.isInfoEnabled()).isTrue();
+		assertThat(logger.isWarnEnabled()).isTrue();
+		assertThat(logger.isErrorEnabled()).isTrue();
+	}
+
+	@Test
+	void testSetLogLevelDebug() throws Exception {
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
+			"--logName", name, "--verbose"
+		});
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+		Logger logger = transformer.getLogger();
+		assertThat(logger.isTraceEnabled()).isFalse();
+		assertThat(logger.isDebugEnabled()).isTrue();
+		assertThat(logger.isInfoEnabled()).isTrue();
+		assertThat(logger.isWarnEnabled()).isTrue();
+		assertThat(logger.isErrorEnabled()).isTrue();
+	}
+
+	@Test
+	void testSetLogLevelTrace() throws Exception {
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
+			"--logName", name, "--trace"
+		});
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+		Logger logger = transformer.getLogger();
+		assertThat(logger.isTraceEnabled()).isTrue();
+		assertThat(logger.isDebugEnabled()).isTrue();
+		assertThat(logger.isInfoEnabled()).isTrue();
+		assertThat(logger.isWarnEnabled()).isTrue();
 		assertThat(logger.isErrorEnabled()).isTrue();
 	}
 
@@ -166,7 +208,7 @@ class TestCommandLine {
 		assertEquals(outputFileName, transformer.getOutputFileName(),
 			"output file name is not correct [" + transformer.getOutputFileName() + "]");
 
-		assertTrue(transformer.setRules(), "options.setRules() failed");
+		assertTrue(transformer.setRules(transformer.getImmediateData()), "options.setRules() failed");
 		assertTrue(transformer.acceptAction(), "options.acceptAction() failed");
 		assertEquals(actionClassName, transformer.acceptedAction.getClass().getName());
 

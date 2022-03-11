@@ -105,7 +105,7 @@ public class TransformerLoggerFactory {
 	}
 
 	private void verboseOutput(String format, Object... args) {
-		if (settings.isVerbose) {
+		if (settings.isDebug || settings.isTrace) {
 			FormattingTuple tp = MessageFormatter.arrayFormat(format, args);
 			consolePrint(cli.getSystemOut()).accept(tp.getMessage(), tp.getThrowable());
 		}
@@ -122,7 +122,7 @@ public class TransformerLoggerFactory {
 
 	public Logger createLogger() {
 		String loggerName = selectLoggerName();
-		setLoggingProperties(loggerName); // throws TransformException
+		setLoggingProperties(loggerName); 
 		String logFile = System.getProperty(LoggerProperty.LOG_FILE.toString());
 		boolean toSysOut = (logFile != null) && logFile.equals("System.out");
 		boolean toSysErr = (logFile == null) || logFile.equals("System.err");
@@ -158,7 +158,9 @@ public class TransformerLoggerFactory {
 			setLoggingProperty(logLevelPropertyName, settings.logLevel);
 		}
 
-		if (settings.isVerbose) {
+		if (settings.isTrace) {
+			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "trace");
+		} else if (settings.isDebug) {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "debug");
 		} else if (settings.isQuiet) {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "error");
@@ -167,7 +169,6 @@ public class TransformerLoggerFactory {
 		if (settings.properties != null) {
 			for (String propertyAssignment : settings.properties) {
 				assignLoggingProperty(propertyAssignment);
-				// throws TransformException
 			}
 		}
 
@@ -187,8 +188,7 @@ public class TransformerLoggerFactory {
 					.toString();
 				String propertyValue = propertyEntry.getValue()
 					.toString();
-				setLoggingProperty(propertyName, propertyValue); // throws
-																	// TransformException
+				setLoggingProperty(propertyName, propertyValue);
 			}
 		}
 	}
@@ -259,13 +259,7 @@ public class TransformerLoggerFactory {
 	}
 
 	protected void setLoggingProperty(String propertyName, String newPropertyValue) {
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ...");
-
 		String oldPropertyValue = System.getProperty(propertyName);
-
-		// System.out.println("setLoggingProperty Old value [ " +
-		// oldPropertyValue + " ]");
 
 		if (oldPropertyValue != null) {
 			nonQuietOutput("Blocked assignment of logging property [ {} ] to [ {} ] by prior value [ {} ]",
@@ -276,13 +270,6 @@ public class TransformerLoggerFactory {
 
 			nonQuietOutput("Assigning logging property [ {} ] to [ {} ]", propertyName, newPropertyValue);
 		}
-
-		// String assignedPropertyValue = System.getProperty(propertyName);
-		// System.out.println("setLogginProperty Assigned value [ " +
-		// assignedPropertyValue + " ]");
-
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ... done");
 	}
 
 }

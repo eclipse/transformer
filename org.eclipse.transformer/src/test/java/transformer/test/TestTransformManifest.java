@@ -359,7 +359,6 @@ public class TestTransformManifest extends CaptureTest {
 	public List<String> displayManifest(String manifestPath, InputStream manifestStream) throws IOException {
 		System.out.println("Manifest [ " + manifestPath + " ]");
 		List<String> manifestLines = TestUtils.loadLines(manifestStream);
-		// throws IOException
 
 		List<String> collapsedLines = TestUtils.manifestCollapse(manifestLines);
 
@@ -386,7 +385,6 @@ public class TestTransformManifest extends CaptureTest {
 
 		System.out.println("Read [ " + inputPath + " ]");
 		InputStream manifestInput = TestUtils.getResourceStream(inputPath);
-		// throws IOException
 
 		List<String> inputLines = displayManifest(inputPath, manifestInput);
 
@@ -398,8 +396,8 @@ public class TestTransformManifest extends CaptureTest {
 		}
 
 		ByteData manifestOutput;
-		try (InputStream input = TestUtils.getResourceStream(inputPath)) { // throws IOException
-			manifestOutput = manifestAction.apply(inputPath, input); // throws JakartaTransformException
+		try (InputStream input = TestUtils.getResourceStream(inputPath)) {
+			manifestOutput = manifestAction.apply(inputPath, input);
 		}
 
 		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
@@ -409,7 +407,6 @@ public class TestTransformManifest extends CaptureTest {
 		if ( expectedOutputPath != null ) {
 			System.out.println("Read expected output [ " + expectedOutputPath + " ]");
 			InputStream expectedInput = TestUtils.getResourceStream(expectedOutputPath);
-			// throws IOException
 
 			List<String> expectedLines = displayManifest(expectedOutputPath, expectedInput);
 
@@ -558,7 +555,6 @@ public class TestTransformManifest extends CaptureTest {
 			MANIFEST_TO_JAKARTA_DATA,
 			WEBCONTAINER_BUNDLE_OUTPUT,
 			getJakartaManifestAction());
-		// throws JakartaTransformException, IOException
 	}
 
 	@Test
@@ -569,7 +565,6 @@ public class TestTransformManifest extends CaptureTest {
 			FEATURE_TO_JAKARTA_DATA,
 			UNUSED_IDENTITY_UPDATES,
 			getJakartaFeatureAction());
-		// throws JakartaTransformException, IOException
 	}
 
 	//
@@ -597,8 +592,6 @@ public class TestTransformManifest extends CaptureTest {
 			MANIFEST_TO_JAKARTA_DATA_TX,
 			TRANSACTION_BUNDLE_OUTPUT,
 			getJakartaManifestActionTx());
-
-		// throws JakartaTransformException, IOException
 	}
 
 	public static final String	newVersion							= "[4.0,5)";
@@ -1008,8 +1001,6 @@ public class TestTransformManifest extends CaptureTest {
 			UNUSED_OCCURRENCES,
 			UNUSED_IDENTITY_UPDATES,
 			getSpecificJakartaManifestAction());
-
-		// throws JakartaTransformException, IOException
 	}
 
 	public Properties loadProperties(String path) throws IOException {

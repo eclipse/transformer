@@ -119,14 +119,14 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transform(reader, writer); // throws IOException
+			transform(reader, writer);
 		} catch (IOException e) {
 			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
-			writer.flush(); // throws
+			writer.flush();
 		} catch (IOException e) {
 			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
@@ -143,7 +143,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
 
 		String inputLine;
-		while ((inputLine = reader.readLine()) != null) { // throws IOException
+		while ((inputLine = reader.readLine()) != null) {
 			// Goal is to find the input package name. Find it by
 			// successively taking text off of the input line.
 
@@ -223,8 +223,8 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 				addChangedProvider();
 			}
 
-			writer.write(outputLine); // throws IOException
-			writer.newLine(); // throws IOException
+			writer.write(outputLine);
+			writer.newLine();
 		}
 	}
 

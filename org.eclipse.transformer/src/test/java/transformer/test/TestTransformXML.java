@@ -146,8 +146,7 @@ public class TestTransformXML extends CaptureTest {
 
 	public List<String> display(String resourceRef, InputStream resourceStream) throws IOException {
 		System.out.println("Resource [ " + resourceRef + " ]");
-		List<String> lines = TestUtils.loadLines(resourceStream); // throws
-																	// IOException
+		List<String> lines = TestUtils.loadLines(resourceStream);
 
 		int numLines = lines.size();
 		for (int lineNo = 0; lineNo < numLines; lineNo++) {
@@ -163,8 +162,7 @@ public class TestTransformXML extends CaptureTest {
 		System.out.println("Transform [ " + resourceRef + " ] ...");
 
 		List<String> initialLines;
-		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) { // throws
-																						// IOException
+		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) {
 			initialLines = display(resourceRef, resourceInput);
 		}
 
@@ -172,10 +170,8 @@ public class TestTransformXML extends CaptureTest {
 		System.out.println("Transform [ " + resourceRef + " ] using [ " + useTextAction.getName() + " ]");
 
 		List<String> finalLines;
-		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) { // throws
-																						// IOException
-			ByteData xmlOutput = useTextAction.apply(resourceRef, resourceInput); // throws
-																						// JakartaTransformException
+		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) {
+			ByteData xmlOutput = useTextAction.apply(resourceRef, resourceInput);
 			finalLines = display(resourceRef, xmlOutput.stream());
 		}
 
@@ -209,12 +205,10 @@ public class TestTransformXML extends CaptureTest {
 	@Test
 	public void testTransform_UTServiceXml() throws TransformException, IOException {
 		testTransform(UTSERVICE_XML_PATH, UT_INITIAL_OCCURRENCES, UT_FINAL_OCCURRENCES);
-		// throws JakartaTransformException, IOException
 	}
 
 	@Test
 	public void testTransform_TransactionManagerXml() throws TransformException, IOException {
 		testTransform(TRANSACTION_MANAGER_XML_PATH, TM_INITIAL_OCCURRENCES, TM_FINAL_OCCURRENCES);
-		// throws JakartaTransformException, IOException
 	}
 }

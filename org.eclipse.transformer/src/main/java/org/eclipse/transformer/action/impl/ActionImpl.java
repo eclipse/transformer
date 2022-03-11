@@ -154,24 +154,20 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 		String genericVersion = getPackageVersions().get(packageName);
 
-		// System.out.println("Attribute [ " + attributeName + " ] Package [ " + packageName + " ]");
-		// System.out.println("  Generic version  [ " + genericVersion + " ]");
-		// System.out.println("  Specific version [ " + specificVersion + " ]");
-
 		if ( (specificVersion == null) && (genericVersion == null) ) {
-			getLogger().debug("Manifest attribute {}: Package {} version {} is unchanged",
+			getLogger().trace("Manifest attribute {}: Package {} version {} is unchanged",
 				attributeName, packageName, oldVersion);
 			return null;
 		} else if (specificVersion == null) {
-			getLogger().debug("Manifest attribute {}: Generic update of package {} version {} to {}",
+			getLogger().trace("Manifest attribute {}: Generic update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, genericVersion);
 			return genericVersion;
 		} else if (genericVersion == null) {
-			getLogger().debug("Manifest attribute {}: Specific update of package {} version {} to {}",
+			getLogger().trace("Manifest attribute {}: Specific update of package {} version {} to {}",
 				attributeName, packageName, oldVersion, specificVersion);
 			return specificVersion;
 		} else {
-			getLogger().debug(
+			getLogger().trace(
 				"Manifest attribute {}: Specific update of package {} version {} to {} overrides generic version update {}",
 				attributeName, packageName, oldVersion, specificVersion, genericVersion);
 			return specificVersion;
@@ -474,12 +470,14 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		startRecording(inputName);
 		try {
 			String className = getClass().getSimpleName();
-			String methodName = "apply";
+			String methodName = "basicApply";
 
 			getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
 			ByteData inputData = read(inputName, inputStream, inputCount);
-			getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName,
-				inputData.length());
+			if (inputCount != inputData.length()) {
+				getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName,
+					inputData.length());
+			}
 
 			ByteData outputData;
 			try {
