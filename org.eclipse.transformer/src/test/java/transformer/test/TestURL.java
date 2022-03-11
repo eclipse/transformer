@@ -64,7 +64,7 @@ public class TestURL {
 
 		@Override
 		protected URLConnection openConnection(URL u) throws IOException {
-			return new TransformURLConnection(baseURL); // throws IOException
+			return new TransformURLConnection(baseURL);
 		}
 	}
 
@@ -73,7 +73,7 @@ public class TestURL {
 			super(baseURL);
 
 			this.baseConnection = this.getURL()
-				.openConnection(); // 'openConnection' throws IOException
+				.openConnection();
 		}
 
 		//
@@ -88,7 +88,7 @@ public class TestURL {
 
 		@Override
 		public void connect() throws IOException {
-			getBaseConnection().connect(); // 'connect' throws IOException
+			getBaseConnection().connect();
 		}
 
 		@Override
@@ -96,8 +96,7 @@ public class TestURL {
 			URLConnection useBaseConnection = getBaseConnection();
 			String baseName = useBaseConnection.getURL()
 				.toString();
-			InputStream baseStream = useBaseConnection.getInputStream(); // throws
-																			// IOException
+			InputStream baseStream = useBaseConnection.getInputStream();
 
 			ByteBuffer inputData = FileUtils.read(baseName, baseStream);
 

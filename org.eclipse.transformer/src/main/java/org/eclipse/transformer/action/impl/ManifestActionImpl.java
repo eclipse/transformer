@@ -131,7 +131,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 		try {
-			write(finalManifest, outputStream); // throws IOException
+			write(finalManifest, outputStream);
 		} catch (IOException e) {
 			getLogger().error("Failed to write manifest [ {} ]", inputData.name(), e);
 			return null;
@@ -226,14 +226,14 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	protected void write(Manifest manifest, OutputStream outputStream) throws IOException {
 		if (getIsManifest()) {
-			writeAsManifest(manifest, outputStream); // throws IOException
+			writeAsManifest(manifest, outputStream);
 		} else {
-			writeAsFeature(manifest, outputStream); // throws IOException
+			writeAsFeature(manifest, outputStream);
 		}
 	}
 
 	protected void writeAsManifest(Manifest manifest, OutputStream outputStream) throws IOException {
-		// manifest.write(outputStream); // throws IOException
+		// manifest.write(outputStream);
 		ManifestWriter.write(manifest, outputStream);
 	}
 

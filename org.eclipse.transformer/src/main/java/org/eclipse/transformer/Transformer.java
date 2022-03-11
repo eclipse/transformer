@@ -323,7 +323,6 @@ public class Transformer {
 
 		if ( !updateProperties.isEmpty() ) {
 			bundleUpdates = TransformProperties.getBundleUpdates(updateProperties);
-			// throws IllegalArgumentException
 			getLogger().info(consoleMarker, "Bundle identities will be updated");
 		} else {
 			bundleUpdates = null;
@@ -336,7 +335,6 @@ public class Transformer {
 
 			Map<String, String> substitutionRefs =
 				TransformProperties.convertPropertiesToMap(textMasterProperties);
-			// throws IllegalArgumentException
 
 			Map<String, Map<String, String>> masterUpdates = new HashMap<>();
 			for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
@@ -345,7 +343,6 @@ public class Transformer {
 
 				Map<String, String> substitutionsMap =
 					loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
-				// throws URISyntaxException, IOException
 
 				substitutionRefs.put(simpleNameSelector, substitutionsRef);
 				masterUpdates.put(simpleNameSelector, substitutionsMap);
@@ -373,7 +370,6 @@ public class Transformer {
 
 			Map<String, String> substitutionRefs =
 				TransformProperties.convertPropertiesToMap(perClassConstantProperties);
-			// throws IllegalArgumentException
 
 			Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
 			for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
@@ -387,7 +383,6 @@ public class Transformer {
 				}
 				Map<String, String> substitutionsMap =
 					TransformProperties.convertPropertiesToMap(substitutions);
-				// throws IllegalArgumentException
 				masterUpdates.put(classSelector, substitutionsMap);
 			}
 
@@ -453,7 +448,6 @@ public class Transformer {
 					break;
 				case RULES_MASTER_TEXT:
 					addImmediateMasterText(masterTextRef, nextData.key, nextData.value);
-					// throws IOException, URISyntaxException
 					break;
 
 				default:
@@ -699,7 +693,6 @@ public class Transformer {
 		if ( masterRef == null ) {
 			substitutions = loadInternalProperties(
 				"Substitutions matching [ " + selector + " ]", substitutionsRef);
-			// throws IOException
 		} else {
 			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
 			if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
@@ -709,12 +702,10 @@ public class Transformer {
 
 			substitutions = loadExternalProperties(
 				"Substitutions matching [ " + selector + " ]", relativeSubstitutionsRef);
-			// throws URISyntaxException, IOException
 		}
 
 		Map<String, String> substitutionsMap =
 			TransformProperties.convertPropertiesToMap(substitutions);
-		// throws IllegalArgumentException
 
 		return substitutionsMap;
 	}
@@ -732,7 +723,6 @@ public class Transformer {
 
 		Map<String, String> substitutionsMap =
 			loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
-		// throws URISyntaxException, IOException
 
 		String oldSubstitutionsRef =
 			masterSubstitutionRefs.put(simpleNameSelector, substitutionsRef);

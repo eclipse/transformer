@@ -124,15 +124,14 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transformAsPlainText(inputData.name(), reader, writer); // throws
-																// IOException
+			transformAsPlainText(inputData.name(), reader, writer);
 		} catch (IOException e) {
 			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
-			writer.flush(); // throws
+			writer.flush();
 		} catch (IOException e) {
 			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;
@@ -168,13 +167,12 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		SAXParser parser;
 		try {
 			parser = getParserFactory().newSAXParser();
-			// 'newSAXParser' throws ParserConfigurationException, SAXException
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
 
 		try {
-			parser.parse(input, handler); // throws SAXException, IOException
+			parser.parse(input, handler);
 		} catch (Exception e) {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}
@@ -190,13 +188,12 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		SAXParser parser;
 		try {
 			parser = getParserFactory().newSAXParser();
-			// 'newSAXParser' throws ParserConfigurationException, SAXException
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
 
 		try {
-			parser.parse(input, handler); // throws SAXException, IOException
+			parser.parse(input, handler);
 		} catch (Exception e) {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}
@@ -318,7 +315,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 			String nextLine = lineBuilder.toString();
 			lineBuilder.setLength(0);
 
-			write(nextLine); // throws SAXException
+			write(nextLine);
 		}
 
 		@SuppressWarnings("unused")
@@ -326,7 +323,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 			String nextLine = lineBuilder.toString();
 			lineBuilder.setLength(0);
 
-			writeUTF8(nextLine); // throws SAXException
+			writeUTF8(nextLine);
 		}
 
 		//

@@ -157,14 +157,14 @@ public class JavaActionImpl extends ActionImpl<Changes> {
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transform(reader, writer); // throws IOException
+			transform(reader, writer);
 		} catch (IOException e) {
 			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
-			writer.flush(); // throws
+			writer.flush();
 		} catch (IOException e) {
 			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;

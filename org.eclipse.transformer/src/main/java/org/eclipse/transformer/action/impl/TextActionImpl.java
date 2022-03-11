@@ -85,14 +85,14 @@ public class TextActionImpl extends ActionImpl<Changes> {
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 
 		try {
-			transform(inputData.name(), reader, writer); // throws IOException
+			transform(inputData.name(), reader, writer);
 		} catch (IOException e) {
 			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
 			return null;
 		}
 
 		try {
-			writer.flush(); // throws
+			writer.flush();
 		} catch (IOException e) {
 			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
 			return null;

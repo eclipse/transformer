@@ -122,7 +122,7 @@ public class TransformerLoggerFactory {
 
 	public Logger createLogger() {
 		String loggerName = selectLoggerName();
-		setLoggingProperties(loggerName); // throws TransformException
+		setLoggingProperties(loggerName); 
 		String logFile = System.getProperty(LoggerProperty.LOG_FILE.toString());
 		boolean toSysOut = (logFile != null) && logFile.equals("System.out");
 		boolean toSysErr = (logFile == null) || logFile.equals("System.err");
@@ -169,7 +169,6 @@ public class TransformerLoggerFactory {
 		if (settings.properties != null) {
 			for (String propertyAssignment : settings.properties) {
 				assignLoggingProperty(propertyAssignment);
-				// throws TransformException
 			}
 		}
 
@@ -189,8 +188,7 @@ public class TransformerLoggerFactory {
 					.toString();
 				String propertyValue = propertyEntry.getValue()
 					.toString();
-				setLoggingProperty(propertyName, propertyValue); // throws
-																	// TransformException
+				setLoggingProperty(propertyName, propertyValue);
 			}
 		}
 	}

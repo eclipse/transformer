@@ -150,11 +150,9 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 
 			try {
 				apply(inputPath, zipInputStream, zipOutputStream);
-				// throws JakartaTransformException
-
 			} finally {
 				try {
-					zipOutputStream.finish(); // throws IOException
+					zipOutputStream.finish();
 				} catch (IOException e) {
 					throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
 				}
@@ -195,11 +193,9 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 					// TODO: Should more of the entry details be transferred?
 
 					ZipEntry outputEntry = new ZipEntry(inputName);
-					zipOutputStream.putNextEntry(outputEntry); // throws
-																// IOException
-					FileUtils.transfer(zipInputStream, zipOutputStream, buffer); // throws
-																					// IOException
-					zipOutputStream.closeEntry(); // throws IOException
+					zipOutputStream.putNextEntry(outputEntry);
+					FileUtils.transfer(zipInputStream, zipOutputStream, buffer);
+					zipOutputStream.closeEntry();
 
 				} else {
 					// long inputCRC = inputEntry.getCrc();
@@ -250,12 +246,11 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 						// transferred?
 
 						ZipEntry outputEntry = new ZipEntry(inputName);
-						zipOutputStream.putNextEntry(outputEntry); // throws
-																	// IOException
+						zipOutputStream.putNextEntry(outputEntry);
 
 						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
 						recordTransform(acceptedAction, inputName);
-						zipOutputStream.closeEntry(); // throws IOException
+						zipOutputStream.closeEntry();
 
 					} else {
 						int intInputLength;
@@ -273,11 +268,9 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 
 						ZipEntry outputEntry = new ZipEntry(acceptedAction.getLastActiveChanges()
 							.getOutputResourceName());
-						zipOutputStream.putNextEntry(outputEntry); // throws
-																	// IOException
-						FileUtils.transfer(outputData.stream(), zipOutputStream, buffer); // throws
-																						// IOException
-						zipOutputStream.closeEntry(); // throws IOException
+						zipOutputStream.putNextEntry(outputEntry);
+						FileUtils.transfer(outputData.stream(), zipOutputStream, buffer);
+						zipOutputStream.closeEntry();
 					}
 				}
 
