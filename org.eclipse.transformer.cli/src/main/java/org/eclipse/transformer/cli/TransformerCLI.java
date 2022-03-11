@@ -94,21 +94,6 @@ public class TransformerCLI implements TransformOptions {
 		Map<String, OptionGroup> groups = new HashMap<>();
 
 		for (AppOption appOption : AppOption.values()) {
-			String groupTag = appOption.getGroupTag();
-			OptionGroup group;
-			if (groupTag != null) {
-				group = groups.computeIfAbsent(groupTag, k -> {
-					OptionGroup result = new OptionGroup();
-					if (appOption.isRequired()) {
-						result.setRequired(true);
-					}
-					options.addOptionGroup(result);
-					return result;
-				});
-			} else {
-				group = null;
-			}
-
 			Builder builder = Option.builder(appOption.getShortTag());
 			builder.longOpt(appOption.getLongTag());
 			builder.desc(appOption.getDescription());
@@ -122,16 +107,24 @@ public class TransformerCLI implements TransformOptions {
 			} else {
 				// No arguments are required for this option.
 			}
-			builder.required((group == null) && appOption.isRequired());
+			builder.required(appOption.isRequired());
 
 			Option option = builder.build();
 
-			if (group != null) {
+			String groupTag = appOption.getGroupTag();
+			if (groupTag != null) {
+				OptionGroup group = groups.computeIfAbsent(groupTag, k -> new OptionGroup());
+				if (option.isRequired()) {
+					group.setRequired(true);
+				}
 				group.addOption(option);
 			} else {
 				options.addOption(option);
 			}
 		}
+
+		groups.values()
+			.forEach(options::addOptionGroup);
 
 		return options;
 	}
