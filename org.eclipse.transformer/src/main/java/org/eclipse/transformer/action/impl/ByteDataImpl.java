@@ -36,37 +36,21 @@ public class ByteDataImpl implements ByteData {
 		this.buffer = buffer;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.transformer.action.InputStreamData#name()
-	 */
 	@Override
 	public String name() {
 		return name;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.transformer.action.InputStreamData#stream()
-	 */
 	@Override
 	public InputStream stream() {
 		return new ByteBufferInputStream(buffer());
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.transformer.action.InputStreamData#length()
-	 */
 	@Override
 	public int length() {
 		return buffer.remaining();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.transformer.action.InputStreamData#buffer()
-	 */
 	@Override
 	public ByteBuffer buffer() {
 		return buffer.duplicate();

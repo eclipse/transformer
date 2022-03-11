@@ -160,7 +160,7 @@ public class Transformer {
 
 		boolean loadedRules;
 		try {
-			loadedRules = setRules();
+			loadedRules = setRules(getImmediateData());
 		} catch (Exception e) {
 			getLogger().error(consoleMarker, "Exception loading rules:", e);
 			return ResultCode.RULES_ERROR_RC;
@@ -266,18 +266,18 @@ public class Transformer {
 	/**
 	 * Process the rules data. Load and validate the data.
 	 *
+	 * @param immediateData Immediate rules data.
 	 * @return True or false telling if the data was successfully loaded and is
 	 *         usable.
 	 * @throws Exception Thrown if an error occurred while loading or validating
 	 *             the data.
 	 */
-	public boolean setRules() throws Exception {
-		ImmediateRuleData[] immediateData = getImmediateData();
+	public boolean setRules(ImmediateRuleData[] immediateData) throws Exception {
 		if ( immediateData == null ) {
 			return false;
 		}
 
-		Set<String> orphanedFinalPackages = new HashSet<String>();
+		Set<String> orphanedFinalPackages = new HashSet<>();
 
 		Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
 		Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
@@ -365,7 +365,7 @@ public class Transformer {
 			getLogger().info(consoleMarker, "Java direct string updates will be performed");
 		} else {
 			directStrings = null;
-			getLogger().info(consoleMarker, "Java direct string updates will not be performed");
+			getLogger().debug(consoleMarker, "Java direct string updates will not be performed");
 		}
 
 		if ( !perClassConstantProperties.isEmpty() ) {
@@ -396,7 +396,7 @@ public class Transformer {
 
 		} else {
 			perClassConstantStrings = null;
-			getLogger().info(consoleMarker, "Per class constant mapping files are not enabled");
+			getLogger().debug(consoleMarker, "Per class constant mapping files are not enabled");
 		}
 
 		processImmediateData(immediateData, masterTextRef, orphanedFinalPackages);
@@ -408,22 +408,22 @@ public class Transformer {
 			getLogger().info(consoleMarker, "All resources will be selected");
 		}
 		if ( packageRenames == null ) {
-			getLogger().info(consoleMarker, "Packages will not be renamed");
+			getLogger().debug(consoleMarker, "Packages will not be renamed");
 		}
 		if ( packageVersions == null ) {
-			getLogger().info(consoleMarker, "Package versions will not be updated");
+			getLogger().debug(consoleMarker, "Package versions will not be updated");
 		}
 		if ( bundleUpdates == null ) {
-			getLogger().info(consoleMarker, "Bundle identities will not be updated");
+			getLogger().debug(consoleMarker, "Bundle identities will not be updated");
 		}
 		if ( masterTextUpdates == null ) {
-			getLogger().info(consoleMarker, "Text files will not be updated");
+			getLogger().debug(consoleMarker, "Text files will not be updated");
 		}
 		if ( directStrings == null ) {
-			getLogger().info(consoleMarker, "Java direct string updates will not be performed");
+			getLogger().debug(consoleMarker, "Java direct string updates will not be performed");
 		}
 		if ( perClassConstantStrings == null ) {
-			getLogger().info(consoleMarker, "Per class constant mapping files are not enabled");
+			getLogger().debug(consoleMarker, "Per class constant mapping files are not enabled");
 		}
 
 		return validateVersionUpdates(orphanedFinalPackages);
@@ -557,7 +557,7 @@ public class Transformer {
 		if (rulesReferences == null) {
 			String rulesReference = options.getDefaultValue(ruleOption);
 			if (rulesReference == null) {
-				getLogger().info(consoleMarker, "Skipping option [ {} ]", ruleOption);
+				getLogger().debug(consoleMarker, "Skipping option [ {} ]", ruleOption);
 				return PropertiesUtils.createProperties();
 			} else {
 				return loadInternalProperties(ruleOption, rulesReference);
@@ -610,7 +610,7 @@ public class Transformer {
 		URL rulesUrl = options.getRuleLoader()
 			.apply(resourceRef);
 		if (rulesUrl == null) {
-			getLogger().info(consoleMarker, "Internal [ {} ] were not found [ {} ]", ruleOption, resourceRef);
+			getLogger().debug(consoleMarker, "Internal [ {} ] were not found [ {} ]", ruleOption, resourceRef);
 			throw new IOException("Resource [ " + resourceRef + " ] not found on [ " + options.getRuleLoader() + " ]");
 		} else {
 			getLogger().info(consoleMarker, "Internal [ {}] URL [ {} ]", ruleOption, rulesUrl);
@@ -632,9 +632,6 @@ public class Transformer {
 
 	protected Properties loadExternalProperties(String referenceName, String externalReference, File relativeHome)
 		throws URISyntaxException, IOException {
-
-		// getLogger().info(consoleMarker, "Using external [ {} ]: [ {} ]",
-		// referenceName, externalReference);
 
 		URI relativeHomeUri = relativeHome.toURI();
 		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference)
@@ -706,7 +703,7 @@ public class Transformer {
 		} else {
 			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
 			if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
-				getLogger().info(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]",
+				getLogger().debug(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]",
 					substitutionsRef, relativeSubstitutionsRef);
 			}
 
@@ -1010,8 +1007,8 @@ public class Transformer {
 			return false;
 		}
 
-		getLogger().info(consoleMarker, "Input     [ {} ]", inputName);
-		getLogger().info(consoleMarker, "          [ {} ]", inputPath);
+		getLogger().debug(consoleMarker, "Input [ {} ]", inputName);
+		getLogger().info(consoleMarker, "Input [ {} ]", inputPath);
 		return true;
 	}
 
@@ -1065,8 +1062,8 @@ public class Transformer {
 			}
 		}
 
-		getLogger().info(consoleMarker, "Output    [ {} ] ({})", useOutputName, outputCase);
-		getLogger().info(consoleMarker, "          [ {} ]", useOutputPath);
+		getLogger().debug(consoleMarker, "Output [ {} ] ({})", useOutputName, outputCase);
+		getLogger().info(consoleMarker, "Output [ {} ]", useOutputPath);
 
 		allowOverwrite = options.hasOption(AppOption.OVERWRITE);
 		if (allowOverwrite) {

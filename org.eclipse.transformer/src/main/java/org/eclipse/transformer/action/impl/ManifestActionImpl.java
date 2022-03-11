@@ -193,7 +193,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	protected int transformPackages(String inputName, String entryName, Attributes initialAttributes,
 		Attributes finalAttributes) {
 
-		getLogger().debug("Transforming [ {} ]: [ {} ] Attributes [ {} ]", inputName, entryName,
+		getLogger().trace("Transforming [ {} ]: [ {} ] Attributes [ {} ]", inputName, entryName,
 			initialAttributes.size());
 
 		int replacements = 0;
@@ -218,7 +218,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			finalAttributes.put(untypedName, finalValue);
 		}
 
-		getLogger().debug("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]", inputName, entryName,
+		getLogger().trace("Transformed [ {} ]: [ {} ] Attributes [ {} ] Replacements [ {} ]", inputName, entryName,
 			finalAttributes.size(), replacements);
 
 		return replacements;
@@ -547,7 +547,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	 * @return package attribute text
 	 */
 	protected String getPackageAttributeText(String text) {
-		// debug("getPackageAttributeText ENTER[ text: {}]", text);
+		// getLogger().trace("getPackageAttributeText ENTER[ text: {}]", text);
 
 		if (text == null) {
 			return null;
@@ -558,7 +558,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 		}
 
 		int commaIndex = text.indexOf(',');
-		getLogger().debug("Comma index: [{}]", commaIndex);
+		// getLogger().trace("Comma index: [{}]", commaIndex);
 		// If there is no comma, then the whole text is the packageAttributeText
 		if (commaIndex == -1) {
 			return text;
@@ -570,7 +570,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 		// If an odd number of quotes are found, then the comma is in quotes and
 		// we need to find the next comma.
 		String packageText = text.substring(0, commaIndex + 1);
-		getLogger().debug("packageText [ {} ]", packageText);
+		getLogger().trace("packageText [ {} ]", packageText);
 
 		while (!isPackageDelimitingComma(text, packageText, commaIndex)) {
 			commaIndex = text.indexOf(',', packageText.length());
@@ -589,7 +589,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			}
 		}
 
-		getLogger().debug("getPackageAttributeText returning: [ {} ]", packageText);
+		getLogger().trace("getPackageAttributeText returning: [ {} ]", packageText);
 		return packageText;
 	}
 
@@ -703,7 +703,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 		String initialSymbolicName = initialMainAttributes.getValue(SYMBOLIC_NAME_PROPERTY_NAME);
 		if (initialSymbolicName == null) {
-			getLogger().debug("Input [ {} ] has no bundle symbolic name", inputName);
+			getLogger().trace("Input [ {} ] has no bundle symbolic name", inputName);
 			return false;
 		}
 
@@ -734,7 +734,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			isWildcard = false;
 			matchCase = "identity update";
 		}
-		getLogger().debug("Input [ {} ] symbolic name [ {} ] has {}", inputName, initialSymbolicName, matchCase);
+		getLogger().trace("Input [ {} ] symbolic name [ {} ] has {}", inputName, initialSymbolicName, matchCase);
 		if (!matched) {
 			return false;
 		}

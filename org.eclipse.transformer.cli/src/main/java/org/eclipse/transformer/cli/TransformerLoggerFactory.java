@@ -261,13 +261,7 @@ public class TransformerLoggerFactory {
 	}
 
 	protected void setLoggingProperty(String propertyName, String newPropertyValue) {
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ...");
-
 		String oldPropertyValue = System.getProperty(propertyName);
-
-		// System.out.println("setLoggingProperty Old value [ " +
-		// oldPropertyValue + " ]");
 
 		if (oldPropertyValue != null) {
 			nonQuietOutput("Blocked assignment of logging property [ {} ] to [ {} ] by prior value [ {} ]",
@@ -278,13 +272,6 @@ public class TransformerLoggerFactory {
 
 			nonQuietOutput("Assigning logging property [ {} ] to [ {} ]", propertyName, newPropertyValue);
 		}
-
-		// String assignedPropertyValue = System.getProperty(propertyName);
-		// System.out.println("setLogginProperty Assigned value [ " +
-		// assignedPropertyValue + " ]");
-
-		// System.out.println("setLoggingProperty [ " + propertyName + " ] to [
-		// " + newPropertyValue + " ] ... done");
 	}
 
 }

@@ -208,7 +208,7 @@ class TestCommandLine {
 		assertEquals(outputFileName, transformer.getOutputFileName(),
 			"output file name is not correct [" + transformer.getOutputFileName() + "]");
 
-		assertTrue(transformer.setRules(), "options.setRules() failed");
+		assertTrue(transformer.setRules(transformer.getImmediateData()), "options.setRules() failed");
 		assertTrue(transformer.acceptAction(), "options.acceptAction() failed");
 		assertEquals(actionClassName, transformer.acceptedAction.getClass().getName());
 

@@ -43,6 +43,7 @@ import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.Transformer.ResultCode;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.util.PropertiesUtils;
 import org.slf4j.Logger;
 
 public class TransformerCLI implements TransformOptions {
@@ -160,17 +161,17 @@ public class TransformerCLI implements TransformOptions {
 		// }
 	}
 
-	private void displayCopyright() {
-		for (String copyrightLine : COPYRIGHT_LINES) {
-			preInitDisplay(copyrightLine);
+	private void displayHeader() {
+		if (getLogger().isDebugEnabled()) {
+			for (String copyrightLine : COPYRIGHT_LINES) {
+				preInitDisplay(copyrightLine);
+			}
+		} else {
+			preInitDisplay(COPYRIGHT_LINES[0]);
 		}
-	}
-
-	private void displayBuildProperties() {
 		Properties useBuildProperties = getBuildProperties();
-
-		preInitDisplay(getClass().getName());
-		preInitDisplay("  Version [ " + useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME) + " ]");
+		preInitDisplay(getClass().getName() + " Version [ "
+			+ useBuildProperties.getProperty(SHORT_VERSION_PROPERTY_NAME, "<unavailable>") + " ]");
 		preInitDisplay("");
 	}
 
@@ -182,7 +183,7 @@ public class TransformerCLI implements TransformOptions {
 			useProperties = loadProperties(TRANSFORMER_BUILD_PROPERTIES);
 		} catch (IOException e) {
 			getLogger().error("Failed to load properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]", e);
-			return new Properties();
+			return PropertiesUtils.createProperties();
 		}
 		if (useProperties.isEmpty()) {
 			getLogger().error("Failed to locate properties [ " + TRANSFORMER_BUILD_PROPERTIES + " ]");
@@ -191,7 +192,7 @@ public class TransformerCLI implements TransformOptions {
 	}
 
 	private static Properties loadProperties(String resourceRef) throws IOException {
-		Properties properties = new Properties();
+		Properties properties = PropertiesUtils.createProperties();
 		try (InputStream inputStream = Transformer.class.getClassLoader()
 			.getResourceAsStream(resourceRef)) {
 			if (Objects.nonNull(inputStream)) {
@@ -360,8 +361,7 @@ public class TransformerCLI implements TransformOptions {
 	//
 
 	public ResultCode run() {
-		displayCopyright();
-		displayBuildProperties();
+		displayHeader();
 
 		if (getParsedArgs() == null) {
 			help(getSystemOut());
