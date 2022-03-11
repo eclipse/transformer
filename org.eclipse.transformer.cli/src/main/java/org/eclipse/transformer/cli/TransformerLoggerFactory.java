@@ -105,7 +105,7 @@ public class TransformerLoggerFactory {
 	}
 
 	private void verboseOutput(String format, Object... args) {
-		if (settings.isVerbose) {
+		if (settings.isDebug || settings.isTrace) {
 			FormattingTuple tp = MessageFormatter.arrayFormat(format, args);
 			consolePrint(cli.getSystemOut()).accept(tp.getMessage(), tp.getThrowable());
 		}
@@ -158,7 +158,9 @@ public class TransformerLoggerFactory {
 			setLoggingProperty(logLevelPropertyName, settings.logLevel);
 		}
 
-		if (settings.isVerbose) {
+		if (settings.isTrace) {
+			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "trace");
+		} else if (settings.isDebug) {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "debug");
 		} else if (settings.isQuiet) {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "error");

@@ -22,10 +22,15 @@ public enum AppOption {
 	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
 	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
 
-	LOG_QUIET(new Settings("q", "quiet", "Display quiet output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
-		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
-	LOG_VERBOSE(new Settings("v", "verbose", "Display verbose output", !Settings.HAS_ARG, !Settings.HAS_ARGS,
-		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	LOG_QUIET(
+		new Settings("q", "quiet", "Display quiet output: error level logging", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, "LOG_GROUP")),
+	LOG_DEBUG(new Settings("v", "verbose", "Display verbose output: debug level logging", !Settings.HAS_ARG,
+		!Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, "LOG_GROUP")),
+	LOG_TRACE(
+		new Settings("x", "trace", "Display trace output: trace level logging", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, "LOG_GROUP")),
 	LOG_PROPERTY(new Settings("lp", "logProperty", "Logging property", !Settings.HAS_ARG, Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
 	LOG_PROPERTY_FILE(new Settings("lpf", "logPropertyFile", "Logging properties file", Settings.HAS_ARG,

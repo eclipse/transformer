@@ -17,19 +17,21 @@ import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 
 public class LoggerSettings {
-	public final boolean	isQuiet;
-	public final boolean	isVerbose;
+	public final boolean		isQuiet;
+	public final boolean		isDebug;
+	public final boolean		isTrace;
 
 	public final List<String>	properties;
-	public final String		propertyFileName;
+	public final String			propertyFileName;
 
-	public final String		logName;
-	public final String		logLevel;
-	public final String		logFileName;
+	public final String			logName;
+	public final String			logLevel;
+	public final String			logFileName;
 
 	public LoggerSettings(TransformOptions options) {
 		this.isQuiet = options.hasOption(AppOption.LOG_QUIET);
-		this.isVerbose = options.hasOption(AppOption.LOG_VERBOSE);
+		this.isDebug = options.hasOption(AppOption.LOG_DEBUG);
+		this.isTrace = options.hasOption(AppOption.LOG_TRACE);
 
 		this.properties = options.getOptionValues(AppOption.LOG_PROPERTY);
 		this.propertyFileName = options.normalize(options.getOptionValue(AppOption.LOG_PROPERTY_FILE));
