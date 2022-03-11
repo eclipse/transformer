@@ -17,12 +17,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
-
-import aQute.lib.utf8properties.UTF8Properties;
 
 public class TransformProperties {
 	/** Character used to define a package rename. */
@@ -36,7 +35,7 @@ public class TransformProperties {
 
 	//
 
-	public static void addSelections(Set<String> included, Set<String> excluded, UTF8Properties selections) {
+	public static void addSelections(Set<String> included, Set<String> excluded, Properties selections) {
 		for (Map.Entry<Object, Object> selectionEntry : selections.entrySet()) {
 			String selection = (String) selectionEntry.getKey();
 			addSelection(included, excluded, selection);
@@ -92,7 +91,7 @@ public class TransformProperties {
 		}
 	}
 
-	public static Map<String, String> getPackageRenames(UTF8Properties renameProperties) {
+	public static Map<String, String> getPackageRenames(Properties renameProperties) {
 		Map<String, String> packageRenames = new HashMap<>(renameProperties.size());
 		for (Map.Entry<Object, Object> renameEntry : renameProperties.entrySet()) {
 			packageRenames.put((String) renameEntry.getKey(), (String) renameEntry.getValue());
@@ -100,7 +99,7 @@ public class TransformProperties {
 		return packageRenames;
 	}
 
-	public static Map<String, String> getDirectStrings(UTF8Properties directProperties) {
+	public static Map<String, String> getDirectStrings(Properties directProperties) {
 		Map<String, String> directStrings = new HashMap<>(directProperties.size());
 		for (Map.Entry<Object, Object> directEntry : directProperties.entrySet()) {
 			directStrings.put((String) directEntry.getKey(), (String) directEntry.getValue());
@@ -117,7 +116,7 @@ public class TransformProperties {
 	}
 
 	public static void setPackageVersions(
-		UTF8Properties versionProperties,
+		Properties versionProperties,
 		Map<String, String> packageVersions,
 		Map<String, Map<String, String>> specificPackageVersions) {
 
@@ -278,7 +277,7 @@ public class TransformProperties {
 		}
 	}
 
-	public static Map<String, BundleData> getBundleUpdates(UTF8Properties updateProperties) {
+	public static Map<String, BundleData> getBundleUpdates(Properties updateProperties) {
 		Map<String, BundleData> bundleUpdates = new HashMap<>(updateProperties.size());
 		for (Map.Entry<Object, Object> updateEntry : updateProperties.entrySet()) {
 			bundleUpdates.put((String) updateEntry.getKey(), new BundleDataImpl((String) updateEntry.getValue()));
@@ -286,7 +285,7 @@ public class TransformProperties {
 		return bundleUpdates;
 	}
 
-	public static Map<String, String> convertPropertiesToMap(UTF8Properties properties) {
+	public static Map<String, String> convertPropertiesToMap(Properties properties) {
 		Map<String, String> map = new HashMap<>(properties.size());
 		for (Map.Entry<Object, Object> fileEntry : properties.entrySet()) {
 			map.put((String) fileEntry.getKey(), (String) fileEntry.getValue());

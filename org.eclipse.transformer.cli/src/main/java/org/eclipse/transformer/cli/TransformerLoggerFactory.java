@@ -14,18 +14,18 @@ package org.eclipse.transformer.cli;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.function.BiConsumer;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 
 import aQute.lib.io.IO;
-import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
 /*
@@ -172,11 +172,11 @@ public class TransformerLoggerFactory {
 		}
 
 		if (settings.propertyFileName != null) {
-			UTF8Properties properties;
+			Properties properties;
 			try {
 				URL propertyFileUrl = URIUtil.resolve(IO.work.toURI(), settings.propertyFileName)
 					.toURL();
-				properties = FileUtils.loadProperties(propertyFileUrl);
+				properties = PropertiesUtils.loadProperties(propertyFileUrl);
 			} catch (Exception e) {
 				throw new TransformException("Failed to load logging properties [ " + settings.propertyFileName + " ]",
 					e);
