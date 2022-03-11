@@ -14,12 +14,10 @@ package org.eclipse.transformer.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URL;
 import java.nio.ByteBuffer;
 
-import aQute.lib.utf8properties.UTF8Properties;
-
 public class FileUtils {
+	private FileUtils() {}
 
 	/** Usual disk page size. */
 	public static final int	PAGE_SIZE			= 4096;
@@ -142,27 +140,7 @@ public class FileUtils {
 		return totalBytesRead;
 	}
 
-	//
-
-	public static final char SLASH = '/';
-
-	//
-
-	public static UTF8Properties loadProperties(URL url) throws IOException {
-		try (InputStream stream = url.openStream()) {
-			return loadProperties(stream);
-		}
-	}
-
-	public static UTF8Properties loadProperties(InputStream inputStream) throws IOException {
-		UTF8Properties properties = createProperties();
-		properties.load(inputStream);
-		return properties;
-	}
-
-	public static UTF8Properties createProperties() {
-		return new UTF8Properties();
-	}
+	private static final char SLASH = '/';
 
 	public static String getFileNameFromFullyQualifiedFileName(String fqFileName) {
 		int index = fqFileName.lastIndexOf(SLASH);

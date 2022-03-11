@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.transformer.action.Action;
@@ -53,14 +54,13 @@ import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
 import org.eclipse.transformer.action.impl.WarActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
-import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.PropertiesUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import aQute.lib.io.IO;
-import aQute.lib.utf8properties.UTF8Properties;
 import aQute.libg.uri.URIUtil;
 
 public class Transformer {
@@ -279,13 +279,13 @@ public class Transformer {
 
 		Set<String> orphanedFinalPackages = new HashSet<String>();
 
-		UTF8Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
-		UTF8Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
-		UTF8Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
-		UTF8Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
-		UTF8Properties directProperties = loadProperties(AppOption.RULES_DIRECT, null);
-		UTF8Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
-		UTF8Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT,
+		Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
+		Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
+		Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
+		Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
+		Properties directProperties = loadProperties(AppOption.RULES_DIRECT, null);
+		Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
+		Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT,
 			null);
 
 		invert = options.hasOption(AppOption.INVERT);
@@ -380,7 +380,7 @@ public class Transformer {
 				String classSelector = substitutionRefEntry.getKey();
 				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
 
-				UTF8Properties substitutions = new UTF8Properties();
+				Properties substitutions = PropertiesUtils.createProperties();
 				if ( masterDirect == null ) {
 					substitutions = loadInternalProperties("Substitions matching [ " + classSelector + " ]",
 						substitutionsRef);
@@ -550,7 +550,7 @@ public class Transformer {
 	 * @throws URISyntaxException Thrown if the load failed because a non-valid
 	 *             URI was specified.
 	 */
-	public UTF8Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
+	public Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
 		throws IOException, URISyntaxException {
 		List<String> rulesReferences = options.normalize(options.getOptionValues(ruleOption));
 
@@ -558,7 +558,7 @@ public class Transformer {
 			String rulesReference = options.getDefaultValue(ruleOption);
 			if (rulesReference == null) {
 				getLogger().info(consoleMarker, "Skipping option [ {} ]", ruleOption);
-				return FileUtils.createProperties();
+				return PropertiesUtils.createProperties();
 			} else {
 				return loadInternalProperties(ruleOption, rulesReference);
 			}
@@ -566,9 +566,9 @@ public class Transformer {
 			return loadExternalProperties(ruleOption, rulesReferences.get(0));
 		} else {
 			String baseReference = rulesReferences.get(0);
-			UTF8Properties mergedProperties = rulesReferences.stream()
+			Properties mergedProperties = rulesReferences.stream()
 				.reduce(null, asBiFunction((props, ref) -> {
-					UTF8Properties p = loadExternalProperties(ruleOption, ref);
+					Properties p = loadExternalProperties(ruleOption, ref);
 					if (props == null) {
 						return p;
 					}
@@ -600,11 +600,11 @@ public class Transformer {
 	 * Sibling path [ sibling1 ]
 	 */
 
-	protected UTF8Properties loadInternalProperties(AppOption ruleOption, String resourceRef) throws IOException {
+	protected Properties loadInternalProperties(AppOption ruleOption, String resourceRef) throws IOException {
 		return loadInternalProperties(ruleOption.toString(), resourceRef);
 	}
 
-	protected UTF8Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
+	protected Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
 		// getLogger().info(consoleMarker, "Using internal [ {} ]: [ {} ]",
 		// ruleOption, resourceRef);
 		URL rulesUrl = options.getRuleLoader()
@@ -615,22 +615,22 @@ public class Transformer {
 		} else {
 			getLogger().info(consoleMarker, "Internal [ {}] URL [ {} ]", ruleOption, rulesUrl);
 		}
-		return FileUtils.loadProperties(rulesUrl);
+		return PropertiesUtils.loadProperties(rulesUrl);
 	}
 
-	protected UTF8Properties loadExternalProperties(AppOption ruleOption, String resourceRef)
+	protected Properties loadExternalProperties(AppOption ruleOption, String resourceRef)
 		throws URISyntaxException, IOException {
 
 		return loadExternalProperties(ruleOption.toString(), resourceRef);
 	}
 
-	public UTF8Properties loadExternalProperties(String referenceName, String externalReference)
+	public Properties loadExternalProperties(String referenceName, String externalReference)
 		throws URISyntaxException, IOException {
 
 		return loadExternalProperties(referenceName, externalReference, IO.work);
 	}
 
-	protected UTF8Properties loadExternalProperties(String referenceName, String externalReference, File relativeHome)
+	protected Properties loadExternalProperties(String referenceName, String externalReference, File relativeHome)
 		throws URISyntaxException, IOException {
 
 		// getLogger().info(consoleMarker, "Using external [ {} ]: [ {} ]",
@@ -641,10 +641,10 @@ public class Transformer {
 			.toURL();
 		getLogger().info(consoleMarker, "External [ {} ] URL [ {} ]", referenceName, rulesUrl);
 
-		return FileUtils.loadProperties(rulesUrl);
+		return PropertiesUtils.loadProperties(rulesUrl);
 	}
 
-	protected void merge(String sinkName, UTF8Properties sink, String sourceName, UTF8Properties source,
+	protected void merge(String sinkName, Properties sink, String sourceName, Properties source,
 		Set<String> orphanedValues) {
 
 		for (Map.Entry<Object, Object> sourceEntry : source.entrySet()) {
@@ -698,7 +698,7 @@ public class Transformer {
 
 	private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef)
 		throws IOException, URISyntaxException {
-		UTF8Properties substitutions;
+		Properties substitutions;
 		if ( masterRef == null ) {
 			substitutions = loadInternalProperties(
 				"Substitions matching [ " + selector + " ]", substitutionsRef);

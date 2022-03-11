@@ -33,14 +33,13 @@ import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.PropertiesUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-import aQute.lib.utf8properties.UTF8Properties;
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
@@ -1013,9 +1012,9 @@ public class TestTransformManifest extends CaptureTest {
 		// throws JakartaTransformException, IOException
 	}
 
-	public UTF8Properties loadProperties(String path) throws IOException {
+	public Properties loadProperties(String path) throws IOException {
 		try ( InputStream inputStream = TestUtils.getResourceStream(path) ) {
-			return FileUtils.loadProperties(inputStream);
+			return PropertiesUtils.loadProperties(inputStream);
 		}
 	}
 
@@ -1029,7 +1028,7 @@ public class TestTransformManifest extends CaptureTest {
 
 		Map<String, String> loadedGeneric = new HashMap<>();
 		Map<String, Map<String, String>> loadedSpecific = new HashMap<>();
-		UTF8Properties properties = loadProperties(SPECIFIC_VERSION_PROPERTIES_PATH);
+		Properties properties = loadProperties(SPECIFIC_VERSION_PROPERTIES_PATH);
 		TransformProperties.setPackageVersions(properties, loadedGeneric, loadedSpecific);
 
 		validateMap("Generic version updates", loadedGeneric, expectedGeneric);
