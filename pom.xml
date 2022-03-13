@@ -62,6 +62,7 @@
 		<url>https://github.com/eclipse/transformer</url>
 		<connection>scm:git:https://github.com/eclipse/transformer.git</connection>
 		<developerConnection>scm:git:git@github.com:eclipse/transformer.git</developerConnection>
+		<tag>${revision}</tag>
 	</scm>
 	<developers>
 		<developer>
