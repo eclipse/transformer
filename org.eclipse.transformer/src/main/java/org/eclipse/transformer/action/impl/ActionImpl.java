@@ -526,7 +526,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	//
 
-	protected InputStream openInputStream(File inputFile) throws TransformException {
+	private InputStream openInputStream(File inputFile) throws TransformException {
 		try {
 			return IO.stream(inputFile);
 		} catch (IOException e) {
@@ -534,7 +534,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		}
 	}
 
-	protected void closeInputStream(File inputFile, InputStream inputStream) throws TransformException {
+	private void closeInputStream(File inputFile, InputStream inputStream) throws TransformException {
 		try {
 			inputStream.close();
 		} catch (IOException e) {
@@ -544,6 +544,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	private OutputStream openOutputStream(File outputFile) throws TransformException {
 		try {
+			IO.mkdirs(outputFile.getParentFile());
 			return IO.outputStream(outputFile);
 		} catch (IOException e) {
 			throw new TransformException("Failed to open output [ " + outputFile.getAbsolutePath() + " ]", e);
