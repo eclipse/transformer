@@ -17,7 +17,7 @@
 		<groupId>org.eclipse.transformer</groupId>
 		<artifactId>org.eclipse.transformer.parent</artifactId>
 		<version>${revision}</version>
-		<relativePath>../pom.xml</relativePath>
+		<relativePath>../org.eclipse.transformer.parent</relativePath>
 	</parent>
 
 	<artifactId>maven-plugins</artifactId>
