@@ -427,7 +427,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	 *         newVersion.
 	 */
 	protected String replacePackageVersion(String text, String newVersion) {
-		// debug("replacePackageVersion: ( {} )", text );
+		// getLogger().debug("replacePackageVersion: ( {} )", text );
 
 		String packageText = getPackageAttributeText(text);
 
@@ -439,7 +439,8 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			return text;
 		}
 
-		// debug("replacePackageVersion: (packageText: {} )", packageText);
+		// getLogger().debug("replacePackageVersion: (packageText: {} )",
+		// packageText);
 
 		final String VERSION = "version";
 		final int VERSION_LEN = 7;
@@ -482,7 +483,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 			// Skip white space past the equals sign
 			if (Character.isWhitespace(ch)) {
-				// debug("ch is \'{}\' and is whitespace.", ch);
+				// getLogger().debug("ch is \'{}\' and is whitespace.", ch);
 				continue;
 			}
 
@@ -499,8 +500,10 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 					}
 					versionEndIndex--; // just before the 2nd quotation mark
 
-					// debug("versionBeginIndex = [{}]", versionBeginIndex);
-					// debug("versionEndIndex = [{}]", versionEndIndex);
+					// getLogger().debug("versionBeginIndex = [{}]",
+					// versionBeginIndex);
+					// getLogger().debug("versionEndIndex = [{}]",
+					// versionEndIndex);
 					foundQuotationMark = true; // not necessary, just leave loop
 					break;
 				}
@@ -517,13 +520,14 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 		// String oldVersion = packageText.substring(versionBeginIndex,
 		// versionEndIndex+1);
-		// debug("old version[{}] new version[{}]", oldVersion, newVersion);
+		// getLogger().debug("old version[{}] new version[{}]", oldVersion,
+		// newVersion);
 
 		String head = text.substring(0, versionBeginIndex);
 		String tail = text.substring(versionEndIndex + 1);
 
 		String newText = head + newVersion + tail;
-		// debug("Old [{}] New [{}]", text , newText);
+		// getLogger().debug("Old [{}] New [{}]", text , newText);
 
 		return newText;
 	}

@@ -511,51 +511,19 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		long inputLength = inputFile.length();
 		getLogger().debug("Input [ {} ] Length [ {} ]", inputName, inputLength);
 
-		InputStream inputStream = openInputStream(inputFile);
-		try {
-			OutputStream outputStream = openOutputStream(outputFile);
-			try {
-				apply(inputName, inputStream, inputLength, outputStream);
-			} finally {
-				closeOutputStream(outputFile, outputStream);
-			}
-		} finally {
-			closeInputStream(inputFile, inputStream);
-		}
-	}
-
-	//
-
-	private InputStream openInputStream(File inputFile) throws TransformException {
-		try {
-			return IO.stream(inputFile);
-		} catch (IOException e) {
-			throw new TransformException("Failed to open input [ " + inputFile.getAbsolutePath() + " ]", e);
-		}
-	}
-
-	private void closeInputStream(File inputFile, InputStream inputStream) throws TransformException {
-		try {
-			inputStream.close();
-		} catch (IOException e) {
-			throw new TransformException("Failed to close input [ " + inputFile.getAbsolutePath() + " ]", e);
-		}
-	}
-
-	private OutputStream openOutputStream(File outputFile) throws TransformException {
 		try {
 			IO.mkdirs(outputFile.getParentFile());
-			return IO.outputStream(outputFile);
 		} catch (IOException e) {
-			throw new TransformException("Failed to open output [ " + outputFile.getAbsolutePath() + " ]", e);
+			throw new TransformException("Failed to create directory [ " + outputFile.getParentFile() + " ]", e);
 		}
-	}
-
-	private void closeOutputStream(File outputFile, OutputStream outputStream) throws TransformException {
-		try {
-			outputStream.close();
+		try (InputStream inputStream = IO.stream(inputFile)) {
+			try (OutputStream outputStream = IO.outputStream(outputFile)) {
+				apply(inputName, inputStream, inputLength, outputStream);
+			} catch (IOException e) {
+				throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
+			}
 		} catch (IOException e) {
-			throw new TransformException("Failed to close output [ " + outputFile.getAbsolutePath() + " ]", e);
+			throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
 		}
 	}
 }

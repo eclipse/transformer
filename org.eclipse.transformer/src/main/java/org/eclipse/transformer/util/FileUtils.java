@@ -131,8 +131,7 @@ public class FileUtils {
 	public static long transfer(InputStream inputStream, OutputStream outputStream, byte[] buffer) throws IOException {
 		long totalBytesRead = 0L;
 
-		int bytesRead = 0;
-		while ((bytesRead = inputStream.read(buffer, 0, buffer.length)) != -1) {
+		for (int bytesRead = 0; (bytesRead = inputStream.read(buffer, 0, buffer.length)) != -1;) {
 			totalBytesRead += bytesRead;
 			outputStream.write(buffer, 0, bytesRead);
 		}

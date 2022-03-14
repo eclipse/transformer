@@ -65,10 +65,6 @@ public class SelectionRuleImpl implements SelectionRule {
 		return logger;
 	}
 
-	public void debug(String message, Object... parms) {
-		getLogger().debug(message, parms);
-	}
-
 	//
 
 	private final Set<String>	included;
@@ -94,34 +90,34 @@ public class SelectionRuleImpl implements SelectionRule {
 	@Override
 	public boolean selectIncluded(String resourceName) {
 		if (included.isEmpty()) {
-			debug("Include [ {} ]: {}", resourceName, "No includes");
+			getLogger().debug("Include [ {} ]: {}", resourceName, "No includes");
 			return true;
 
 		} else if (includedExact.contains(resourceName)) {
-			debug("Include [ {} ]: {}", resourceName, "Exact include");
+			getLogger().debug("Include [ {} ]: {}", resourceName, "Exact include");
 			return true;
 
 		} else {
 			for (String tail : includedHead) {
 				if (resourceName.endsWith(tail)) {
-					debug("Include [ {} ]: {} ({})", resourceName, "Match tail", tail);
+					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match tail", tail);
 					return true;
 				}
 			}
 			for (String head : includedTail) {
 				if (resourceName.startsWith(head)) {
-					debug("Include [ {} ]: {} ({})", resourceName, "Match head", head);
+					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match head", head);
 					return true;
 				}
 			}
 			for (String middle : includedAny) {
 				if (resourceName.contains(middle)) {
-					debug("Include [ {} ]: {} ({})", resourceName, "Match middle", middle);
+					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match middle", middle);
 					return true;
 				}
 			}
 
-			debug("Do not include [ {} ]", resourceName);
+			getLogger().debug("Do not include [ {} ]", resourceName);
 			return false;
 		}
 	}
@@ -129,34 +125,34 @@ public class SelectionRuleImpl implements SelectionRule {
 	@Override
 	public boolean rejectExcluded(String resourceName) {
 		if (excluded.isEmpty()) {
-			debug("Do not exclude[ {} ]: {}", resourceName, "No excludes");
+			getLogger().debug("Do not exclude[ {} ]: {}", resourceName, "No excludes");
 			return false;
 
 		} else if (excludedExact.contains(resourceName)) {
-			debug("Exclude [ {} ]: {}", resourceName, "Exact exclude");
+			getLogger().debug("Exclude [ {} ]: {}", resourceName, "Exact exclude");
 			return true;
 
 		} else {
 			for (String tail : excludedHead) {
 				if (resourceName.endsWith(tail)) {
-					debug("Exclude[ {} ]: {} ({})", resourceName, "Match tail", tail);
+					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match tail", tail);
 					return true;
 				}
 			}
 			for (String head : excludedTail) {
 				if (resourceName.startsWith(head)) {
-					debug("Exclude[ {} ]: {} ({})", resourceName, "Match head", head);
+					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match head", head);
 					return true;
 				}
 			}
 			for (String middle : excludedAny) {
 				if (resourceName.contains(middle)) {
-					debug("Exclude[ {} ]: {} ({})", resourceName, "Match middle", middle);
+					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match middle", middle);
 					return true;
 				}
 			}
 
-			debug("Do not exclude [ {} ]", resourceName);
+			getLogger().debug("Do not exclude [ {} ]", resourceName);
 			return false;
 		}
 	}

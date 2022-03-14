@@ -181,10 +181,6 @@ public class SignatureRuleImpl implements SignatureRule {
 		return logger;
 	}
 
-	public void debug(String message, Object... parms) {
-		getLogger().debug(message, parms);
-	}
-
 	//
 
 	private final Map<String, BundleData> bundleUpdates;
@@ -245,7 +241,7 @@ public class SignatureRuleImpl implements SignatureRule {
 
 		String full = directStringsForClass.get(initialValue);
 		if (full != null) {
-			debug("Per class direct replacement:[{}], {} => {}", className, initialValue, full);
+			getLogger().debug("Per class direct replacement:[{}], {} => {}", className, initialValue, full);
 			return full;
 		}
 
@@ -260,14 +256,14 @@ public class SignatureRuleImpl implements SignatureRule {
 			if (transformedString.contains(initialSubstring)) {
 				String finalSubstring = directStringsForClass.get(initialSubstring);
 				transformedString = transformedString.replace(initialSubstring, finalSubstring);
-				debug("Per class token replacement:[{}], {} => {}", className, initialSubstring,
+				getLogger().debug("Per class token replacement:[{}], {} => {}", className, initialSubstring,
 					finalSubstring);
 				transformed = true;
 			}
 		}
 
 		if (transformed) {
-			debug("Per class token replacement: [{}] {} => {}", className, initialValue, transformedString);
+			getLogger().debug("Per class token replacement: [{}] {} => {}", className, initialValue, transformedString);
 			return transformedString;
 		} else {
 			return null;
@@ -307,6 +303,7 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	protected final Map<String, Map<String, String>> specificPackageVersions;
 
+	@Override
 	public Map<String, Map<String, String>> getSpecificPackageVersions() {
 		return specificPackageVersions;
 	}
@@ -510,6 +507,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		return m.matches();
 	}
 
+	@Override
 	public Map<String, String> getTextSubstitutions(String inputFileName) {
 		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
 
@@ -529,6 +527,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		return null;
 	}
 
+	@Override
 	public String replaceText(String inputFileName, String text) {
 		Map<String, String> substitutions = getTextSubstitutions(inputFileName);
 		if (substitutions == null) {
@@ -585,7 +584,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		try {
 			return transformBinaryType(inputConstant, allowSimpleSubstitution);
 		} catch (Throwable th) {
-			debug("Failed to parse constant as resource reference [ {} ]: {}", inputConstant, th.getMessage());
+			getLogger().trace("Failed to parse constant as resource reference [ {} ]", inputConstant, th);
 			return null;
 		}
 	}
@@ -675,7 +674,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		try {
 			return transformDescriptor(inputConstant, allowSimpleSubstitution);
 		} catch (Throwable th) {
-			debug("Failed to parse constant as descriptor [ {} ]: {}", inputConstant, th.getMessage());
+			getLogger().trace("Failed to parse constant as descriptor [ {} ]", inputConstant, th);
 			return null;
 		}
 	}

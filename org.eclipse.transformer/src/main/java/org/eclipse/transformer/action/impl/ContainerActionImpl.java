@@ -15,7 +15,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -31,6 +33,8 @@ import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
+
+import aQute.lib.io.IO;
 
 public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImpl> implements ContainerAction {
 
@@ -144,18 +148,16 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 			//
 			// Jar streams automatically read and consume the manifest, which we
 			// don't want.
-
-			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
-
 			try {
-				apply(inputPath, zipInputStream, zipOutputStream);
-			} finally {
+				ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+				ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
 				try {
+					apply(inputPath, zipInputStream, zipOutputStream);
+				} finally {
 					zipOutputStream.finish();
-				} catch (IOException e) {
-					throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
 				}
+			} catch (IOException e) {
+				throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
 			}
 
 		} finally {
@@ -170,10 +172,9 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 		String inputName = null;
 
 		try {
-			byte[] buffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
+			byte[] copyBuffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
 
-			ZipEntry inputEntry;
-			while ((inputEntry = zipInputStream.getNextEntry()) != null) {
+			for (ZipEntry inputEntry; (inputEntry = zipInputStream.getNextEntry()) != null;) {
 				inputName = inputEntry.getName();
 				long inputLength = inputEntry.getSize();
 
@@ -190,68 +191,34 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 						recordUnselected(acceptedAction, inputName);
 					}
 
-					// TODO: Should more of the entry details be transferred?
-
-					ZipEntry outputEntry = new ZipEntry(inputName);
+					ZipEntry outputEntry = new ZipEntry(inputEntry);
+					outputEntry.setCompressedSize(-1L);
 					zipOutputStream.putNextEntry(outputEntry);
-					FileUtils.transfer(zipInputStream, zipOutputStream, buffer);
+					FileUtils.transfer(zipInputStream, zipOutputStream, copyBuffer);
 					zipOutputStream.closeEntry();
-
 				} else {
-					// long inputCRC = inputEntry.getCrc();
-					//
-					// int inputMethod = inputEntry.getMethod();
-					// long inputCompressed = inputEntry.getCompressedSize();
-					//
-					// FileTime inputCreation = inputEntry.getCreationTime();
-					// FileTime inputAccess = inputEntry.getLastAccessTime();
-					// FileTime inputModified =
-					// inputEntry.getLastModifiedTime();
-					//
-					// String className = getClass().getSimpleName();
-					// String methodName = "applyZip";
-					//
-					// debug( "[ {}.{} ] [ {} ] Size [ {} ] CRC [ {} ]",
-					// className, methodName, inputName, inputLength, inputCRC);
-					// debug( "[ {}.{} ] [ {} ] Compressed size [ {} ] Method [
-					// {} ]",
-					// className, methodName, inputName, inputCompressed,
-					// inputMethod);
-					// debug( "[ {}.{} ] [ {} ] Created [ {} ] Accessed [ {} ]
-					// Modified [ {} ]",
-					// className, methodName, inputName, inputCreation,
-					// inputAccess, inputModified);
-
 					// Archive type actions are processed using streams,
 					// while non-archive type actions do a full read of the
-					// entry
-					// data and process the resulting byte array.
+					// entry data and process the resulting byte array.
 					//
 					// Ideally, a single pattern would be used for both cases,
-					// but
 					// but that is not possible:
 					//
 					// A full read of a nested archive is not possible because
-					// the nested
-					// archive can be very large.
+					// the nested archive can be very large.
 					//
 					// A read of non-archive data must be performed, since
-					// non-archive data
-					// may change the name associated with the data, and that
-					// can only be
-					// determined after reading the data.
-
+					// non-archive data may change the name associated with the
+					// data, and that can only be determined after reading the
+					// data.
 					if (acceptedAction.useStreams()) {
-						// TODO: Should more of the entry details be
-						// transferred?
-
 						ZipEntry outputEntry = new ZipEntry(inputName);
+						outputEntry.setExtra(inputEntry.getExtra());
+						outputEntry.setComment(inputEntry.getComment());
 						zipOutputStream.putNextEntry(outputEntry);
-
 						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
 						recordTransform(acceptedAction, inputName);
 						zipOutputStream.closeEntry();
-
 					} else {
 						int intInputLength;
 						if (inputLength == -1L) {
@@ -259,17 +226,26 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 						} else {
 							intInputLength = FileUtils.verifyArray(0, inputLength);
 						}
-
 						ByteData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
 						recordTransform(acceptedAction, inputName);
 
-						// TODO: Should more of the entry details be
-						// transferred?
-
 						ZipEntry outputEntry = new ZipEntry(acceptedAction.getLastActiveChanges()
 							.getOutputResourceName());
+						outputEntry.setMethod(inputEntry.getMethod());
+						outputEntry.setExtra(inputEntry.getExtra());
+						outputEntry.setComment(inputEntry.getComment());
+						ByteBuffer buffer = outputData.buffer();
+						if (outputEntry.getMethod() == ZipOutputStream.STORED) {
+							outputEntry.setSize(buffer.remaining());
+							outputEntry.setCompressedSize(buffer.remaining());
+							CRC32 crc = new CRC32();
+							buffer.mark();
+							crc.update(buffer);
+							buffer.reset();
+							outputEntry.setCrc(crc.getValue());
+						}
 						zipOutputStream.putNextEntry(outputEntry);
-						FileUtils.transfer(outputData.stream(), zipOutputStream, buffer);
+						IO.copy(buffer, zipOutputStream);
 						zipOutputStream.closeEntry();
 					}
 				}
@@ -277,7 +253,6 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 				prevName = inputName;
 				inputName = null;
 			}
-
 		} catch (IOException e) {
 			String message;
 			if (inputName != null) { // Actively processing an entry.
