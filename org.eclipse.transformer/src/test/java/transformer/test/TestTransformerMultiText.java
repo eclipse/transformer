@@ -196,14 +196,13 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		writeRulesData(propertiesDir.getPath());
 
 		IO.mkdirs(inputDir);
+		IO.mkdirs(outputDir);
 		TestUtils.writeInputData(
 			inputDir.getPath(), NUM_FILES, NUM_EXTS,
 			TestTransformerMultiText::getInputName,
 			INPUT_TEXT);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
-		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
-		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
 		options.put(AppOption.RULES_MASTER_TEXT,
 			Arrays.asList(new File(propertiesDir, TIER0_MASTER_PROPERTIES).getPath(), //
 				new File(propertiesDir, TIER1_MASTER_PROPERTIES).getPath(), //
@@ -269,12 +268,11 @@ public class TestTransformerMultiText extends TestTransformerBase {
 		writeRulesData(propertiesDir.getPath());
 
 		IO.mkdirs(inputDir);
+		IO.mkdirs(outputDir);
 		TestUtils.writeInputData(inputDir.getPath(), NUM_FILES, NUM_EXTS, TestTransformerMultiText::getInputName,
 			INPUT_TEXT);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
-		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
-		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
 		options.put(AppOption.RULES_MASTER_TEXT,
 			Arrays.asList(new File(propertiesDir, TIER0_MASTER_PROPERTIES).getPath(), //
 				new File(propertiesDir, TIER1_MASTER_PROPERTIES).getPath(), //

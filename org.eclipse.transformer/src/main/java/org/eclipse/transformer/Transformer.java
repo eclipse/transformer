@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
@@ -1060,7 +1062,7 @@ public class Transformer {
 			getLogger().info(consoleMarker, "Overwrite of output is enabled");
 		}
 
-		if (useOutputFile.exists()) {
+		if (outputExists(useOutputFile)) {
 			if (allowOverwrite) {
 				getLogger().info(consoleMarker, "Output exists and will be overwritten [ {} ]", useOutputPath);
 			} else {
@@ -1079,6 +1081,21 @@ public class Transformer {
 		outputPath = useOutputPath;
 
 		return true;
+	}
+
+	private boolean outputExists(File outputFile) {
+		if (outputFile.isFile()) {
+			return true;
+		}
+		if (outputFile.isDirectory()) {
+			try (Stream<Path> stream = Files.list(outputFile.toPath())) {
+				return stream.findAny()
+					.isPresent();
+			} catch (IOException e) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void setActions() {
