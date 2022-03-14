@@ -42,7 +42,7 @@
 		<module>org.eclipse.transformer.jakarta</module>
 		<module>org.eclipse.transformer</module>
 		<module>org.eclipse.transformer.cli</module>
-		<module>transformer-maven-plugin</module>
+		<module>maven-plugins</module>
 	</modules>
 
 	<url>https://projects.eclipse.org/projects/technology.transformer</url>
