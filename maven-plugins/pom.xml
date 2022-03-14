@@ -13,7 +13,6 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>org.eclipse.transformer</groupId>
 		<artifactId>org.eclipse.transformer.parent</artifactId>
@@ -21,24 +20,17 @@
 		<relativePath>../org.eclipse.transformer.parent</relativePath>
 	</parent>
 
-	<artifactId>org.eclipse.transformer.jakarta</artifactId>
-	<description>Eclipse Transformer Jakarta EE Rules</description>
+	<artifactId>maven-plugins</artifactId>
+	<description>Eclipse Transformer Maven Plugins Build Reactor</description>
+	<packaging>pom</packaging>
 	<name>${project.groupId}:${project.artifactId}</name>
-	<url>https://projects.eclipse.org/projects/technology.transformer</url>
-	<scm>
-		<url>https://github.com/eclipse/transformer</url>
-		<connection>scm:git:https://github.com/eclipse/transformer.git</connection>
-		<developerConnection>scm:git:git@github.com:eclipse/transformer.git</developerConnection>
-		<tag>${revision}</tag>
-	</scm>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>biz.aQute.bnd</groupId>
-				<artifactId>bnd-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+	<properties>
+		<maven.install.skip>true</maven.install.skip>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
 
+	<modules>
+		<module>transformer-maven-plugin</module>
+	</modules>
 </project>
