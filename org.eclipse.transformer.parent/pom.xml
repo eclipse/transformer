@@ -92,11 +92,12 @@
 					<groupId>biz.aQute.bnd</groupId>
 					<artifactId>bnd-maven-plugin</artifactId>
 					<version>${bnd.version}</version>
+					<extensions>true</extensions>
 					<executions>
 						<execution>
-							<id>bnd-process</id>
+							<id>jar</id>
 							<goals>
-								<goal>bnd-process</goal>
+								<goal>jar</goal>
 							</goals>
 							<configuration>
 								<bnd><![CDATA[
@@ -135,14 +136,6 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>3.2.2</version>
-					<configuration>
-						<archive>
-							<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-							<manifest>
-								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-							</manifest>
-						</archive>
-					</configuration>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
