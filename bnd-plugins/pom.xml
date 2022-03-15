@@ -15,11 +15,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.eclipse.transformer</groupId>
-	<artifactId>build</artifactId>
+	<artifactId>bnd-plugins</artifactId>
 	<version>1.0.0</version>
-	<description>Eclipse Transformer Build Reactor</description>
-	<name>${project.groupId}:${project.artifactId}</name>
+	<description>Eclipse Transformer Bnd Plugins Build Reactor</description>
 	<packaging>pom</packaging>
+	<name>${project.groupId}:${project.artifactId}</name>
 
 	<properties>
 		<maven.install.skip>true</maven.install.skip>
@@ -27,11 +27,6 @@
 	</properties>
 
 	<modules>
-		<module>org.eclipse.transformer.parent</module>
-		<module>org.eclipse.transformer.jakarta</module>
-		<module>org.eclipse.transformer</module>
-		<module>org.eclipse.transformer.cli</module>
-		<module>maven-plugins</module>
-		<module>bnd-plugins</module>
+		<module>org.eclipse.transformer.bnd.analyzer</module>
 	</modules>
 </project>

@@ -323,6 +323,12 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				<scope>compile</scope>
 			</dependency>
 			<dependency>
+				<groupId>biz.aQute.bnd</groupId>
+				<artifactId>biz.aQute.bndlib</artifactId>
+				<version>${bnd.version}</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
 				<groupId>commons-cli</groupId>
 				<artifactId>commons-cli</artifactId>
 				<version>1.5.0</version>
