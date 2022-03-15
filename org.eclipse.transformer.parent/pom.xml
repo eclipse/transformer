@@ -540,6 +540,11 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		</profile>
 		<profile>
 			<id>bnd-snapshot</id>
+			<activation><!-- This is temporary as the Bnd Analyzer requires Bnd 6.3 -->
+				<property>
+					<name>!bnd.analyzer</name>
+				</property>
+			</activation>
 			<properties>
 				<bnd.version>6.3.0-SNAPSHOT</bnd.version>
 			</properties>
