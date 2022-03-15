@@ -28,13 +28,13 @@ import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ManifestWriter;
 import org.slf4j.Logger;
 
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
 import aQute.lib.io.ByteBufferOutputStream;
+import aQute.lib.manifest.ManifestUtil;
 
 public class ManifestActionImpl extends ActionImpl<Changes> {
 	public static final String	META_INF				= "META-INF/";
@@ -227,7 +227,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	protected void writeAsManifest(Manifest manifest, OutputStream outputStream) throws IOException {
 		// manifest.write(outputStream);
-		ManifestWriter.write(manifest, outputStream);
+		ManifestUtil.write(manifest, outputStream);
 	}
 
 	// Copied and updated from:

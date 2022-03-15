@@ -9,20 +9,14 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-package org.eclipse.transformer.bnd.analyzer;
+package org.eclipse.transformer.test.api;
 
-import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.service.AnalyzerPlugin;
+import javax.annotation.Priority;
+import javax.enterprise.concurrent.AbortedException;
 
-/**
- * Bnd Analyzer Plugin for transforming.
- */
-public class TransformerPlugin implements AnalyzerPlugin {
+@Priority(10)
+public interface Ball {
+	void inflate();
 
-	@Override
-	public boolean analyzeJar(Analyzer analyzer) throws Exception {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
+	void kick() throws AbortedException;
 }
