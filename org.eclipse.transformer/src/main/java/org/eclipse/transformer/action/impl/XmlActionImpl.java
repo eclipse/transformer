@@ -88,22 +88,27 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		if (XML_AS_PLAIN_TEXT) {
-			return applyAsPlainText(inputData);
+		startRecording(inputData.name());
+		try {
+			if (XML_AS_PLAIN_TEXT) {
+				return applyAsPlainText(inputData);
+			}
+
+			setResourceNames(inputData.name(), inputData.name());
+
+			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+
+			transformUsingSaxParser(inputData.name(), inputStream, outputStream);
+
+			if (!hasNonResourceNameChanges()) {
+				return null;
+			}
+			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+			return outputData;
+		} finally {
+			stopRecording(inputData.name());
 		}
-
-		setResourceNames(inputData.name(), inputData.name());
-
-		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-
-		transformUsingSaxParser(inputData.name(), inputStream, outputStream);
-
-		if (!hasNonResourceNameChanges()) {
-			return null;
-		}
-		ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
-		return outputData;
 	}
 
 	@SuppressWarnings("unused")
