@@ -138,9 +138,7 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 	@Override
 	public void apply(String inputPath, InputStream inputStream, long inputCount, OutputStream outputStream)
 		throws TransformException {
-
 		startRecording(inputPath);
-
 		try {
 			setResourceNames(inputPath, inputPath);
 

@@ -69,41 +69,45 @@ public class TextActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-
-		String outputName = inputData.name();
-
-		setResourceNames(inputData.name(), outputName);
-
-		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
-
-		BufferedReader reader = new BufferedReader(inputReader);
-
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
-
-		BufferedWriter writer = new BufferedWriter(outputWriter);
-
+		startRecording(inputData.name());
 		try {
-			transform(inputData.name(), reader, writer);
-		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
-			return null;
-		}
+			String outputName = inputData.name();
 
-		try {
-			writer.flush();
-		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
-			return null;
-		}
+			setResourceNames(inputData.name(), outputName);
 
-		if (!hasNonResourceNameChanges()) {
-			return null;
-		}
+			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
+			InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
-		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
-		return outputData;
+			BufferedReader reader = new BufferedReader(inputReader);
+
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+			OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
+
+			BufferedWriter writer = new BufferedWriter(outputWriter);
+
+			try {
+				transform(inputData.name(), reader, writer);
+			} catch (IOException e) {
+				getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			try {
+				writer.flush();
+			} catch (IOException e) {
+				getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			if (!hasNonResourceNameChanges()) {
+				return null;
+			}
+
+			ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+			return outputData;
+		} finally {
+			stopRecording(inputData.name());
+		}
 	}
 
 	//

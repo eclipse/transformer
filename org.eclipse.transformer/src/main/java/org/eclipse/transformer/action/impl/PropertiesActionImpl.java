@@ -38,14 +38,19 @@ public class PropertiesActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		String outputName = transformBinaryType(inputData.name());
-		if (outputName != null) {
-			getLogger().debug("Properties file {}, relocated to {}", inputData.name(), outputName);
-			setResourceNames(inputData.name(), outputName);
-			return new ByteDataImpl(outputName, inputData.buffer());
-		} else {
-			setResourceNames(inputData.name(), inputData.name());
-			return inputData;
+		startRecording(inputData.name());
+		try {
+			String outputName = transformBinaryType(inputData.name());
+			if (outputName != null) {
+				getLogger().debug("Properties file {}, relocated to {}", inputData.name(), outputName);
+				setResourceNames(inputData.name(), outputName);
+				return new ByteDataImpl(outputName, inputData.buffer());
+			} else {
+				setResourceNames(inputData.name(), inputData.name());
+				return inputData;
+			}
+		} finally {
+			stopRecording(inputData.name());
 		}
 	}
 

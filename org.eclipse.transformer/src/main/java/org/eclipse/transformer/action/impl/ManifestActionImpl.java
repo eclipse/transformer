@@ -99,49 +99,53 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-
-		String className = getClass().getSimpleName();
-		String methodName = "apply";
-
-		getLogger().debug("[ {}.{} ]: [ {} ] Initial bytes [ {} ]", className, methodName, inputData.name(),
-			inputData.length());
-
-		setResourceNames(inputData.name(), inputData.name());
-
-		Manifest initialManifest;
+		startRecording(inputData.name());
 		try {
-			initialManifest = new Manifest(inputData.stream());
-		} catch (IOException e) {
-			getLogger().error("Failed to parse manifest [ {} ]", inputData.name(), e);
-			return null;
+			String className = getClass().getSimpleName();
+			String methodName = "apply";
+
+			getLogger().debug("[ {}.{} ]: [ {} ] Initial bytes [ {} ]", className, methodName, inputData.name(),
+				inputData.length());
+
+			setResourceNames(inputData.name(), inputData.name());
+
+			Manifest initialManifest;
+			try {
+				initialManifest = new Manifest(inputData.stream());
+			} catch (IOException e) {
+				getLogger().error("Failed to parse manifest [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			Manifest finalManifest = new Manifest();
+
+			transform(inputData.name(), initialManifest, finalManifest);
+
+			// info("[ {}.{} ]: [ {} ] Replacements [ {} ]",
+			// getClass().getSimpleName(), "transform",
+			// initialName, getActiveChanges().getReplacements());
+
+			if (!hasNonResourceNameChanges()) {
+				getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, inputData.name());
+				return null;
+			}
+
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+			try {
+				write(finalManifest, outputStream);
+			} catch (IOException e) {
+				getLogger().error("Failed to write manifest [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+			getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName,
+				outputData.name(), outputData.length());
+
+			return outputData;
+		} finally {
+			stopRecording(inputData.name());
 		}
-
-		Manifest finalManifest = new Manifest();
-
-		transform(inputData.name(), initialManifest, finalManifest);
-
-		// info("[ {}.{} ]: [ {} ] Replacements [ {} ]",
-		// getClass().getSimpleName(), "transform",
-		// initialName, getActiveChanges().getReplacements());
-
-		if (!hasNonResourceNameChanges()) {
-			getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, inputData.name());
-			return null;
-		}
-
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-		try {
-			write(finalManifest, outputStream);
-		} catch (IOException e) {
-			getLogger().error("Failed to write manifest [ {} ]", inputData.name(), e);
-			return null;
-		}
-
-		ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
-		getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName,
-			outputData.name(), outputData.length());
-
-		return outputData;
 	}
 
 	protected void transform(String inputName, Manifest initialManifest, Manifest finalManifest) {

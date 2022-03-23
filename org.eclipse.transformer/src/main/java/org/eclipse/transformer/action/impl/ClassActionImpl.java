@@ -272,140 +272,145 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-
-		getLogger().debug("Read [ {} ] Bytes [ {} ]", inputData.name(), inputData.length());
-		traceDump(inputData);
-
-		ClassFile inputClass;
+		startRecording(inputData.name());
 		try {
-			DataInput inputClassData = ByteBufferDataInput.wrap(inputData.buffer());
-			inputClass = ClassFile.parseClassFile(inputClassData);
-		} catch (IOException e) {
-			getLogger().error("Failed to parse raw class bytes [ {} ]", inputData.name(), e);
-			return null;
-		}
+			getLogger().debug("Read [ {} ] Bytes [ {} ]", inputData.name(), inputData.length());
+			traceDump(inputData);
 
-		displayClass(inputData.name(), inputClass);
+			ClassFile inputClass;
+			try {
+				DataInput inputClassData = ByteBufferDataInput.wrap(inputData.buffer());
+				inputClass = ClassFile.parseClassFile(inputClassData);
+			} catch (IOException e) {
+				getLogger().error("Failed to parse raw class bytes [ {} ]", inputData.name(), e);
+				return null;
+			}
 
-		ClassFileBuilder classBuilder = new ClassFileBuilder(inputClass);
+			displayClass(inputData.name(), inputClass);
 
-		// Transform the class declaration ...
+			ClassFileBuilder classBuilder = new ClassFileBuilder(inputClass);
 
-		String inputClassName = classBuilder.this_class();
-		String outputClassName = transformBinaryType(inputClassName);
+			// Transform the class declaration ...
 
-		String outputName;
-		if (outputClassName != null) {
-			classBuilder.this_class(outputClassName);
-			outputName = relocateClass(getLogger(), inputData.name(), inputClassName, outputClassName);
-			getLogger().debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
-		} else {
-			outputClassName = inputClassName;
-			outputName = inputData.name();
-		}
+			String inputClassName = classBuilder.this_class();
+			String outputClassName = transformBinaryType(inputClassName);
 
-		setClassNames(inputClassName, outputClassName);
-		setResourceNames(inputData.name(), outputName);
-
-		getLogger().trace("{}", classBuilder);
-
-		String inputSuperName = classBuilder.super_class();
-		if (inputSuperName != null) {
-			String outputSuperName = transformBinaryType(inputSuperName);
-			if (outputSuperName != null) {
-				classBuilder.super_class(outputSuperName);
+			String outputName;
+			if (outputClassName != null) {
+				classBuilder.this_class(outputClassName);
+				outputName = relocateClass(getLogger(), inputData.name(), inputClassName, outputClassName);
+				getLogger().debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
 			} else {
-				outputSuperName = inputSuperName;
+				outputClassName = inputClassName;
+				outputName = inputData.name();
 			}
 
-			setSuperClassNames(inputSuperName, outputSuperName);
+			setClassNames(inputClassName, outputClassName);
+			setResourceNames(inputData.name(), outputName);
 
-			if (!outputSuperName.equals("java/lang/Object")) {
-				getLogger().trace("  extends {}", outputSuperName);
-			}
-		}
+			getLogger().trace("{}", classBuilder);
 
-		List<String> interfaces = classBuilder.interfaces();
-		if (!interfaces.isEmpty()) {
-			ListIterator<String> interfaceNames = interfaces.listIterator();
-			while (interfaceNames.hasNext()) {
-				String inputInterfaceName = interfaceNames.next();
-				String outputInterfaceName = transformBinaryType(inputInterfaceName);
-				if (outputInterfaceName != null) {
-					interfaceNames.set(outputInterfaceName);
-					addModifiedInterface();
-					getLogger().debug("Interface {} -> {}", inputInterfaceName, outputInterfaceName);
+			String inputSuperName = classBuilder.super_class();
+			if (inputSuperName != null) {
+				String outputSuperName = transformBinaryType(inputSuperName);
+				if (outputSuperName != null) {
+					classBuilder.super_class(outputSuperName);
+				} else {
+					outputSuperName = inputSuperName;
+				}
+
+				setSuperClassNames(inputSuperName, outputSuperName);
+
+				if (!outputSuperName.equals("java/lang/Object")) {
+					getLogger().trace("  extends {}", outputSuperName);
 				}
 			}
-			getLogger().trace("  implements {}", interfaces);
-		}
 
-		// Transform members ...
-
-		ListIterator<FieldInfo> fields = classBuilder.fields()
-			.listIterator();
-		while (fields.hasNext()) {
-			FieldInfo inputField = fields.next();
-			FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputData.name());
-			if (outputField != null) {
-				fields.set(outputField);
-				addModifiedField();
-				getLogger().debug("Field  {} -> {}", inputField, outputField);
+			List<String> interfaces = classBuilder.interfaces();
+			if (!interfaces.isEmpty()) {
+				ListIterator<String> interfaceNames = interfaces.listIterator();
+				while (interfaceNames.hasNext()) {
+					String inputInterfaceName = interfaceNames.next();
+					String outputInterfaceName = transformBinaryType(inputInterfaceName);
+					if (outputInterfaceName != null) {
+						interfaceNames.set(outputInterfaceName);
+						addModifiedInterface();
+						getLogger().debug("Interface {} -> {}", inputInterfaceName, outputInterfaceName);
+					}
+				}
+				getLogger().trace("  implements {}", interfaces);
 			}
-		}
 
-		ListIterator<MethodInfo> methods = classBuilder.methods()
-			.listIterator();
-		while (methods.hasNext()) {
-			MethodInfo inputMethod = methods.next();
-			MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD, inputData.name());
-			if (outputMethod != null) {
-				methods.set(outputMethod);
-				addModifiedMethod();
-				getLogger().debug("Method {} -> {}", inputMethod, outputMethod);
+			// Transform members ...
+
+			ListIterator<FieldInfo> fields = classBuilder.fields()
+				.listIterator();
+			while (fields.hasNext()) {
+				FieldInfo inputField = fields.next();
+				FieldInfo outputField = transform(inputField, FieldInfo::new, SignatureType.FIELD, inputData.name());
+				if (outputField != null) {
+					fields.set(outputField);
+					addModifiedField();
+					getLogger().debug("Field  {} -> {}", inputField, outputField);
+				}
 			}
-		}
 
-		// Transform attributes ...
-
-		ListIterator<Attribute> attributes = classBuilder.attributes()
-			.listIterator();
-		while (attributes.hasNext()) {
-			Attribute inputAttribute = attributes.next();
-			Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputData.name());
-			if (outputAttribute != null) {
-				attributes.set(outputAttribute);
-				addModifiedAttribute();
-				getLogger().debug("Attribute {} -> {}", inputAttribute, outputAttribute);
+			ListIterator<MethodInfo> methods = classBuilder.methods()
+				.listIterator();
+			while (methods.hasNext()) {
+				MethodInfo inputMethod = methods.next();
+				MethodInfo outputMethod = transform(inputMethod, MethodInfo::new, SignatureType.METHOD,
+					inputData.name());
+				if (outputMethod != null) {
+					methods.set(outputMethod);
+					addModifiedMethod();
+					getLogger().debug("Method {} -> {}", inputMethod, outputMethod);
+				}
 			}
+
+			// Transform attributes ...
+
+			ListIterator<Attribute> attributes = classBuilder.attributes()
+				.listIterator();
+			while (attributes.hasNext()) {
+				Attribute inputAttribute = attributes.next();
+				Attribute outputAttribute = transform(inputAttribute, SignatureType.CLASS, inputData.name());
+				if (outputAttribute != null) {
+					attributes.set(outputAttribute);
+					addModifiedAttribute();
+					getLogger().debug("Attribute {} -> {}", inputAttribute, outputAttribute);
+				}
+			}
+
+			MutableConstantPool constants = classBuilder.constant_pool();
+			getLogger().debug("  Constant pool: {}", constants.size());
+
+			int modifiedConstants = transform(constants, inputData.name());
+			if (modifiedConstants > 0) {
+				setModifiedConstants(modifiedConstants);
+			}
+
+			if (!hasNonResourceNameChanges()) {
+				getLogger().debug("  Class bytes: {} {}", inputData.name(), inputData.length());
+				return null;
+			}
+
+			ClassFile outputClass = classBuilder.build();
+
+			ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputData.length() + FileUtils.PAGE_SIZE);
+			try {
+				outputClass.write(outputClassData);
+			} catch (IOException e) {
+				throw new TransformException("Failed to write transformed class bytes", e);
+			}
+
+			ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer());
+			getLogger().debug("  Class size: {}: {} -> {}", inputData.name(), inputData.length(), outputData.length());
+
+			return outputData;
+		} finally {
+			stopRecording(inputData.name());
 		}
-
-		MutableConstantPool constants = classBuilder.constant_pool();
-		getLogger().debug("  Constant pool: {}", constants.size());
-
-		int modifiedConstants = transform(constants, inputData.name());
-		if (modifiedConstants > 0) {
-			setModifiedConstants(modifiedConstants);
-		}
-
-		if (!hasNonResourceNameChanges()) {
-			getLogger().debug("  Class bytes: {} {}", inputData.name(), inputData.length());
-			return null;
-		}
-
-		ClassFile outputClass = classBuilder.build();
-
-		ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputData.length() + FileUtils.PAGE_SIZE);
-		try {
-			outputClass.write(outputClassData);
-		} catch (IOException e) {
-			throw new TransformException("Failed to write transformed class bytes", e);
-		}
-
-		ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer());
-		getLogger().debug("  Class size: {}: {} -> {}", inputData.name(), inputData.length(), outputData.length());
-
-		return outputData;
 	}
 
 	private void displayClass(String inputName, ClassFile inputClass) {

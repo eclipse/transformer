@@ -99,45 +99,49 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-
-		String outputName = renameInput(inputData.name());
-		if (outputName == null) {
-			outputName = inputData.name();
-		} else {
-			getLogger().debug("Service name  [ {} ] -> [ {} ]", inputData.name(), outputName);
-		}
-		setResourceNames(inputData.name(), outputName);
-
-		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
-
-		BufferedReader reader = new BufferedReader(inputReader);
-
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
-
-		BufferedWriter writer = new BufferedWriter(outputWriter);
-
+		startRecording(inputData.name());
 		try {
-			transform(reader, writer);
-		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
-			return null;
-		}
+			String outputName = renameInput(inputData.name());
+			if (outputName == null) {
+				outputName = inputData.name();
+			} else {
+				getLogger().debug("Service name  [ {} ] -> [ {} ]", inputData.name(), outputName);
+			}
+			setResourceNames(inputData.name(), outputName);
 
-		try {
-			writer.flush();
-		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
-			return null;
-		}
+			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
+			InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
 
-		if (!hasNonResourceNameChanges()) {
-			return null;
-		}
+			BufferedReader reader = new BufferedReader(inputReader);
 
-		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
-		return outputData;
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+			OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
+
+			BufferedWriter writer = new BufferedWriter(outputWriter);
+
+			try {
+				transform(reader, writer);
+			} catch (IOException e) {
+				getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			try {
+				writer.flush();
+			} catch (IOException e) {
+				getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
+				return null;
+			}
+
+			if (!hasNonResourceNameChanges()) {
+				return null;
+			}
+
+			ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+			return outputData;
+		} finally {
+			stopRecording(inputData.name());
+		}
 	}
 
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {

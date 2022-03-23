@@ -55,8 +55,12 @@ public class NullActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-
-		setResourceNames(inputData.name(), inputData.name());
-		return inputData;
+		startRecording(inputData.name());
+		try {
+			setResourceNames(inputData.name(), inputData.name());
+			return inputData;
+		} finally {
+			stopRecording(inputData.name());
+		}
 	}
 }

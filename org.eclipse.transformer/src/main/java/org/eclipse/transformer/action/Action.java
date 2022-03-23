@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
+import org.slf4j.Logger;
 
 public interface Action {
 	/**
@@ -82,11 +83,25 @@ public interface Action {
 	//
 
 	/**
+	 * Answer the logger.
+	 *
+	 * @return The logger.
+	 */
+	Logger getLogger();
+
+	/**
 	 * Answer the rules widget for signature type updates.
 	 *
 	 * @return The rules widget for signature type updates.
 	 */
 	SignatureRule getSignatureRule();
+
+	/**
+	 * Answer the rules widget for selection.
+	 *
+	 * @return The rules widget for selection.
+	 */
+	SelectionRule getSelectionRule();
 
 	//
 

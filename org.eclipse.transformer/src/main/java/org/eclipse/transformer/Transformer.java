@@ -123,7 +123,7 @@ public class Transformer {
 	public Map<String, String>				directStrings;
 
 	public boolean							widenArchiveNesting;
-	public CompositeAction					rootAction;
+	private CompositeAction					rootAction;
 	public Action							acceptedAction;
 
 	public String							inputName;
@@ -173,8 +173,6 @@ public class Transformer {
 		}
 		logRules();
 
-		setActions();
-
 		if (!acceptAction()) {
 			getLogger().error(consoleMarker, "No action selected");
 			return ResultCode.FILE_TYPE_ERROR_RC;
@@ -197,7 +195,7 @@ public class Transformer {
 
 	private final InputBuffer buffer = new InputBufferImpl();
 
-	protected InputBuffer getBuffer() {
+	public InputBuffer getBuffer() {
 		return buffer;
 	}
 
@@ -963,7 +961,7 @@ public class Transformer {
 
 	private SelectionRule selectionRules;
 
-	protected SelectionRule getSelectionRule() {
+	public SelectionRule getSelectionRule() {
 		if (selectionRules == null) {
 			selectionRules = new SelectionRuleImpl(getLogger(), includes, excludes);
 		}
@@ -972,7 +970,7 @@ public class Transformer {
 
 	private SignatureRule signatureRules;
 
-	protected SignatureRule getSignatureRule() {
+	public SignatureRule getSignatureRule() {
 		if (signatureRules == null) {
 			signatureRules = new SignatureRuleImpl(
 				getLogger(),
@@ -1098,15 +1096,6 @@ public class Transformer {
 		return false;
 	}
 
-	public void setActions() {
-		if (options.hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
-			widenArchiveNesting = true;
-			getLogger().info(consoleMarker, "Widened action nesting is enabled.");
-		} else {
-			widenArchiveNesting = false;
-		}
-	}
-
 	public CompositeAction getRootAction() {
 		if (rootAction == null) {
 			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), getBuffer(), getSelectionRule(),
@@ -1199,7 +1188,8 @@ public class Transformer {
 			// restrictive. Allow a slight widening of the
 			// usual nesting.
 
-			if (widenArchiveNesting) {
+			if (options.hasOption(AppOption.WIDEN_ARCHIVE_NESTING)) {
+				getLogger().info(consoleMarker, "Widened action nesting is enabled.");
 				jarAction.addAction(jarAction);
 				jarAction.addAction(zipAction);
 

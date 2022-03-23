@@ -59,7 +59,6 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 
 	@Override
 	public void apply(String inputPath, File inputFile, File outputFile) throws TransformException {
-
 		startRecording(inputPath);
 		try {
 			setResourceNames(inputPath, inputPath);
