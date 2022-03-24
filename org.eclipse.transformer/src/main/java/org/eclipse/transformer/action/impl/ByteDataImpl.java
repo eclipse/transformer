@@ -55,4 +55,9 @@ public class ByteDataImpl implements ByteData {
 	public ByteBuffer buffer() {
 		return buffer.duplicate();
 	}
+
+	@Override
+	public String toString() {
+		return name() + "-" + buffer();
+	}
 }

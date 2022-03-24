@@ -47,17 +47,17 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 
 	@Override
 	public String getName() {
-		return ((acceptedAction == null) ? null : acceptedAction.getName());
+		return (acceptedAction == null) ? null : acceptedAction.getName();
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ((acceptedAction == null) ? null : acceptedAction.getActionType());
+		return (acceptedAction == null) ? null : acceptedAction.getActionType();
 	}
 
 	@Override
 	public Changes getLastActiveChanges() {
-		return ((acceptedAction == null) ? null : acceptedAction.getLastActiveChanges());
+		return (acceptedAction == null) ? null : acceptedAction.getLastActiveChanges();
 	}
 
 	@Override
@@ -104,12 +104,12 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		return (acceptAction(resourceName, resourceFile) != null);
+		return acceptAction(resourceName, resourceFile) != null;
 	}
 
 	@Override
 	public Action getAcceptedAction() {
-		return ((acceptedAction == null) ? null : acceptedAction);
+		return acceptedAction;
 	}
 
 	//
