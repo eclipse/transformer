@@ -27,7 +27,7 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return (changedProviders > 0);
+		return changedProviders > 0;
 	}
 
 	@Override

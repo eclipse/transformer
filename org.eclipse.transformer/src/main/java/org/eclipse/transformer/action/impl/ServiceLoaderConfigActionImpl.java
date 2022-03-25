@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
@@ -133,11 +134,12 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 				return null;
 			}
 
-			if (!hasNonResourceNameChanges()) {
+			if (!hasResourceNameChange() && !hasNonResourceNameChanges()) {
 				return null;
 			}
 
-			ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
+			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
 			return outputData;
 		} finally {
 			stopRecording(inputData.name());

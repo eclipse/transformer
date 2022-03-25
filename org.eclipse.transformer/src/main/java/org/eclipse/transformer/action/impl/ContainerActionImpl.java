@@ -227,8 +227,7 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 						ByteData outputData = acceptedAction.apply(inputName, zipInputStream, intInputLength);
 						recordTransform(acceptedAction, inputName);
 
-						ZipEntry outputEntry = new ZipEntry(acceptedAction.getLastActiveChanges()
-							.getOutputResourceName());
+						ZipEntry outputEntry = new ZipEntry(outputData.name());
 						outputEntry.setMethod(inputEntry.getMethod());
 						outputEntry.setExtra(inputEntry.getExtra());
 						outputEntry.setComment(inputEntry.getComment());
