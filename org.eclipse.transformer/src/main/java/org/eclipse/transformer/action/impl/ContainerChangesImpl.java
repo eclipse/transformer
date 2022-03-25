@@ -45,7 +45,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return (allChanged > 0);
+		return allChanged > 0;
 	}
 
 	@Override
@@ -139,7 +139,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	@Override
 	public int getChanged(String name) {
 		int[] changes = changedByAction.get(name);
-		return ((changes == null) ? 0 : changes[0]);
+		return (changes == null) ? 0 : changes[0];
 	}
 
 	@Override
@@ -150,7 +150,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	@Override
 	public int getUnchanged(String name) {
 		int[] changes = unchangedByAction.get(name);
-		return ((changes == null) ? 0 : changes[0]);
+		return (changes == null) ? 0 : changes[0];
 	}
 
 	@Override
@@ -208,7 +208,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public boolean hasNestedChanges() {
-		return (allNestedChanges != null);
+		return allNestedChanges != null;
 	}
 
 	@Override
@@ -249,7 +249,6 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	}
 
 	private void addChangeMap(Map<String, int[]> thisChangeMap, Map<String, int[]> otherChangeMap) {
-
 		int[] nextChanges = new int[1];
 		for (Map.Entry<String, int[]> mapEntry : otherChangeMap.entrySet()) {
 			int[] thisChanges = thisChangeMap.putIfAbsent(mapEntry.getKey(), nextChanges);
@@ -293,29 +292,6 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 	@Override
 	public void log(Logger logger, String inputPath, String outputPath) {
 		if (logger.isDebugEnabled(consoleMarker)) {
-			// ================================================================================
-			// [ Input ] [ test.jar ]
-			// [
-			// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\test.jar
-			// ]
-			// [ Output ] [ output_test.jar ]
-			// [
-			// c:\dev\jakarta-repo-pub\jakartaee-prototype\dev\transformer\app\testOutput.jar
-			// ]
-			// ================================================================================
-			// [ All Resources ] [ 55 ] Unselected [ 6 ] Selected [ 49 ]
-			// ================================================================================
-			// [ Immediate changes: ]
-			// --------------------------------------------------------------------------------
-			// [ All Actions ] [ 49 ] Unchanged [ 43 ] Changed [ 6 ]
-			// [ Class Action ] [ 41 ] Unchanged [ 38 ] Changed [ 3 ]
-			// [ Manifest Action ] [ 1 ] Unchanged [ 0 ] Changed [ 1 ]
-			// [ Service Config Action ] [ 7 ] Unchanged [ 5 ] Changed [ 2 ]
-			// ================================================================================
-			// [ Nested changes: ]
-			// --------------------------------------------------------------------------------
-			// [ ... ]
-			// ================================================================================
 			logger.debug(consoleMarker, DASH_LINE);
 
 			logger.debug(consoleMarker, "[ Input  ] [ {} ]", getInputResourceName());

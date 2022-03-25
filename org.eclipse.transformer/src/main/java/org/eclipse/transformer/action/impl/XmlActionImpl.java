@@ -71,7 +71,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 	public boolean accept(String resourceName, File resourceFile) {
 		if (resourceName.toLowerCase()
 			.endsWith(getAcceptExtension())) {
-			if (signatureRule.getTextSubstitutions(resourceName) != null) {
+			if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 				return true;
 			}
 		}

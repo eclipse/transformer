@@ -35,14 +35,18 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
+		String inputClassName = getInputClassName();
+		String outputClassName = getOutputClassName();
+		String inputSuperName = getInputSuperName();
+		String outputSuperName = getOutputSuperName();
 		return (((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName))
 			|| ((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName)) ||
 
-			(modifiedInterfaces > 0) ||
+			(getModifiedInterfaces() > 0) ||
 
-			(modifiedFields > 0) || (modifiedMethods > 0) || (modifiedAttributes > 0) ||
+			(getModifiedFields() > 0) || (getModifiedMethods() > 0) || (getModifiedAttributes() > 0) ||
 
-			(modifiedConstants > 0));
+			(getModifiedConstants() > 0));
 	}
 
 	//
@@ -99,7 +103,6 @@ public class ClassChangesImpl extends ChangesImpl {
 
 	public void addModifiedInterface() {
 		modifiedInterfaces++;
-
 	}
 
 	//
@@ -171,9 +174,9 @@ public class ClassChangesImpl extends ChangesImpl {
 
 			logger.debug(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
 
-			String useInputSuperName = getInputSuperName();
-			if (useInputSuperName != null) {
-				logger.debug(consoleMarker, "Super class name [ {} ] [ {} ]", useInputSuperName, getOutputSuperName());
+			String inputSuperName = getInputSuperName();
+			if (inputSuperName != null) {
+				logger.debug(consoleMarker, "Super class name [ {} ] [ {} ]", inputSuperName, getOutputSuperName());
 			}
 
 			logger.debug(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());

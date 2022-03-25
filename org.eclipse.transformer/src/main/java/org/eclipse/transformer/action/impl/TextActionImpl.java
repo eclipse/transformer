@@ -59,7 +59,7 @@ public class TextActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		if (signatureRule.getTextSubstitutions(resourceName) != null) {
+		if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 			return true;
 		}
 		return false;

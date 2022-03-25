@@ -46,10 +46,14 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 
 	public ContainerActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
-
 		this.compositeAction = createUsing(CompositeActionImpl::new);
+	}
+
+	public ContainerActionImpl(CompositeActionImpl compositeAction) {
+		super(compositeAction.getLogger(), compositeAction.getBuffer(), compositeAction.getSelectionRule(),
+			compositeAction.getSignatureRule());
+		this.compositeAction = compositeAction;
 	}
 
 	//
