@@ -85,10 +85,6 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 		return actions;
 	}
 
-	protected void addAction(Action action) {
-		getActions().add(action);
-	}
-
 	@Override
 	public String getAcceptExtension() {
 		throw new UnsupportedOperationException();
