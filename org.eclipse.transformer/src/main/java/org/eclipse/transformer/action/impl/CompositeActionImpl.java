@@ -47,21 +47,25 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 
 	@Override
 	public String getName() {
+		Action acceptedAction = getAcceptedAction();
 		return (acceptedAction == null) ? null : acceptedAction.getName();
 	}
 
 	@Override
 	public ActionType getActionType() {
+		Action acceptedAction = getAcceptedAction();
 		return (acceptedAction == null) ? null : acceptedAction.getActionType();
 	}
 
 	@Override
 	public Changes getLastActiveChanges() {
+		Action acceptedAction = getAcceptedAction();
 		return (acceptedAction == null) ? null : acceptedAction.getLastActiveChanges();
 	}
 
 	@Override
 	public Changes getActiveChanges() {
+		Action acceptedAction = getAcceptedAction();
 		return ((acceptedAction == null) ? null : acceptedAction.getActiveChanges());
 	}
 
@@ -81,10 +85,6 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 		return actions;
 	}
 
-	protected void addAction(Action action) {
-		getActions().add(action);
-	}
-
 	@Override
 	public String getAcceptExtension() {
 		throw new UnsupportedOperationException();
@@ -94,12 +94,10 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 	public Action acceptAction(String resourceName, File resourceFile) {
 		for (Action action : getActions()) {
 			if (action.accept(resourceName, resourceFile)) {
-				acceptedAction = action;
-				return action;
+				return acceptedAction = action;
 			}
 		}
-		acceptedAction = null;
-		return null;
+		return acceptedAction = null;
 	}
 
 	@Override

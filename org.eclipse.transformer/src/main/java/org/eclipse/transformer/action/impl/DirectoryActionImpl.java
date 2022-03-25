@@ -54,7 +54,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		return ((resourceFile != null) && resourceFile.isDirectory());
+		return (resourceFile != null) && resourceFile.isDirectory();
 	}
 
 	@Override

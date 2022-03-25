@@ -63,8 +63,9 @@ public class ChangesImpl implements Changes {
 
 	@Override
 	public boolean hasResourceNameChange() {
+		String inputResourceName = getInputResourceName();
 		// The input name will be null if the transform fails very early.
-		return ((inputResourceName != null) && !inputResourceName.equals(outputResourceName));
+		return ((inputResourceName != null) && !inputResourceName.equals(getOutputResourceName()));
 	}
 
 	//
@@ -88,7 +89,7 @@ public class ChangesImpl implements Changes {
 
 	@Override
 	public boolean hasNonResourceNameChanges() {
-		return (replacements > 0);
+		return getReplacements() > 0;
 	}
 
 	//
@@ -101,7 +102,7 @@ public class ChangesImpl implements Changes {
 	//
 
 	protected String getChangeTag() {
-		return (hasNonResourceNameChanges() ? "Changed" : "Unchanged");
+		return hasNonResourceNameChanges() ? "Changed" : "Unchanged";
 	}
 
 	@Override

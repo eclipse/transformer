@@ -17,11 +17,6 @@ public enum AppOption {
 	HELP(new Settings("h", "help", "Display help", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
 		Settings.NO_GROUP)),
 
-	// TODO: Refine versioning
-	// FULL_VERSION("f", "fullVersion", "Display full version information",
-	// !OptionSettings.HAS_ARG, !OptionSettings.HAS_ARGS,
-	// !OptionSettings.IS_REQUIRED, OptionSettings.NO_GROUP),
-
 	LOG_QUIET(
 		new Settings("q", "quiet", "Display quiet output: error level logging", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, "LOG_GROUP")),

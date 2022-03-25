@@ -26,6 +26,7 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.CompositeAction;
 import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.InputBuffer;
@@ -46,18 +47,22 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 
 	public ContainerActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
-
 		this.compositeAction = createUsing(CompositeActionImpl::new);
+	}
+
+	public ContainerActionImpl(CompositeAction compositeAction) {
+		super(compositeAction.getLogger(), compositeAction.getBuffer(), compositeAction.getSelectionRule(),
+			compositeAction.getSignatureRule());
+		this.compositeAction = compositeAction;
 	}
 
 	//
 
-	private final CompositeActionImpl compositeAction;
+	private final CompositeAction compositeAction;
 
 	@Override
-	public CompositeActionImpl getAction() {
+	public CompositeAction getAction() {
 		return compositeAction;
 	}
 

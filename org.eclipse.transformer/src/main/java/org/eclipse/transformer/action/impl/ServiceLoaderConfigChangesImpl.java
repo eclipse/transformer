@@ -19,8 +19,6 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 
 	public ServiceLoaderConfigChangesImpl() {
 		super();
-
-		this.clearChanges();
 	}
 
 	//
@@ -34,7 +32,6 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 	public void clearChanges() {
 		changedProviders = 0;
 		unchangedProviders = 0;
-
 		super.clearChanges();
 	}
 

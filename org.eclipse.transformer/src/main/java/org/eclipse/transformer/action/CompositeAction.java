@@ -17,6 +17,10 @@ import java.util.List;
 public interface CompositeAction extends Action {
 	List<Action> getActions();
 
+	default void addAction(Action action) {
+		getActions().add(action);
+	}
+
 	Action acceptAction(String resourceName, File resourceFile);
 
 	Action getAcceptedAction();

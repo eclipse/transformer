@@ -121,7 +121,7 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	//
 
-	protected final SignatureRule signatureRule;
+	private final SignatureRule signatureRule;
 
 	@Override
 	public SignatureRule getSignatureRule() {
@@ -298,20 +298,22 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		return (CHANGES) new ChangesImpl();
 	}
 
-	protected final Deque<CHANGES>	changes;
-	protected CHANGES				activeChanges;
-	protected CHANGES				lastActiveChanges;
+	private final Deque<CHANGES>	changes;
+	private CHANGES					activeChanges;
+	private CHANGES					lastActiveChanges;
 
 	protected void startRecording(String inputName) {
 		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
 
+		CHANGES activeChanges = getActiveChanges();
 		if (activeChanges != null) {
 			changes.addLast(activeChanges);
 		}
-		activeChanges = newChanges();
+		this.activeChanges = newChanges();
 	}
 
 	protected void stopRecording(String inputName) {
+		CHANGES activeChanges = getActiveChanges();
 		if (getLogger().isDebugEnabled()) {
 			String changeText;
 
@@ -331,8 +333,8 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 			getLogger().debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getActionType(), changeText);
 		}
 
-		lastActiveChanges = activeChanges;
-		activeChanges = changes.pollLast();
+		this.lastActiveChanges = activeChanges;
+		this.activeChanges = changes.pollLast();
 	}
 
 	//
