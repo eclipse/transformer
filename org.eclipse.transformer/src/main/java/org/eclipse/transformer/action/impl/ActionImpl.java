@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action.impl;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +50,6 @@ import aQute.lib.io.IO;
 
 public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	public ActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		this.logger = logger;
 
 		this.buffer = buffer;
@@ -281,11 +282,6 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	public abstract String getAcceptExtension();
 
 	@Override
-	public boolean accept(String resourceName) {
-		return accept(resourceName, null);
-	}
-
-	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 		return resourceName.toLowerCase()
 			.endsWith(getAcceptExtension());
@@ -401,11 +397,6 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	//
 
-	@Override
-	public boolean useStreams() {
-		return false;
-	}
-
 	/**
 	 * Read bytes from an input stream. Answer byte data and a count of bytes
 	 * read.
@@ -417,9 +408,16 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	 * @return Byte data from the read.
 	 * @throws TransformException Indicates a read failure.
 	 */
-	protected ByteData read(String inputName, InputStream inputStream, int inputCount)
+	@Override
+	public ByteData collect(String inputName, InputStream inputStream, int inputCount)
 		throws TransformException {
+		if (inputCount < 0) {
+			inputCount = -1;
+		} else {
+			inputCount = FileUtils.verifyArray(0, inputCount);
+		}
 
+		getLogger().debug("[ {}.collect ]: Requested [ {} ] [ {} ]", getClass().getSimpleName(), inputName, inputCount);
 		ByteBuffer readData = getInputBuffer();
 		try {
 			readData = FileUtils.read(inputName, inputStream, readData, inputCount);
@@ -430,7 +428,12 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 		setInputBuffer(readData);
 
-		return new ByteDataImpl(inputName, readData);
+		ByteData inputData = new ByteDataImpl(inputName, readData);
+		if (inputCount != inputData.length()) {
+			getLogger().debug("[ {}.collect ]: Obtained [ {} ] [ {} ]", getClass().getSimpleName(), inputName,
+				inputData.length());
+		}
+		return inputData;
 	}
 
 	/**
@@ -452,57 +455,17 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	//
 
 	@Override
-	public ByteData apply(String inputName, InputStream inputStream) throws TransformException {
-		return apply(inputName, inputStream, -1);
-	}
-
-	@Override
-	public ByteData apply(String inputName, InputStream inputStream, int inputCount) throws TransformException {
-		String className = getClass().getSimpleName();
-		String methodName = "apply";
-
-		getLogger().debug("[ {}.{} ]: Requested [ {} ] [ {} ]", className, methodName, inputName, inputCount);
-		ByteData inputData = read(inputName, inputStream, inputCount);
-		if (inputCount != inputData.length()) {
-			getLogger().debug("[ {}.{} ]: Obtained [ {} ] [ {} ]", className, methodName, inputName,
-				inputData.length());
-		}
-
-		ByteData outputData;
-		try {
-			outputData = apply(inputData);
-		} catch (Throwable th) {
-			getLogger().error("Transform failure [ {} ]", inputName, th);
-			outputData = null;
-		}
-
-		if (outputData == null) {
-			getLogger().debug("[ {}.{} ]: Null transform", className, methodName);
-			outputData = inputData;
-		} else {
-			getLogger().debug("[ {}.{} ]: Active transform [ {} ] [ {} ]", className, methodName, outputData.name(),
-				outputData.length());
-		}
-		return outputData;
-	}
-
-	@Override
-	public void apply(String inputName, InputStream inputStream, long inputCount, OutputStream outputStream)
+	public void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
 		throws TransformException {
-		int intInputCount;
-		if (inputCount == -1L) {
-			intInputCount = -1;
-		} else {
-			intInputCount = FileUtils.verifyArray(0, inputCount);
-		}
-		ByteData outputData = apply(inputName, inputStream, intInputCount);
+		ByteData inputData = collect(inputName, inputStream, inputCount);
+		ByteData outputData = apply(inputData);
 		write(outputData, outputStream);
 	}
 
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
-		long inputLength = inputFile.length();
-		getLogger().debug("Input [ {} ] Length [ {} ]", inputName, inputLength);
+		int inputCount = Math.toIntExact(inputFile.length());
+		getLogger().debug("Input [ {} ] Length [ {} ]", inputName, inputCount);
 
 		try {
 			IO.mkdirs(outputFile.getParentFile());
@@ -511,12 +474,20 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		}
 		try (InputStream inputStream = IO.stream(inputFile)) {
 			try (OutputStream outputStream = IO.outputStream(outputFile)) {
-				apply(inputName, inputStream, inputLength, outputStream);
+				apply(inputName, inputStream, inputCount, outputStream);
 			} catch (IOException e) {
 				throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
 			}
 		} catch (IOException e) {
 			throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
 		}
+	}
+
+	protected BufferedReader reader(ByteBuffer buffer) {
+		return FileUtils.reader(buffer);
+	}
+
+	protected BufferedWriter writer(OutputStream outputStream) {
+		return FileUtils.writer(outputStream);
 	}
 }

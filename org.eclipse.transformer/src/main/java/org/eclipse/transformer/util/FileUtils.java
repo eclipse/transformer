@@ -11,10 +11,17 @@
 
 package org.eclipse.transformer.util;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
+
+import aQute.lib.io.IO;
 
 public class FileUtils {
 	private FileUtils() {}
@@ -38,7 +45,7 @@ public class FileUtils {
 	 * @param count A count of bytes to add to the target array.
 	 * @return The count value as an int value.
 	 */
-	public static int verifyArray(int offset, long count) {
+	public static int verifyArray(int offset, int count) {
 		if (offset < 0) {
 			throw new IllegalArgumentException("Array offset [ " + offset + " ] less than zero.");
 		} else if (offset > MAX_ARRAY_LENGTH) {
@@ -53,18 +60,17 @@ public class FileUtils {
 				"Array fill amount [ " + count + " ] greater than [ " + MAX_ARRAY_LENGTH + " ]");
 		}
 
-		int intCount = (int) count;
 
 		int maxCount = MAX_ARRAY_LENGTH - offset;
-		if (intCount > maxCount) {
+		if (count > maxCount) {
 			throw new IllegalArgumentException("Array length [ " + maxCount + " ] from offset [ " + offset
-				+ " ] and fill amount [ " + intCount + " ] greater than [ " + MAX_ARRAY_LENGTH + " ]");
+				+ " ] and fill amount [ " + count + " ] greater than [ " + MAX_ARRAY_LENGTH + " ]");
 		}
 
 		// System.out.println("Count [ " + count + " ] Adjusted to [ " +
 		// intCount + " ]");
 
-		return intCount;
+		return count;
 	}
 
 	/**
@@ -147,5 +153,16 @@ public class FileUtils {
 			return fqFileName.substring(index + 1);
 		}
 		return fqFileName;
+	}
+
+	public static BufferedReader reader(ByteBuffer buffer) {
+		BufferedReader reader = IO.reader(buffer, UTF_8);
+		return reader;
+	}
+
+	public static BufferedWriter writer(OutputStream outputStream) {
+		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
+		BufferedWriter writer = new BufferedWriter(outputWriter);
+		return writer;
 	}
 }

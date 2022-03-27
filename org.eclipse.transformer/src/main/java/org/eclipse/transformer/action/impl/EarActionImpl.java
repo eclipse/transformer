@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 public class EarActionImpl extends ContainerActionImpl {
 	public EarActionImpl(Logger logger, InputBuffer buffer,
 		SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 

@@ -206,7 +206,6 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	public ClassActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -258,7 +257,10 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	}
 
 	protected void setModifiedConstants(int modifiedConstants) {
-		getActiveChanges().setModifiedConstants(modifiedConstants);
+		ClassChangesImpl activeChanges = getActiveChanges();
+		for (int i = 0; i < modifiedConstants; i++) {
+			activeChanges.addModifiedConstant();
+		}
 	}
 
 	//
@@ -282,8 +284,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				DataInput inputClassData = ByteBufferDataInput.wrap(inputData.buffer());
 				inputClass = ClassFile.parseClassFile(inputClassData);
 			} catch (IOException e) {
-				getLogger().error("Failed to parse raw class bytes [ {} ]", inputData.name(), e);
-				return null;
+				throw new TransformException("Failed to parse raw class bytes [ " + inputData.name() + " ]", e);
 			}
 
 			displayClass(inputData.name(), inputClass);
@@ -390,9 +391,14 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				setModifiedConstants(modifiedConstants);
 			}
 
+			if (!hasChanges()) {
+				return inputData;
+			}
+
 			if (!hasNonResourceNameChanges()) {
 				getLogger().debug("  Class bytes: {} {}", inputData.name(), inputData.length());
-				return null;
+				ByteData outputData = new ByteDataImpl(outputName, inputData.buffer());
+				return outputData;
 			}
 
 			ClassFile outputClass = classBuilder.build();

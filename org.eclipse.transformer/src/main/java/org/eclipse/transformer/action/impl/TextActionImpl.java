@@ -11,15 +11,11 @@
 
 package org.eclipse.transformer.action.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
@@ -30,13 +26,11 @@ import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
-import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
 public class TextActionImpl extends ActionImpl<Changes> {
 
 	public TextActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -75,35 +69,20 @@ public class TextActionImpl extends ActionImpl<Changes> {
 
 			setResourceNames(inputData.name(), outputName);
 
-			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-			InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
-
-			BufferedReader reader = new BufferedReader(inputReader);
-
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-			OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
-			BufferedWriter writer = new BufferedWriter(outputWriter);
-
-			try {
+			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
 				transform(inputData.name(), reader, writer);
 			} catch (IOException e) {
-				getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
-				return null;
+				throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
 			}
 
-			try {
-				writer.flush();
-			} catch (IOException e) {
-				getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
-				return null;
+			if (!hasChanges()) {
+				return inputData;
 			}
 
-			if (!hasNonResourceNameChanges()) {
-				return null;
-			}
-
-			ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
+			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
 			return outputData;
 		} finally {
 			stopRecording(inputData.name());
@@ -113,7 +92,6 @@ public class TextActionImpl extends ActionImpl<Changes> {
 	//
 
 	protected void transform(String inputName, BufferedReader reader, BufferedWriter writer) throws IOException {
-
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
 			String outputLine = replaceText(inputName, inputLine);

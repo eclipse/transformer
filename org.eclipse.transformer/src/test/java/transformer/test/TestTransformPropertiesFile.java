@@ -105,7 +105,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		PropertiesActionImpl propsAction = getJakartaPropertiesAction();
 
 		byte[] content = {};
-		propsAction.apply(JAVAX_PATH, new ByteArrayInputStream(content));
+		propsAction.apply(propsAction.collect(JAVAX_PATH, new ByteArrayInputStream(content), content.length));
 		Assertions.assertTrue(JAKARTA_PATH.equals(propsAction.getLastActiveChanges()
 			.getOutputResourceName()));
 	}

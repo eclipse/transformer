@@ -27,7 +27,6 @@ public class PropertiesActionImpl extends ActionImpl<Changes> {
 
 	public PropertiesActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -45,10 +44,9 @@ public class PropertiesActionImpl extends ActionImpl<Changes> {
 				getLogger().debug("Properties file {}, relocated to {}", inputData.name(), outputName);
 				setResourceNames(inputData.name(), outputName);
 				return new ByteDataImpl(outputName, inputData.buffer());
-			} else {
-				setResourceNames(inputData.name(), inputData.name());
-				return inputData;
 			}
+			setResourceNames(inputData.name(), inputData.name());
+			return inputData;
 		} finally {
 			stopRecording(inputData.name());
 		}

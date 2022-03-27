@@ -20,7 +20,6 @@ import org.slf4j.Logger;
 public class JarActionImpl extends ZipActionImpl {
 
 	public JarActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 

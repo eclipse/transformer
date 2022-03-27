@@ -16,21 +16,8 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 import org.slf4j.Logger;
 
 public class ClassChangesImpl extends ChangesImpl {
-	@Override
-	public void clearChanges() {
-		inputClassName = null;
-		outputClassName = null;
-
-		inputSuperName = null;
-		outputSuperName = null;
-
-		modifiedInterfaces = 0;
-
-		modifiedFields = 0;
-		modifiedMethods = 0;
-		modifiedAttributes = 0;
-
-		modifiedConstants = 0;
+	public ClassChangesImpl() {
+		super();
 	}
 
 	@Override
@@ -39,14 +26,9 @@ public class ClassChangesImpl extends ChangesImpl {
 		String outputClassName = getOutputClassName();
 		String inputSuperName = getInputSuperName();
 		String outputSuperName = getOutputSuperName();
-		return (((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName))
-			|| ((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName)) ||
-
-			(getModifiedInterfaces() > 0) ||
-
-			(getModifiedFields() > 0) || (getModifiedMethods() > 0) || (getModifiedAttributes() > 0) ||
-
-			(getModifiedConstants() > 0));
+		return super.hasNonResourceNameChanges() || //
+			((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName)) || //
+			((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName));
 	}
 
 	//
@@ -97,12 +79,9 @@ public class ClassChangesImpl extends ChangesImpl {
 		return modifiedInterfaces;
 	}
 
-	public void setModifiedInterfaces(int modifiedInterfaces) {
-		this.modifiedInterfaces = modifiedInterfaces;
-	}
-
 	public void addModifiedInterface() {
 		modifiedInterfaces++;
+		addReplacement();
 	}
 
 	//
@@ -115,36 +94,27 @@ public class ClassChangesImpl extends ChangesImpl {
 		return modifiedFields;
 	}
 
-	public void setModifiedFields(int modifiedFields) {
-		this.modifiedFields = modifiedFields;
-	}
-
 	public void addModifiedField() {
 		modifiedFields++;
+		addReplacement();
 	}
 
 	public int getModifiedMethods() {
 		return modifiedMethods;
 	}
 
-	public void setModifiedMethods(int modifiedMethods) {
-		this.modifiedMethods = modifiedMethods;
-	}
-
 	public void addModifiedMethod() {
 		modifiedMethods++;
+		addReplacement();
 	}
 
 	public int getModifiedAttributes() {
 		return modifiedAttributes;
 	}
 
-	public void setModifiedAttributes(int modifiedAttributes) {
-		this.modifiedAttributes = modifiedAttributes;
-	}
-
 	public void addModifiedAttribute() {
 		modifiedAttributes++;
+		addReplacement();
 	}
 
 	//
@@ -155,12 +125,9 @@ public class ClassChangesImpl extends ChangesImpl {
 		return modifiedConstants;
 	}
 
-	public void setModifiedConstants(int modifiedConstants) {
-		this.modifiedConstants = modifiedConstants;
-	}
-
 	public void addModifiedConstant() {
 		modifiedConstants++;
+		addReplacement();
 	}
 
 	//

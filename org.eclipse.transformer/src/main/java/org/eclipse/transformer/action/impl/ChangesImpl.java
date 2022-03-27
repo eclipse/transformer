@@ -28,14 +28,6 @@ public class ChangesImpl implements Changes {
 		return hasResourceNameChange() || hasNonResourceNameChanges();
 	}
 
-	@Override
-	public void clearChanges() {
-		inputResourceName = null;
-		outputResourceName = null;
-
-		replacements = 0;
-	}
-
 	//
 
 	private String	inputResourceName;
@@ -116,5 +108,21 @@ public class ChangesImpl implements Changes {
 				logger.info(consoleMarker, "Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
 			}
 		}
+	}
+
+	@Override
+	public String toString() {
+		String inputResourceName = getInputResourceName();
+		boolean hasChanges = hasChanges();
+		if (inputResourceName != null) {
+			if (hasChanges) {
+				return String.format("%s Changed [%d]", inputResourceName, getReplacements());
+			}
+			return String.format("%s Unchanged", inputResourceName);
+		}
+		if (hasChanges) {
+			return String.format("Changed [%d]", getReplacements());
+		}
+		return "Unchanged";
 	}
 }

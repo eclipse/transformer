@@ -171,7 +171,7 @@ public class TestTransformXML extends CaptureTest {
 
 		List<String> finalLines;
 		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) {
-			ByteData xmlOutput = useTextAction.apply(resourceRef, resourceInput);
+			ByteData xmlOutput = useTextAction.apply(useTextAction.collect(resourceRef, resourceInput));
 			finalLines = display(resourceRef, xmlOutput.stream());
 		}
 

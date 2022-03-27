@@ -504,7 +504,7 @@ public class TestTransformClass extends CaptureTest {
 
 		display("Transforming class [ %s ]", resourceName);
 		ByteArrayInputStream internalInputStream = new ByteArrayInputStream(inputBytes);
-		ByteData outputStreamData = classAction.apply(resourceName, internalInputStream);
+		ByteData outputStreamData = classAction.apply(classAction.collect(resourceName, internalInputStream));
 		display(classAction.getLastActiveChanges());
 
 		ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
@@ -797,7 +797,7 @@ public class TestTransformClass extends CaptureTest {
 		InputStream inputStream = getResourceStream(resourceName);
 
 		@SuppressWarnings("unused")
-		ByteData outputStreamData = classAction.apply(resourceName, inputStream);
+		ByteData outputStreamData = classAction.apply(classAction.collect(resourceName, inputStream));
 		display(classAction.getLastActiveChanges());
 
 		int expectedChanges = 5;
@@ -817,7 +817,7 @@ public class TestTransformClass extends CaptureTest {
 			InputStream inputStream = getResourceStream(resourceName);
 
 			@SuppressWarnings("unused")
-			ByteData outputStreamData = classAction.apply(resourceName, inputStream);
+			ByteData outputStreamData = classAction.apply(classAction.collect(resourceName, inputStream));
 			display(classAction.getLastActiveChanges());
 
 			// 2 to pass although should be 1. Both UTF8 and ConstantString are counted.
@@ -832,7 +832,7 @@ public class TestTransformClass extends CaptureTest {
 			InputStream inputStream = getResourceStream(resourceName);
 
 			@SuppressWarnings("unused")
-			ByteData outputStreamData = classAction.apply(resourceName, inputStream);
+			ByteData outputStreamData = classAction.apply(classAction.collect(resourceName, inputStream));
 			display(classAction.getLastActiveChanges());
 
 			int expectedChanges = 0;
