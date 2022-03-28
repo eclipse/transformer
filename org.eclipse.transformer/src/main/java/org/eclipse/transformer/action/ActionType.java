@@ -19,7 +19,7 @@ public enum ActionType {
 	FEATURE,
 	SERVICE_LOADER_CONFIG,
 	TEXT,
-	// XML,
+	XML,
 
 	ZIP,
 	JAR,

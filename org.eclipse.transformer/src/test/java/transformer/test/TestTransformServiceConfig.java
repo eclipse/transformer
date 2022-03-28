@@ -273,7 +273,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 		ByteData transformedData;
 		try {
-			transformedData = action.apply(inputName, inputStream);
+			transformedData = action.apply(action.collect(inputName, inputStream));
 		} finally {
 			inputStream.close();
 		}

@@ -43,26 +43,22 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	//
 
-	public static final boolean	IS_MANIFEST				= true;
-	public static final boolean	IS_FEATURE				= !IS_MANIFEST;
+	private static final boolean	IS_MANIFEST				= true;
+	private static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
 	public static ManifestActionImpl newManifestAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_MANIFEST);
 	}
 
 	public static ManifestActionImpl newFeatureAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_FEATURE);
 	}
 
 	public ManifestActionImpl(Logger logger, InputBuffer buffer,
 		SelectionRule selectionRule, SignatureRule signatureRule, boolean isManifest) {
-
 		super(logger, buffer, selectionRule, signatureRule);
-
 		this.isManifest = isManifest;
 	}
 
@@ -70,29 +66,29 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public String getName() {
-		return (getIsManifest() ? "Manifest Action" : "Feature Action");
+		return isManifest() ? "Manifest Action" : "Feature Action";
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return (getIsManifest() ? ActionType.MANIFEST : ActionType.FEATURE);
+		return isManifest() ? ActionType.MANIFEST : ActionType.FEATURE;
 	}
 
 	//
 
 	private final boolean isManifest;
 
-	public boolean getIsManifest() {
-		return isManifest;
+	public boolean isManifest() {
+		return isManifest == IS_MANIFEST;
 	}
 
-	public boolean getIsFeature() {
-		return !isManifest;
+	public boolean isFeature() {
+		return isManifest == IS_FEATURE;
 	}
 
 	@Override
 	public String getAcceptExtension() {
-		return (getIsManifest() ? "manifest.mf" : ".mf");
+		return isManifest() ? "manifest.mf" : ".mf";
 	}
 
 	//
@@ -113,35 +109,28 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			try {
 				initialManifest = new Manifest(inputData.stream());
 			} catch (IOException e) {
-				getLogger().error("Failed to parse manifest [ {} ]", inputData.name(), e);
-				return null;
+				throw new TransformException("Failed to parse manifest [ " + inputData.name() + " ]", e);
 			}
 
 			Manifest finalManifest = new Manifest();
 
 			transform(inputData.name(), initialManifest, finalManifest);
 
-			// info("[ {}.{} ]: [ {} ] Replacements [ {} ]",
-			// getClass().getSimpleName(), "transform",
-			// initialName, getActiveChanges().getReplacements());
-
-			if (!hasNonResourceNameChanges()) {
+			if (!hasChanges()) {
 				getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, inputData.name());
-				return null;
+				return inputData;
 			}
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 			try {
 				write(finalManifest, outputStream);
 			} catch (IOException e) {
-				getLogger().error("Failed to write manifest [ {} ]", inputData.name(), e);
-				return null;
+				throw new TransformException("Failed to write manifest [ " + inputData.name() + " ]", e);
 			}
 
 			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
 			getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName,
 				outputData.name(), outputData.length());
-
 			return outputData;
 		} finally {
 			stopRecording(inputData.name());
@@ -229,7 +218,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	}
 
 	protected void write(Manifest manifest, OutputStream outputStream) throws IOException {
-		if (getIsManifest()) {
+		if (isManifest()) {
 			writeAsManifest(manifest, outputStream);
 		} else {
 			writeAsFeature(manifest, outputStream);

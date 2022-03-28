@@ -36,7 +36,5 @@ public interface Changes {
 
 	boolean hasResourceNameChange();
 
-	void clearChanges();
-
 	void log(Logger logger, String inputPath, String outputPath);
 }

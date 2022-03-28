@@ -151,11 +151,11 @@ public class TestTransformerMultiText extends TestTransformerBase {
 	public static final int NUM_EXTS = 8;
 
 	protected static String getExtension(int extNo) {
-		return ( '.' + "ext" + Integer.toString(extNo) );
+		return ".ext" + Integer.toString(extNo);
 	}
 
 	protected static String getInputName(int fileNo, int extNo) {
-		return "text" + Integer.toString(fileNo) + getExtension(extNo);
+		return "folder/text" + Integer.toString(fileNo) + getExtension(extNo);
 	}
 
 	// Output data ...

@@ -36,7 +36,6 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 
 	public CompositeActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 
 		this.actions = new ArrayList<>();

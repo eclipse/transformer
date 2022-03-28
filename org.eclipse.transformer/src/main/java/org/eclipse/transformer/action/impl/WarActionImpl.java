@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 
 public class WarActionImpl extends ContainerActionImpl {
 	public WarActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 

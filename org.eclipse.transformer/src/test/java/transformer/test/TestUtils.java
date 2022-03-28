@@ -39,6 +39,8 @@ import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 
+import aQute.lib.io.IO;
+
 public class TestUtils {
 
 	public static final boolean DO_CREATE = true;
@@ -432,7 +434,9 @@ public class TestUtils {
 	}
 
 	public static void writeInputFile(String inputPath, String text) throws IOException {
-		try ( OutputStream outputStream = new FileOutputStream(inputPath, true) ) {
+		File inputFile = new File(inputPath);
+		IO.mkdirs(inputFile.getParentFile());
+		try (OutputStream outputStream = new FileOutputStream(inputFile, true)) {
 			PrintWriter outputWriter = new PrintWriter(outputStream);
 			outputWriter.println(text);
 			outputWriter.flush();

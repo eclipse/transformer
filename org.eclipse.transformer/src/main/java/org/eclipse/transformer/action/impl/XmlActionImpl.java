@@ -18,9 +18,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.SAXParser;
@@ -39,7 +38,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
 public class XmlActionImpl extends ActionImpl<Changes> {
@@ -58,8 +56,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ActionType getActionType() {
-		// return ActionType.XML;
-		return null; // THis action is disabled.
+		return ActionType.XML;
 	}
 
 	@Override
@@ -96,57 +93,42 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 			setResourceNames(inputData.name(), inputData.name());
 
-			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			transformUsingSaxParser(inputData.name(), inputStream, outputStream);
+			transformUsingSaxParser(inputData.name(), inputData.stream(), outputStream);
 
-			if (!hasNonResourceNameChanges()) {
-				return null;
+			if (!hasChanges()) {
+				return inputData;
 			}
-			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+
+			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
+			ByteData outputData = new ByteDataImpl(inputData.name(), outputBuffer);
 			return outputData;
 		} finally {
 			stopRecording(inputData.name());
 		}
 	}
 
-	@SuppressWarnings("unused")
 	public ByteData applyAsPlainText(ByteData inputData) throws TransformException {
 
 		String outputName = inputData.name();
 
 		setResourceNames(inputData.name(), outputName);
 
-		InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-		InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
-
-		BufferedReader reader = new BufferedReader(inputReader);
-
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
-		BufferedWriter writer = new BufferedWriter(outputWriter);
-
-		try {
+		try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
 			transformAsPlainText(inputData.name(), reader, writer);
 		} catch (IOException e) {
-			getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
-			return null;
+			throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
 		}
 
-		try {
-			writer.flush();
-		} catch (IOException e) {
-			getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
-			return null;
+		if (!hasChanges()) {
+			return inputData;
 		}
 
-		if (!hasNonResourceNameChanges()) {
-			return null;
-		}
-
-		ByteData outputData = new ByteDataImpl(outputName, outputStream.toByteBuffer());
+		ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
+		ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
 		return outputData;
 	}
 

@@ -245,11 +245,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
+			jakartaManifestAction = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdates(), null, getDirectStrings(),
-					Collections.emptyMap()),
-				ManifestActionImpl.IS_MANIFEST);
+					Collections.emptyMap()));
 		}
 		return jakartaManifestAction;
 	}
@@ -260,11 +259,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaFeatureAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
+			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
-					Collections.emptyMap()),
-				ManifestActionImpl.IS_FEATURE);
+					Collections.emptyMap()));
 		}
 
 		return jakartaFeatureAction;
@@ -278,11 +276,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestActionTx = new ManifestActionImpl(useLogger, new InputBufferImpl(),
+			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
-					Collections.emptyMap()),
-				ManifestActionImpl.IS_MANIFEST);
+					Collections.emptyMap()));
 		}
 		return jakartaManifestActionTx;
 	}
@@ -293,11 +290,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			specificJakartaManifestAction = new ManifestActionImpl(useLogger, new InputBufferImpl(),
+			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
-					null, getDirectStrings(), Collections.emptyMap()),
-				ManifestActionImpl.IS_MANIFEST);
+					null, getDirectStrings(), Collections.emptyMap()));
 		}
 		return specificJakartaManifestAction;
 	}
@@ -397,7 +393,7 @@ public class TestTransformManifest extends CaptureTest {
 
 		ByteData manifestOutput;
 		try (InputStream input = TestUtils.getResourceStream(inputPath)) {
-			manifestOutput = manifestAction.apply(inputPath, input);
+			manifestOutput = manifestAction.apply(manifestAction.collect(inputPath, input));
 		}
 
 		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
@@ -664,9 +660,9 @@ public class TestTransformManifest extends CaptureTest {
 	 */
 	class ManifestActionImpl_Test extends ManifestActionImpl {
 		public ManifestActionImpl_Test(Logger logger, InputBufferImpl buffer,
-			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule, boolean isManifest) {
+			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
 
-			super(logger, buffer, selectionRule, signatureRule, isManifest);
+			super(logger, buffer, selectionRule, signatureRule, true);
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {
@@ -695,8 +691,7 @@ public class TestTransformManifest extends CaptureTest {
 			manifestAction_test = new ManifestActionImpl_Test(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
-					Collections.emptyMap()),
-				ManifestActionImpl.IS_MANIFEST);
+					Collections.emptyMap()));
 		}
 
 		return manifestAction_test;
@@ -712,8 +707,7 @@ public class TestTransformManifest extends CaptureTest {
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),
-					null, null, null, Collections.emptyMap()),
-				ManifestActionImpl.IS_MANIFEST);
+					null, null, null, Collections.emptyMap()));
 		}
 
 		return specificManifestAction_test;

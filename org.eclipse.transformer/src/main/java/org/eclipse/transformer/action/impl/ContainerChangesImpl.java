@@ -25,13 +25,12 @@ import org.slf4j.Logger;
 
 public class ContainerChangesImpl extends ChangesImpl implements ContainerChanges {
 
-	protected ContainerChangesImpl() {
+	public ContainerChangesImpl() {
 		super();
 
 		this.changedByAction = new HashMap<>();
 		this.unchangedByAction = new HashMap<>();
 
-		this.allChanged = 0;
 		this.allUnchanged = 0;
 
 		this.allSelected = 0;
@@ -43,36 +42,10 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	//
 
-	@Override
-	public boolean hasNonResourceNameChanges() {
-		return allChanged > 0;
-	}
-
-	@Override
-	public void clearChanges() {
-		changedByAction.clear();
-		unchangedByAction.clear();
-
-		allChanged = 0;
-		allUnchanged = 0;
-
-		allSelected = 0;
-		allUnselected = 0;
-		allResources = 0;
-
-		allNestedChanges = null;
-
-		super.clearChanges();
-	}
-
-	//
-
 	private final Map<String, int[]>	changedByAction;
 	private final Map<String, int[]>	unchangedByAction;
 
 	private int							allUnchanged;
-	private int							allChanged;
-
 	private int							allSelected;
 	private int							allUnselected;
 	private int							allResources;
@@ -128,7 +101,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	@Override
 	public int getAllChanged() {
-		return allChanged;
+		return getReplacements();
 	}
 
 	@Override
@@ -173,7 +146,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 		Map<String, int[]> target;
 		if (hasChanges) {
-			allChanged++;
+			addReplacement();
 			target = changedByAction;
 		} else {
 			allUnchanged++;
@@ -240,7 +213,7 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 		addChangeMap(this.changedByAction, otherChanges.getChangedByAction());
 		addChangeMap(this.unchangedByAction, otherChanges.getUnchangedByAction());
 
-		this.allChanged += otherChanges.getAllChanged();
+		addReplacements(otherChanges.getReplacements());
 		this.allUnchanged += otherChanges.getAllUnchanged();
 
 		this.allSelected += otherChanges.getAllSelected();

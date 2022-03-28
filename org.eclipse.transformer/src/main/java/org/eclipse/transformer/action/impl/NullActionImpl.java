@@ -12,6 +12,9 @@
 package org.eclipse.transformer.action.impl;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
@@ -22,10 +25,12 @@ import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
+import aQute.lib.io.IO;
+import aQute.lib.io.NonClosingInputStream;
+
 public class NullActionImpl extends ActionImpl<Changes> {
 
 	public NullActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -62,5 +67,49 @@ public class NullActionImpl extends ActionImpl<Changes> {
 		} finally {
 			stopRecording(inputData.name());
 		}
+	}
+
+	/*
+	 * Optimized method for file copy.
+	 */
+	@Override
+	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
+		startRecording(inputName);
+		try {
+			setResourceNames(inputName, inputName);
+			IO.mkdirs(outputFile.getParentFile());
+			IO.copy(inputFile, outputFile);
+		} catch (IOException e) {
+			throw new TransformException("Failed to copy [" + inputFile + "] to [ " + outputFile + " ]", e);
+		} finally {
+			stopRecording(inputName);
+		}
+	}
+
+	/*
+	 * Optimized method for stream copy.
+	 */
+	@Override
+	public void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
+		throws TransformException {
+		startRecording(inputName);
+		try {
+			setResourceNames(inputName, inputName);
+			InputStream nonClosingInputStream = new NonClosingInputStream(inputStream);
+			if (inputCount < 0) {
+				IO.copy(nonClosingInputStream, outputStream);
+			} else {
+				IO.copy(nonClosingInputStream, outputStream, inputCount);
+			}
+		} catch (IOException e) {
+			throw new TransformException("Failed to write [ " + inputName + " ]" + " count [ " + inputCount + " ]", e);
+		} finally {
+			stopRecording(inputName);
+		}
+	}
+
+	@Override
+	public boolean useStreams() {
+		return true;
 	}
 }

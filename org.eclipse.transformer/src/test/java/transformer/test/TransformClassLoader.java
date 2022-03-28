@@ -72,7 +72,7 @@ public class TransformClassLoader extends ClassLoader {
 
 	public InputStream applyClass(String resourceName, InputStream inputStream) throws TransformException {
 
-		ByteData outputData = getClassAction().apply(resourceName, inputStream);
+		ByteData outputData = getClassAction().apply(getClassAction().collect(resourceName, inputStream));
 
 		return outputData.stream();
 	}
@@ -91,7 +91,8 @@ public class TransformClassLoader extends ClassLoader {
 
 	public InputStream applyServiceConfig(String resourceName, InputStream inputStream) throws TransformException {
 
-		ByteData outputData = getServiceConfigAction().apply(resourceName, inputStream);
+		ByteData outputData = getServiceConfigAction()
+			.apply(getServiceConfigAction().collect(resourceName, inputStream));
 
 		return outputData.stream();
 	}

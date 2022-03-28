@@ -58,6 +58,6 @@ public class ByteDataImpl implements ByteData {
 
 	@Override
 	public String toString() {
-		return name() + "-" + buffer();
+		return name() + "=" + buffer();
 	}
 }

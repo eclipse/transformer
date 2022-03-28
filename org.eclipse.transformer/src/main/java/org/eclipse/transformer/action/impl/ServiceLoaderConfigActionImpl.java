@@ -11,15 +11,10 @@
 
 package org.eclipse.transformer.action.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 
 import org.eclipse.transformer.TransformException;
@@ -30,7 +25,6 @@ import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
-import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.ByteBufferOutputStream;
 
 /**
@@ -53,7 +47,6 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 
 	public ServiceLoaderConfigActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
 		SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -93,7 +86,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		return resourceName.contains(META_INF_SERVICES);
+		return resourceName.contains(META_INF_SERVICES) && !resourceName.endsWith(META_INF_SERVICES);
 	}
 
 	//
@@ -110,32 +103,16 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 			}
 			setResourceNames(inputData.name(), outputName);
 
-			InputStream inputStream = new ByteBufferInputStream(inputData.buffer());
-			InputStreamReader inputReader = new InputStreamReader(inputStream, UTF_8);
-
-			BufferedReader reader = new BufferedReader(inputReader);
-
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-			OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
 
-			BufferedWriter writer = new BufferedWriter(outputWriter);
-
-			try {
+			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
 				transform(reader, writer);
 			} catch (IOException e) {
-				getLogger().error("Failed to transform [ {} ]", inputData.name(), e);
-				return null;
+				throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
 			}
 
-			try {
-				writer.flush();
-			} catch (IOException e) {
-				getLogger().error("Failed to flush [ {} ]", inputData.name(), e);
-				return null;
-			}
-
-			if (!hasResourceNameChange() && !hasNonResourceNameChanges()) {
-				return null;
+			if (!hasChanges()) {
+				return inputData;
 			}
 
 			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();

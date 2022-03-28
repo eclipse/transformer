@@ -41,8 +41,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ 'ubuntu-latest' ]
-        java: [ '11', '17' ]
+        os:
+        - 'ubuntu-latest'
+        java:
+        - '11'
+        - '17'
         include:
         - os: 'ubuntu-latest'
           java: '8'

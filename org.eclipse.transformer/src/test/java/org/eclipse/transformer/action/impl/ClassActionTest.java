@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ByteData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
@@ -45,8 +46,6 @@ import aQute.bnd.classfile.builder.ClassFileBuilder;
 import aQute.bnd.classfile.builder.ModuleInfoBuilder;
 import aQute.lib.io.ByteBufferDataInput;
 import aQute.lib.io.ByteBufferDataOutput;
-import aQute.lib.io.ByteBufferInputStream;
-import aQute.lib.io.ByteBufferOutputStream;
 
 public class ClassActionTest {
 	Logger	logger;
@@ -106,8 +105,7 @@ public class ClassActionTest {
 
 		ByteBufferDataOutput dataOutput = new ByteBufferDataOutput();
 		original.write(dataOutput);
-		ByteBufferInputStream inputStream = new ByteBufferInputStream(dataOutput.toByteBuffer());
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputStream.available());
+		ByteData inputData = new ByteDataImpl(testName, dataOutput.toByteBuffer());
 
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.exports", "transformed.exports");
@@ -119,9 +117,9 @@ public class ClassActionTest {
 		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
-		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
+		ByteData outputData = classAction.apply(inputData);
 
-		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
+		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputData.buffer()));
 
 		assertThat(transformed.this_class).as("transformed class name is a module")
 			.isEqualTo("module-info");
@@ -205,8 +203,7 @@ public class ClassActionTest {
 
 		ByteBufferDataOutput dataOutput = new ByteBufferDataOutput();
 		original.write(dataOutput);
-		ByteBufferInputStream inputStream = new ByteBufferInputStream(dataOutput.toByteBuffer());
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputStream.available());
+		ByteData inputData = new ByteDataImpl(testName, dataOutput.toByteBuffer());
 
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.host", "transformed.host");
@@ -214,9 +211,9 @@ public class ClassActionTest {
 		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
-		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
+		ByteData outputData = classAction.apply(inputData);
 
-		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
+		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputData.buffer()));
 
 		assertThat(transformed.this_class).as("transformed class name")
 			.isEqualTo("nest/Test");
@@ -247,8 +244,7 @@ public class ClassActionTest {
 
 		ByteBufferDataOutput dataOutput = new ByteBufferDataOutput();
 		original.write(dataOutput);
-		ByteBufferInputStream inputStream = new ByteBufferInputStream(dataOutput.toByteBuffer());
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputStream.available());
+		ByteData inputData = new ByteDataImpl(testName, dataOutput.toByteBuffer());
 
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.enclosing", "transformed.enclosing");
@@ -257,9 +253,9 @@ public class ClassActionTest {
 		Action classAction = new ClassActionImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
-		classAction.apply(testName, inputStream, inputStream.available(), outputStream);
+		ByteData outputData = classAction.apply(inputData);
 
-		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputStream.toByteBuffer()));
+		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputData.buffer()));
 
 		assertThat(transformed.this_class).as("transformed class name")
 			.isEqualTo("enclosing/Test");

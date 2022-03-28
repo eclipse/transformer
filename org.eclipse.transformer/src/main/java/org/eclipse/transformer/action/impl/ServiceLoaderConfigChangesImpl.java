@@ -23,25 +23,12 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 
 	//
 
-	@Override
-	public boolean hasNonResourceNameChanges() {
-		return changedProviders > 0;
-	}
-
-	@Override
-	public void clearChanges() {
-		changedProviders = 0;
-		unchangedProviders = 0;
-		super.clearChanges();
-	}
-
-	//
-
 	private int	changedProviders;
 	private int	unchangedProviders;
 
 	public void addChangedProvider() {
 		changedProviders++;
+		addReplacement();
 	}
 
 	public int getChangedProviders() {
@@ -63,7 +50,7 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 		if (logger.isDebugEnabled(consoleMarker)) {
 			logger.debug(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 			logger.debug(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-			logger.debug(consoleMarker, "Replacements [ {} ]", getChangedProviders());
+			logger.debug(consoleMarker, "Replacements [ {} ]", getReplacements());
 		} else {
 			super.log(logger, inputPath, outputPath);
 		}

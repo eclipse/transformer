@@ -27,7 +27,6 @@ import org.eclipse.transformer.action.BundleData;
 
 public class BundleDataImpl implements BundleData {
 	public BundleDataImpl(String symbolicName, String version,
-
 		boolean addName, String name, boolean addDescription, String description) {
 
 		this.symbolicName = symbolicName;
