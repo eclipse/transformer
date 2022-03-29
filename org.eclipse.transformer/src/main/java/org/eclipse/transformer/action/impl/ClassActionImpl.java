@@ -788,7 +788,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 			case AnnotationDefaultAttribute.NAME : {
 				AnnotationDefaultAttribute inputAttribute = (AnnotationDefaultAttribute) attr;
-				Object outputValue = transformElementValue(inputAttribute.value, inputName);
+				Object outputValue = transformElementValue(inputAttribute.value, inputName, "", "");
 				return ((outputValue == null) ? null : new AnnotationDefaultAttribute(outputValue));
 			}
 
@@ -1104,7 +1104,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		String outputType = transformDescriptor(inputType);
 
 		ElementValueInfo[] inputValues = inputAnnotation.values;
-		ElementValueInfo[] outputValues = transform(inputValues, inputName);
+		ElementValueInfo[] outputValues = transform(inputValues, inputName, inputType);
 
 		if ((outputType == null) && (outputValues == null)) {
 			return null;
@@ -1114,12 +1114,14 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		}
 	}
 
-	private ElementValueInfo[] transform(ElementValueInfo[] inputElementValues, String inputName) {
+	private ElementValueInfo[] transform(ElementValueInfo[] inputElementValues, String inputName,
+		String annotationType) {
 		ElementValueInfo[] outputElementValues = null;
 
 		for (int valueNo = 0; valueNo < inputElementValues.length; valueNo++) {
 			ElementValueInfo inputElementValue = inputElementValues[valueNo];
-			Object outputValue = transformElementValue(inputElementValue.value, inputName);
+			Object outputValue = transformElementValue(inputElementValue.value, inputName, annotationType,
+				inputElementValue.name);
 
 			if (outputValue != null) {
 				if (outputElementValues == null) {
@@ -1132,7 +1134,8 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		return outputElementValues;
 	}
 
-	private Object transformElementValue(Object inputValue, String inputName) {
+	private Object transformElementValue(Object inputValue, String inputName, String annotationType,
+		String elementName) {
 		if (inputValue instanceof EnumConst) {
 			EnumConst enumValue = (EnumConst) inputValue;
 			String inputType = enumValue.type;
@@ -1158,14 +1161,27 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			return transform(annotationValue, AnnotationInfo::new, inputName);
 
 		} else if (inputValue instanceof String) {
-			return transformString("AnnotationValue", (String) inputValue, inputName);
-
+			String stringValue = (String) inputValue;
+			String result = transformString("AnnotationValue", stringValue, inputName);
+			// Replace package version in OSGi Version annotation.
+			if (inputName.endsWith("/package-info.class")
+				&& annotationType.equals("Lorg/osgi/annotation/versioning/Version;") && elementName.equals("value")) {
+				String binaryPackageName = inputName.substring(0, inputName.lastIndexOf('/'));
+				String dottedPackageName = binaryPackageName.replace('/', '.');
+				String oldVersion = (result == null) ? stringValue : result;
+				String replacementVersion = getReplacementVersion("Export-Package", dottedPackageName, oldVersion);
+				if (replacementVersion != null) {
+					result = replacementVersion;
+				}
+			}
+			return result;
 		} else if (inputValue instanceof Object[]) {
 			Object[] inputElementValues = ((Object[]) inputValue);
 			Object[] outputElementValues = null;
 
 			for (int valueNo = 0; valueNo < inputElementValues.length; valueNo++) {
-				Object outputElementValue = transformElementValue(inputElementValues[valueNo], inputName);
+				Object outputElementValue = transformElementValue(inputElementValues[valueNo], inputName,
+					annotationType, elementName);
 				if (outputElementValue != null) {
 					if (outputElementValues == null) {
 						outputElementValues = inputElementValues.clone();
