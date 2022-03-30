@@ -233,8 +233,8 @@ public class Transformer {
 		List<String> immediateArgs = options.getOptionValues(AppOption.RULES_IMMEDIATE_DATA);
 
 		if ((immediateArgs.size() % 3) != 0) {
-			getLogger().error(consoleMarker, "Incorrect number of arguments to option [ {} ]",
-				AppOption.RULES_IMMEDIATE_DATA.getShortTag());
+			getLogger().error(consoleMarker, "Incorrect number of arguments to option [ {} ] [ {} ]",
+				AppOption.RULES_IMMEDIATE_DATA.getLongTag(), immediateArgs);
 			return null;
 		}
 
@@ -810,27 +810,24 @@ public class Transformer {
 	/**
 	 * Validate a package version update against the specified package renames.
 	 * Answer true or false, telling if the update is valid.
-	 *
+	 * <p>
 	 * There are three cases:
+	 * <p>
+	 * The version update uses a package which is the final package in a package
+	 * rename rule. The update is valid.
+	 * <p>
+	 * The version update uses a package which has been orphaned by a package
+	 * rename rule. That is, the version update would be valid if the final
+	 * package was not orphaned. The update is considered valid.
+	 * <p>
+	 * The version update uses a package which was not specified as the final
+	 * package in a package rename rule. The update is valid.
 	 *
-	 * The version update uses a package which is the final package
-	 * in a package rename rule.  The update is valid.
-	 *
-	 * The version update uses a package which has been orphaned by a
-	 * package rename rule.  That is, the version update would be valid
-	 * if the final package was not orphaned.  The update is considered
-	 * valid.
-	 *
-	 * The version update uses a package which was not specified as the
-	 * final package in a package rename rule.  The update is not valid.
-	 *
-	 * @param finalPackage The package which was used as the key to a
-	 *     package version update.  This package must be used as the
-	 *     final package of a package rename.
+	 * @param finalPackage The package which was used as the key to a package
+	 *            version update. This package must be used as the final package
+	 *            of a package rename.
 	 * @param orphanedFinalPackages Final packages which were orphaned.
-	 *
-	 * @return True or false, telling if the package version update is
-	 *     valid.
+	 * @return True or false, telling if the package version update is valid.
 	 */
 	protected boolean validateVersionUpdate(String finalPackage, Set<String> orphanedFinalPackages) {
 		if ( packageRenames.containsValue(finalPackage) ) {
@@ -849,8 +846,8 @@ public class Transformer {
 			return true;
 		}
 
-		getLogger().error(consoleMarker, "Package [ {} ] has a version update but was not renamed.", finalPackage);
-		return false;
+		getLogger().info(consoleMarker, "Package [ {} ] has a version update but was not renamed.", finalPackage);
+		return true;
 	}
 
 	// protected List<String> getRuleFileNames(AppOption ruleOption) {
