@@ -1,0 +1,70 @@
+#*******************************************************************************
+# Copyright (c) Contributors to the Eclipse Foundation
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
+#*******************************************************************************
+
+name: 'CodeQL'
+
+on:
+  push:
+    branches-ignore:
+    - 'dependabot/**'
+    paths:
+    - '**.java'
+    - '.github/**/*codeql*'
+  pull_request:
+    paths:
+    - '**.java'
+    - '.github/**/*codeql*'
+
+env:
+  LC_ALL: en_US.UTF-8
+  GRADLE_OPTS: >-
+    -Dorg.gradle.parallel=true
+  MAVEN_OPTS: >-
+    -Dhttp.keepAlive=false
+    -Dmaven.wagon.http.pool=false
+    -Dmaven.wagon.http.retryHandler.count=3
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  analyze:
+    permissions:
+      # required for all workflows
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+        - 'ubuntu-latest'
+        java:
+        - '17'
+    name: CodeQL JDK${{ matrix.java }} ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Set up Java ${{ matrix.java }}
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: ${{ matrix.java }}
+    - name: Initialize CodeQL Analysis
+      uses: github/codeql-action/init@v1
+      with:
+        languages: 'java'
+    - name: Build for CodeQL Analysis
+      id: build
+      run: |
+        ./.github/scripts/codeql-build.sh
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
