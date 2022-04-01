@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -93,7 +96,8 @@ public class ZipActionImpl extends ContainerActionImpl {
 
 		try {
 			for (ZipEntry inputEntry; (inputEntry = zipInputStream.getNextEntry()) != null;) {
-				inputName = inputEntry.getName();
+				// Sanitize inputName to avoid ZipSlip
+				inputName = cleanPath(inputEntry.getName());
 				int inputLength = Math.toIntExact(inputEntry.getSize());
 
 				getLogger().debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName,
@@ -139,7 +143,9 @@ public class ZipActionImpl extends ContainerActionImpl {
 							getLogger().error(t.getMessage(), t);
 						}
 
-						ZipEntry outputEntry = new ZipEntry(outputData.name());
+						// Sanitize outputName to avoid ZipSlip
+						String outputName = cleanPath(outputData.name());
+						ZipEntry outputEntry = new ZipEntry(outputName);
 						outputEntry.setMethod(inputEntry.getMethod());
 						outputEntry.setExtra(inputEntry.getExtra());
 						outputEntry.setComment(inputEntry.getComment());
@@ -178,6 +184,32 @@ public class ZipActionImpl extends ContainerActionImpl {
 			}
 			throw new TransformException(message, e);
 		}
+	}
+
+	private final static Pattern PATH_SPLITTER = Pattern.compile("[/\\\\]");
+
+	private String cleanPath(String path) {
+		if (path.isEmpty()) {
+			return path;
+		}
+		String normalized;
+		try {
+			normalized = Paths.get("", PATH_SPLITTER.split(path))
+				.normalize()
+				.toString()
+				.replace('\\', '/');
+		} catch (InvalidPathException e) {
+			throw new TransformException("invalid zip entry name " + path, e);
+		}
+		if (normalized.startsWith("..") && //
+			((normalized.length() == 2) || (normalized.charAt(2) == '/'))) {
+				throw new TransformException("invalid zip entry name " + path);
+		}
+		char lastChar = path.charAt(path.length() - 1);
+		if ((lastChar == '/') || (lastChar == '\\')) {
+			normalized = normalized.concat("/");
+		}
+		return normalized;
 	}
 
 	private void copy(ZipEntry inputEntry, ZipInputStream zipInputStream, ZipOutputStream zipOutputStream,
