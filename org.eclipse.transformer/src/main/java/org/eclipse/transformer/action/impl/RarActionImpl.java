@@ -17,7 +17,7 @@ import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
-public class RarActionImpl extends ContainerActionImpl {
+public class RarActionImpl extends ZipActionImpl {
 	public RarActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 		super(logger, buffer, selectionRule, signatureRule);
 	}
