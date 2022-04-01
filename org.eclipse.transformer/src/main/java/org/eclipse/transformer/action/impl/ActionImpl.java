@@ -279,12 +279,13 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	//
 
-	public abstract String getAcceptExtension();
+	protected abstract String getAcceptExtension();
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		return resourceName.toLowerCase()
-			.endsWith(getAcceptExtension());
+		String acceptExtension = getAcceptExtension();
+		int length = acceptExtension.length();
+		return resourceName.regionMatches(true, resourceName.length() - length, acceptExtension, 0, length);
 	}
 
 	//

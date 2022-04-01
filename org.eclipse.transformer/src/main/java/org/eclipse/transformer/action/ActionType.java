@@ -31,7 +31,6 @@ public enum ActionType {
 	PROPERTIES;
 
 	public boolean matches(String tag) {
-		return name().toLowerCase()
-			.startsWith(tag);
+		return name().regionMatches(true, 0, tag, 0, tag.length());
 	}
 }

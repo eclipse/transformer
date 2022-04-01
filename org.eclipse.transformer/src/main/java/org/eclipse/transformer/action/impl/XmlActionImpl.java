@@ -43,7 +43,6 @@ import aQute.lib.io.ByteBufferOutputStream;
 public class XmlActionImpl extends ActionImpl<Changes> {
 
 	public XmlActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -66,8 +65,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
-		if (resourceName.toLowerCase()
-			.endsWith(getAcceptExtension())) {
+		if (super.accept(resourceName, resourceFile)) {
 			if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 				return true;
 			}

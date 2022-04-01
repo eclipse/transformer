@@ -134,11 +134,11 @@ Container action implementations:
 
 * ContainerActionImpl
   * DirectoryActionImpl
-  * EarActionImpl
-  * RarActionImpl
-  * WarActionImpl
   * ZipActionImpl
     * JarActionImpl
+    * EarActionImpl
+    * RarActionImpl
+    * WarActionImpl
 
 Leaf type action implementations:
 
