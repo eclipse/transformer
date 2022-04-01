@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
@@ -36,6 +37,8 @@ import org.slf4j.Logger;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import aQute.lib.io.ByteBufferOutputStream;
@@ -132,15 +135,53 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 	//
 
-	private static final SAXParserFactory parserFactory;
-
-	static {
-		parserFactory = SAXParserFactory.newInstance();
-		parserFactory.setNamespaceAware(true);
-	}
-
-	public static SAXParserFactory getParserFactory() {
-		return parserFactory;
+	/**
+	 * Create and return a SAXParserFactory instance.
+	 * <p>
+	 * The returned SAXParserFactory is configured to avoid XML External Entity
+	 * (XXE) attacks.
+	 *
+	 * @return A properly configured SAXParserFactory instance.
+	 */
+	public SAXParserFactory newSAXParserFactory() {
+		SAXParserFactory instance = SAXParserFactory.newInstance();
+		instance.setXIncludeAware(false);
+		try {
+			instance.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+			try { // Xerces 2 only fallback
+				instance.setFeature("http://xerces.apache.org/xerces2-j/features.html#disallow-doctype-decl", true);
+			} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e2) {
+				getLogger().info(
+					"Unable to set feature to disallow DTD (doctypes): XML External Entity (XXE) attack risk",
+					e);
+			}
+		}
+		try {
+			instance.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+			try { // Xerces 2 only fallback
+				instance.setFeature("http://xerces.apache.org/xerces2-j/features.html#external-general-entities",
+					false);
+			} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e2) {
+				getLogger().info(
+					"Unable to set feature to disallow external-general-entities: XML External Entity (XXE) attack risk",
+					e);
+			}
+		}
+		try {
+			instance.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+		} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+			try { // Xerces 2 only fallback
+				instance.setFeature("http://xerces.apache.org/xerces2-j/features.html#external-parameter-entities",
+					false);
+			} catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e2) {
+				getLogger().info(
+					"Unable to set feature to disallow external-parameter-entities: XML External Entity (XXE) attack risk",
+					e);
+			}
+		}
+		return instance;
 	}
 
 	public void transform(String inputName, InputStream input, OutputStream output) throws TransformException {
@@ -151,7 +192,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 		SAXParser parser;
 		try {
-			parser = getParserFactory().newSAXParser();
+			parser = newSAXParserFactory().newSAXParser();
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
@@ -172,7 +213,7 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 		SAXParser parser;
 		try {
-			parser = getParserFactory().newSAXParser();
+			parser = newSAXParserFactory().newSAXParser();
 		} catch (Exception e) {
 			throw new TransformException("Failed to obtain parser for [ " + inputName + " ]", e);
 		}
