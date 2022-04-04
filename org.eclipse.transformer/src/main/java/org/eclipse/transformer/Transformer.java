@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -209,6 +210,9 @@ public class Transformer {
 
 	public AppOption getTargetOption(String targetText) {
 		for (AppOption appOption : TARGETABLE_RULES) {
+			if (targetText.equals(appOption.getLongTag())) {
+				return appOption;
+			}
 			if (targetText.equals(appOption.getShortTag())) {
 				return appOption;
 			}
@@ -378,7 +382,7 @@ public class Transformer {
 
 				Properties substitutions = PropertiesUtils.createProperties();
 				if ( masterDirect == null ) {
-					substitutions = loadInternalProperties("Substitutions matching [ " + classSelector + " ]",
+					substitutions = loadProperties0("Substitutions matching [ " + classSelector + " ]",
 						substitutionsRef);
 				}
 				Map<String, String> substitutionsMap =
@@ -552,87 +556,69 @@ public class Transformer {
 			String rulesReference = options.getDefaultValue(ruleOption);
 			if (rulesReference == null) {
 				getLogger().debug(consoleMarker, "Skipping option [ {} ]", ruleOption);
-				return PropertiesUtils.createProperties();
+				rulesReferences = Collections.emptyList();
 			} else {
-				return loadInternalProperties(ruleOption, rulesReference);
+				rulesReferences = Collections.singletonList(rulesReference);
 			}
-		} else if (rulesReferences.size() == 1) {
-			return loadExternalProperties(ruleOption, rulesReferences.get(0));
-		} else {
-			String baseReference = rulesReferences.get(0);
-			Properties mergedProperties = rulesReferences.stream()
-				.reduce(null, asBiFunction((props, ref) -> {
-					Properties p = loadExternalProperties(ruleOption, ref);
-					if (props == null) {
-						return p;
-					}
-					merge(baseReference, props, ref, p, orphanedValues);
-					return props;
-				}), (props1, props2) -> {
-					props1.putAll(props2);
-					return props1;
-				});
-
-			return mergedProperties;
 		}
-	}
-
-	String relativize(String relativeRef, String baseRef) {
-		Path basePath = Paths.get(baseRef);
-		Path siblingPath = basePath.resolveSibling(relativeRef);
-		return siblingPath.toString();
-	}
-
-	/*
-	 * Results of 'relativize': Base reference [ c:\dev\rules\textMaster ]
-	 * Sibling reference [ sibling1 ] Base path [ c:\dev\rules\textMaster ]
-	 * Sibling path [ c:\dev\rules\sibling1 ] Base reference [ c:\textMaster ]
-	 * Sibling reference [ sibling1 ] Base path [ c:\textMaster ] Sibling path [
-	 * c:\sibling1 ] Base reference [ \textMaster ] Sibling reference [ sibling1
-	 * ] Base path [ \textMaster ] Sibling path [ \sibling1 ] Base reference [
-	 * textMaster ] Sibling reference [ sibling1 ] Base path [ textMaster ]
-	 * Sibling path [ sibling1 ]
-	 */
-
-	protected Properties loadInternalProperties(AppOption ruleOption, String resourceRef) throws IOException {
-		return loadInternalProperties(ruleOption.toString(), resourceRef);
-	}
-
-	protected Properties loadInternalProperties(String ruleOption, String resourceRef) throws IOException {
-		// getLogger().info(consoleMarker, "Using internal [ {} ]: [ {} ]",
-		// ruleOption, resourceRef);
-		URL rulesUrl = options.getRuleLoader()
-			.apply(resourceRef);
-		if (rulesUrl == null) {
-			getLogger().debug(consoleMarker, "Internal [ {} ] were not found [ {} ]", ruleOption, resourceRef);
-			throw new IOException("Resource [ " + resourceRef + " ] not found on [ " + options.getRuleLoader() + " ]");
-		} else {
-			getLogger().info(consoleMarker, "Internal [ {}] URL [ {} ]", ruleOption, rulesUrl);
+		if (rulesReferences.isEmpty()) {
+			return PropertiesUtils.createProperties();
 		}
-		return PropertiesUtils.loadProperties(rulesUrl);
+		String referenceName = ruleOption.name();
+		String baseReference = rulesReferences.get(0);
+		if (rulesReferences.size() == 1) {
+			return loadProperties0(referenceName, baseReference);
+		}
+		Properties mergedProperties = rulesReferences.stream()
+			.reduce(null, asBiFunction((props, ref) -> {
+				Properties p = loadProperties0(referenceName, ref);
+				if (props == null) {
+					return p;
+				}
+				merge(baseReference, props, ref, p, orphanedValues);
+				return props;
+			}), (props1, props2) -> {
+				props1.putAll(props2);
+				return props1;
+			});
+		return mergedProperties;
 	}
 
-	protected Properties loadExternalProperties(AppOption ruleOption, String resourceRef)
-		throws URISyntaxException, IOException {
+	private static final URI EMPTYURI = URI.create("");
 
-		return loadExternalProperties(ruleOption.toString(), resourceRef);
+	String relativize(String relativeRef, String baseRef) throws URISyntaxException {
+		URI baseURI = URIUtil.resolve(EMPTYURI, baseRef);
+		URI resolved = URIUtil.resolve(baseURI, relativeRef);
+		return resolved.toString();
 	}
 
-	public Properties loadExternalProperties(String referenceName, String externalReference)
+	protected Properties loadProperties0(String referenceName, String reference)
 		throws URISyntaxException, IOException {
+		URL url;
+		URI uri = URIUtil.resolve(EMPTYURI, reference);
+		if (uri.isAbsolute()) {
+			// reference has a scheme
+			url = uri.toURL();
+		} else {
+			// First resolve against current directory
+			URI fileUri = IO.work.toURI()
+				.resolve(uri);
+			if (Files.exists(Paths.get(fileUri))) {
+				url = fileUri.toURL();
+			} else {
+				// Ask the TransformOptions to load the reference
+				url = options.getRuleLoader()
+					.apply(reference);
+				if (url == null) {
+					getLogger().debug(consoleMarker, "Resource [ {} ] was not found [ {} ]", reference, referenceName);
+					throw new IOException(
+						"Resource [ " + reference + " ] not found on [ " + options.getRuleLoader() + " ]");
+				}
+			}
+		}
+		getLogger().info(consoleMarker, "Properties [ {} ] URL [ {} ]", referenceName, url);
 
-		return loadExternalProperties(referenceName, externalReference, IO.work);
-	}
-
-	protected Properties loadExternalProperties(String referenceName, String externalReference, File relativeHome)
-		throws URISyntaxException, IOException {
-
-		URI relativeHomeUri = relativeHome.toURI();
-		URL rulesUrl = URIUtil.resolve(relativeHomeUri, externalReference)
-			.toURL();
-		getLogger().info(consoleMarker, "External [ {} ] URL [ {} ]", referenceName, rulesUrl);
-
-		return PropertiesUtils.loadProperties(rulesUrl);
+		return PropertiesUtils.loadProperties(url);
 	}
 
 	protected void merge(String sinkName, Properties sink, String sourceName, Properties source,
@@ -691,7 +677,7 @@ public class Transformer {
 		throws IOException, URISyntaxException {
 		Properties substitutions;
 		if ( masterRef == null ) {
-			substitutions = loadInternalProperties(
+			substitutions = loadProperties0(
 				"Substitutions matching [ " + selector + " ]", substitutionsRef);
 		} else {
 			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
@@ -700,7 +686,7 @@ public class Transformer {
 					substitutionsRef, relativeSubstitutionsRef);
 			}
 
-			substitutions = loadExternalProperties(
+			substitutions = loadProperties0(
 				"Substitutions matching [ " + selector + " ]", relativeSubstitutionsRef);
 		}
 

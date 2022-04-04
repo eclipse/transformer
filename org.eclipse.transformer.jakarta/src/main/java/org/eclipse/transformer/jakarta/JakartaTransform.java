@@ -23,7 +23,6 @@ public class JakartaTransform {
 	public static final String	DEFAULT_BUNDLES_REFERENCE		= "jakarta-bundles.properties";
 	public static final String	DEFAULT_DIRECT_REFERENCE		= "jakarta-direct.properties";
 	public static final String	DEFAULT_MASTER_TEXT_REFERENCE	= "jakarta-text-master.properties";
-	public static final String	DEFAULT_PER_CLASS_CONSTANT_MASTER_REFERENCE	= "jakarta-per-class-constant-master.properties";
 
 	public static Function<String, URL> getRuleLoader() {
 		return JakartaTransform.class::getResource;
@@ -37,8 +36,6 @@ public class JakartaTransform {
 		optionDefaults.put("bundles", DEFAULT_BUNDLES_REFERENCE);
 		optionDefaults.put("direct", DEFAULT_DIRECT_REFERENCE);
 		optionDefaults.put("text", DEFAULT_MASTER_TEXT_REFERENCE);
-		optionDefaults.put("per-class-constant", DEFAULT_PER_CLASS_CONSTANT_MASTER_REFERENCE);
-
 		return optionDefaults;
 	}
 }
