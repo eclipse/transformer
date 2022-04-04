@@ -129,7 +129,7 @@ public class TransformProperties {
 
 	// packageName=version
 	//
-	// packageName=version,pName=version,...
+	// packageName=version;pName=version;...
 	//
 	// Use '\' to escape ';' and '=' special characters:
 	//

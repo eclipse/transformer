@@ -210,6 +210,9 @@ public class Transformer {
 
 	public AppOption getTargetOption(String targetText) {
 		for (AppOption appOption : TARGETABLE_RULES) {
+			if (targetText.equals(appOption.getLongTag())) {
+				return appOption;
+			}
 			if (targetText.equals(appOption.getShortTag())) {
 				return appOption;
 			}
