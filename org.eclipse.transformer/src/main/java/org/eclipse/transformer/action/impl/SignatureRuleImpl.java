@@ -38,6 +38,7 @@ import aQute.bnd.signatures.ThrowsSignature;
 import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.bnd.signatures.TypeVariableSignature;
+import aQute.libg.glob.Glob;
 
 public class SignatureRuleImpl implements SignatureRule {
 
@@ -123,11 +124,8 @@ public class SignatureRuleImpl implements SignatureRule {
 				Map<String, String> substitutions = entry.getValue();
 
 				if ((matchesFileName.indexOf('?') != -1) || (matchesFileName.indexOf('*') != -1)) {
-					matchesFileName = matchesFileName.replace("?", ".?")
-						.replace("*", ".*?");
-					Pattern matchPattern = Pattern.compile(matchesFileName);
+					Pattern matchPattern = Glob.toPattern(matchesFileName);
 					useWildCardTextUpdates.put(matchPattern, substitutions);
-
 				} else {
 					useSpecificTextUpdates.put(matchesFileName, substitutions);
 				}
