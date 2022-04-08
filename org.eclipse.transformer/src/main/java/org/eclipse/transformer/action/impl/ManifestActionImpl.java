@@ -14,7 +14,6 @@ package org.eclipse.transformer.action.impl;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -28,13 +27,14 @@ import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.ManifestWriter;
 import org.slf4j.Logger;
 
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
+import aQute.bnd.unmodifiable.Sets;
 import aQute.lib.io.ByteBufferOutputStream;
+import aQute.lib.manifest.ManifestUtil;
 
 public class ManifestActionImpl extends ActionImpl<Changes> {
 	public static final String	META_INF				= "META-INF/";
@@ -161,19 +161,8 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 		}
 	}
 
-	private static final Set<String> SELECT_ATTRIBUTES;
-
-	static {
-		Set<String> useNames = new HashSet<>();
-		useNames.add("DynamicImport-Package");
-		useNames.add("Import-Package");
-		useNames.add("Export-Package");
-		useNames.add("Subsystem-Content");
-		useNames.add("IBM-API-Package");
-		useNames.add("Provide-Capability");
-		useNames.add("Require-Capability");
-		SELECT_ATTRIBUTES = useNames;
-	}
+	private static final Set<String> SELECT_ATTRIBUTES = Sets.of("DynamicImport-Package", "Import-Package",
+		"Export-Package", "Subsystem-Content", "IBM-API-Package", "Provide-Capability", "Require-Capability");
 
 	public static Set<String> getSelectedAttributes() {
 		return SELECT_ATTRIBUTES;
@@ -227,7 +216,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	protected void writeAsManifest(Manifest manifest, OutputStream outputStream) throws IOException {
 		// manifest.write(outputStream);
-		ManifestWriter.write(manifest, outputStream);
+		ManifestUtil.write(manifest, outputStream);
 	}
 
 	// Copied and updated from:

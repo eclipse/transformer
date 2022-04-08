@@ -375,7 +375,7 @@ public class Transformer {
 			Map<String, String> substitutionRefs =
 				TransformProperties.convertPropertiesToMap(perClassConstantProperties);
 
-			Map<String, Map<String, String>> masterUpdates = new HashMap<String, Map<String, String>>();
+			Map<String, Map<String, String>> masterUpdates = new HashMap<>();
 			for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
 				String classSelector = substitutionRefEntry.getKey();
 				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
@@ -475,7 +475,7 @@ public class Transformer {
 		Set<String> orphanedFinalPackages) {
 
 		if ( packageRenames == null ) {
-			packageRenames = new HashMap<String, String>();
+			packageRenames = new HashMap<>();
 			getLogger().info(consoleMarker, "Package renames forced by immediate data.");
 		}
 

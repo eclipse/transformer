@@ -11,7 +11,7 @@
 
 @Version("1.0.0")
 @Export
-package org.eclipse.transformer.util;
+package org.eclipse.transformer.bnd.analyzer;
 
 import org.osgi.annotation.bundle.Export;
 import org.osgi.annotation.versioning.Version;

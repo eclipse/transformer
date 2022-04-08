@@ -9,9 +9,27 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-@Version("1.0.0")
-@Export
-package org.eclipse.transformer.util;
+package org.eclipse.transformer.test.impl;
 
-import org.osgi.annotation.bundle.Export;
-import org.osgi.annotation.versioning.Version;
+import javax.enterprise.concurrent.ManageableThread;
+
+import org.eclipse.transformer.test.api.Ball;
+import org.osgi.service.component.annotations.Component;
+
+@Component
+public class BallImpl implements Ball, ManageableThread {
+	@Override
+	public void inflate() {
+
+	}
+
+	@Override
+	public void kick() {
+
+	}
+
+	@Override
+	public boolean isShutdown() {
+		return false;
+	}
+}

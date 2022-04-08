@@ -9,9 +9,14 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-@Version("1.0.0")
-@Export
-package org.eclipse.transformer.util;
+package org.eclipse.transformer.test.api;
 
-import org.osgi.annotation.bundle.Export;
-import org.osgi.annotation.versioning.Version;
+import javax.annotation.Priority;
+import javax.enterprise.concurrent.AbortedException;
+
+@Priority(10)
+public interface Ball {
+	void inflate();
+
+	void kick() throws AbortedException;
+}

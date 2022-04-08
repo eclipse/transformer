@@ -9,9 +9,15 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-@Version("1.0.0")
-@Export
-package org.eclipse.transformer.util;
+package org.eclipse.transformer.test.api;
 
-import org.osgi.annotation.bundle.Export;
-import org.osgi.annotation.versioning.Version;
+import javax.annotation.Priority;
+import javax.inject.Named;
+
+@Priority(20)
+public interface Player {
+	@Named("ball")
+	Ball getBall();
+
+	void kickBall();
+}
