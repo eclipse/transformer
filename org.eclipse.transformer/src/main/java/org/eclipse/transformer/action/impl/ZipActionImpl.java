@@ -95,7 +95,8 @@ public class ZipActionImpl extends ContainerActionImpl {
 		byte[] copyBuffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
 
 		try {
-			for (ZipEntry inputEntry; (inputEntry = zipInputStream.getNextEntry()) != null;) {
+			for (ZipEntry inputEntry; (inputEntry = zipInputStream
+				.getNextEntry()) != null; prevName = inputName, inputName = null) {
 				// Sanitize inputName to avoid ZipSlip
 				inputName = cleanPath(inputEntry.getName());
 				int inputLength = Math.toIntExact(inputEntry.getSize());
@@ -108,10 +109,14 @@ public class ZipActionImpl extends ContainerActionImpl {
 					if (acceptedAction == null) {
 						recordUnaccepted(inputName);
 						copy(inputEntry, zipInputStream, zipOutputStream, copyBuffer);
-					} else if (!select(inputName)) {
+						continue;
+					}
+					if (!select(inputName)) {
 						recordUnselected(acceptedAction, inputName);
 						copy(inputEntry, zipInputStream, zipOutputStream, copyBuffer);
-					} else if (acceptedAction.useStreams()) {
+						continue;
+					}
+					if (acceptedAction.useStreams()) {
 						/*
 						 * Archive type actions are processed using streams,
 						 * while non-archive type actions do a full read of the
@@ -131,44 +136,41 @@ public class ZipActionImpl extends ContainerActionImpl {
 						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
 						recordTransform(acceptedAction, inputName);
 						zipOutputStream.closeEntry();
-					} else {
-						ByteData inputData = acceptedAction.collect(inputName, zipInputStream, inputLength);
-						ByteData outputData;
-						try {
-							outputData = acceptedAction.apply(inputData);
-							recordTransform(acceptedAction, inputName);
-						} catch (TransformException t) {
-							// Fall back and copy
-							outputData = inputData;
-							getLogger().error(t.getMessage(), t);
-						}
-
-						// Sanitize outputName to avoid ZipSlip
-						String outputName = cleanPath(outputData.name());
-						ZipEntry outputEntry = new ZipEntry(outputName);
-						outputEntry.setMethod(inputEntry.getMethod());
-						outputEntry.setExtra(inputEntry.getExtra());
-						outputEntry.setComment(inputEntry.getComment());
-						ByteBuffer buffer = outputData.buffer();
-						if (outputEntry.getMethod() == ZipOutputStream.STORED) {
-							outputEntry.setSize(buffer.remaining());
-							outputEntry.setCompressedSize(buffer.remaining());
-							CRC32 crc = new CRC32();
-							buffer.mark();
-							crc.update(buffer);
-							buffer.reset();
-							outputEntry.setCrc(crc.getValue());
-						}
-						zipOutputStream.putNextEntry(outputEntry);
-						IO.copy(buffer, zipOutputStream);
-						zipOutputStream.closeEntry();
+						continue;
 					}
+					ByteData inputData = acceptedAction.collect(inputName, zipInputStream, inputLength);
+					ByteData outputData;
+					try {
+						outputData = acceptedAction.apply(inputData);
+						recordTransform(acceptedAction, inputName);
+					} catch (TransformException t) {
+						// Fall back and copy
+						outputData = inputData;
+						getLogger().error(t.getMessage(), t);
+					}
+
+					// Sanitize outputName to avoid ZipSlip
+					String outputName = cleanPath(outputData.name());
+					ZipEntry outputEntry = new ZipEntry(outputName);
+					outputEntry.setMethod(inputEntry.getMethod());
+					outputEntry.setExtra(inputEntry.getExtra());
+					outputEntry.setComment(inputEntry.getComment());
+					ByteBuffer buffer = outputData.buffer();
+					if (outputEntry.getMethod() == ZipOutputStream.STORED) {
+						outputEntry.setSize(buffer.remaining());
+						outputEntry.setCompressedSize(buffer.remaining());
+						CRC32 crc = new CRC32();
+						buffer.mark();
+						crc.update(buffer);
+						buffer.reset();
+						outputEntry.setCrc(crc.getValue());
+					}
+					zipOutputStream.putNextEntry(outputEntry);
+					IO.copy(buffer, zipOutputStream);
+					zipOutputStream.closeEntry();
 				} catch (Exception e) {
 					getLogger().error("Transform failure [ {} ]", inputName, e);
 				}
-
-				prevName = inputName;
-				inputName = null;
 			}
 		} catch (IOException e) {
 			String message;
