@@ -111,10 +111,14 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 			if (selectedAction == null) {
 				recordUnaccepted(inputName);
 				copy(inputName, inputFile, outputFolder);
-			} else if (!select(inputName)) {
+				return;
+			}
+			if (!select(inputName)) {
 				recordUnselected(selectedAction, inputName);
 				copy(inputName, inputFile, outputFolder);
-			} else if (selectedAction.getActionType() == ActionType.NULL) {
+				return;
+			}
+			if (selectedAction.getActionType() == ActionType.NULL) {
 				/*
 				 * For the NULL action type, we are not transforming the
 				 * inputFile, so we use the optimized file-to-file apply method.
@@ -122,34 +126,34 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 				File outputFile = new File(outputFolder, inputName);
 				selectedAction.apply(inputName, inputFile, outputFile);
 				recordTransform(selectedAction, inputName);
-			} else {
-				ByteData inputData;
-				try (InputStream inputStream = IO.stream(inputFile)) {
-					inputData = selectedAction.collect(inputName, inputStream, Math.toIntExact(inputFile.length()));
-				} catch (IOException e) {
-					throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
+				return;
+			}
+			ByteData inputData;
+			try (InputStream inputStream = IO.stream(inputFile)) {
+				inputData = selectedAction.collect(inputName, inputStream, Math.toIntExact(inputFile.length()));
+			} catch (IOException e) {
+				throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
+			}
+			ByteData outputData;
+			try {
+				outputData = selectedAction.apply(inputData);
+				recordTransform(selectedAction, inputName);
+				if (selectedAction.getLastActiveChanges()
+					.hasChanges()) {
+					getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", selectedAction.getClass()
+						.getSimpleName(), inputName, outputData.name());
 				}
-				ByteData outputData;
-				try {
-					outputData = selectedAction.apply(inputData);
-					recordTransform(selectedAction, inputName);
-					if (selectedAction.getLastActiveChanges()
-						.hasChanges()) {
-						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", selectedAction.getClass()
-							.getSimpleName(), inputName, outputData.name());
-					}
-				} catch (TransformException t) {
-					// Fall back and copy
-					outputData = inputData;
-					getLogger().error(t.getMessage(), t);
-				}
-				File outputFile = new File(outputFolder, outputData.name());
-				IO.mkdirs(outputFile.getParentFile());
-				try (OutputStream outputStream = IO.outputStream(outputFile)) {
-					write(outputData, outputStream);
-				} catch (IOException e) {
-					throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
-				}
+			} catch (TransformException t) {
+				// Fall back and copy
+				outputData = inputData;
+				getLogger().error(t.getMessage(), t);
+			}
+			File outputFile = new File(outputFolder, outputData.name());
+			IO.mkdirs(outputFile.getParentFile());
+			try (OutputStream outputStream = IO.outputStream(outputFile)) {
+				write(outputData, outputStream);
+			} catch (IOException e) {
+				throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
 			}
 		} catch (Exception e) {
 			getLogger().error("Transform failure [ {} ]", inputName, e);
