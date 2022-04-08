@@ -175,7 +175,7 @@ public class TransformerCLI implements TransformOptions {
 		preInitDisplay("");
 	}
 
-	private static final String TRANSFORMER_BUILD_PROPERTIES = "META-INF/maven/org.eclipse.transformer/org.eclipse.transformer/pom.properties";
+	private static final String TRANSFORMER_BUILD_PROPERTIES = "META-INF/maven/org.eclipse.transformer/org.eclipse.transformer.cli/pom.properties";
 
 	private Properties getBuildProperties() {
 		Properties useProperties;
