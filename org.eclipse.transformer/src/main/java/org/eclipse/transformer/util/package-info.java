@@ -9,4 +9,9 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
+@Version("1.0.0")
+@Export
 package org.eclipse.transformer.util;
+
+import org.osgi.annotation.bundle.Export;
+import org.osgi.annotation.versioning.Version;
