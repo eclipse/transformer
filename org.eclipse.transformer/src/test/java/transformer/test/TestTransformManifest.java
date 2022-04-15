@@ -11,6 +11,7 @@
 
 package transformer.test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,11 +45,23 @@ import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
 	private Properties prior;
+	private Map<String, String>	packageRenames;
+	private Map<String, String>	packageVersions;
+	protected Map<String, Map<String, String>>	specificPackageVersions;
 
 	@BeforeEach
-	public void setUp() {
+	public void setUp() throws IOException {
 		prior = new Properties();
 		prior.putAll(System.getProperties());
+		Properties renameProperties = PropertiesUtils
+			.loadProperties(getClass().getResourceAsStream("manifest-renames.properties"));
+		packageRenames = TransformProperties.getPackageRenames(renameProperties);
+
+		packageVersions = new HashMap<>();
+		specificPackageVersions = new HashMap<>();
+		Properties versionProperties = PropertiesUtils
+			.loadProperties(getClass().getResourceAsStream("manifest-versions.properties"));
+		TransformProperties.setPackageVersions(versionProperties, packageVersions, specificPackageVersions);
 	}
 
 	@AfterEach
@@ -63,17 +76,11 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_ANNOTATION_SECURITY			= "jakarta.annotation.security";
 
 	public static final String	JAVAX_SERVLET						= "javax.servlet";
-	public static final String	JAVAX_SERVLET_ANNOTATION			= "javax.servlet.annotation";
-	public static final String	JAVAX_SERVLET_DESCRIPTOR			= "javax.servlet.descriptor";
 	public static final String	JAVAX_SERVLET_HTTP					= "javax.servlet.http";
-	public static final String	JAVAX_SERVLET_RESOURCES				= "javax.servlet.resources";
 	public static final String	JAVAX_SERVLET_SCI					= "javax.servlet.ServletContainerInitializer";
 
 	public static final String	JAKARTA_SERVLET						= "jakarta.servlet";
-	public static final String	JAKARTA_SERVLET_ANNOTATION			= "jakarta.servlet.annotation";
-	public static final String	JAKARTA_SERVLET_DESCRIPTOR			= "jakarta.servlet.descriptor";
 	public static final String	JAKARTA_SERVLET_HTTP				= "jakarta.servlet.http";
-	public static final String	JAKARTA_SERVLET_RESOURCES			= "jakarta.servlet.resources";
 	public static final String	JAKARTA_SERVLET_SCI					= "jakarta.servlet.ServletContainerInitializer";
 
 	public static final String	JAVAX_TRANSACTION					= "javax.transaction";
@@ -88,20 +95,6 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_TRANSACTION_TSR				= "jakarta.transaction.TransactionSynchronizationRegistry";
 	public static final String	JAKARTA_TRANSACTION_UT				= "jakarta.transaction.UserTransaction";
 
-	public static final String	JAKARTA_SERVLET_VERSION				= "[2.6, 6.0)";
-	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION	= "[2.6, 6.0)";
-	public static final String	JAKARTA_SERVLET_DESCRIPTOR_VERSION	= "[2.6, 6.0)";
-
-	// Leave out "jakarta.servlet.http": That gives us a slot to test having
-	// a specific version update where there is no generic version update.
-	// public static final String	JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
-
-	public static final String	JAKARTA_SERVLET_RESOURCES_VERSION	= "[2.6, 6.0)";
-
-	public static final String	JAKARTA_SERVLET_VERSION_IMPORT				= "5.0";
-	public static final String	JAKARTA_SERVLET_HTTP_VERSION_IMPORT         = "6.0";
-	public static final String	JAKARTA_SERVLET_ANNOTATION_VERSION_EXPORT	= "[3.0, 6.0)";
-
 	public Set<String> getIncludes() {
 		return Collections.emptySet();
 	}
@@ -110,43 +103,11 @@ public class TestTransformManifest extends CaptureTest {
 		return Collections.emptySet();
 	}
 
-	protected Map<String, String> packageRenames;
-
 	public Map<String, String> getPackageRenames() {
-		if (packageRenames == null) {
-			packageRenames = new HashMap<>();
-			packageRenames.put(JAVAX_ANNOTATION, JAKARTA_ANNOTATION);
-			packageRenames.put(JAVAX_ANNOTATION_SECURITY, JAKARTA_ANNOTATION_SECURITY);
-
-			packageRenames.put(JAVAX_SERVLET, JAKARTA_SERVLET);
-			packageRenames.put(JAVAX_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION);
-			packageRenames.put(JAVAX_SERVLET_DESCRIPTOR, JAKARTA_SERVLET_DESCRIPTOR);
-			packageRenames.put(JAVAX_SERVLET_HTTP, JAKARTA_SERVLET_HTTP);
-			packageRenames.put(JAVAX_SERVLET_RESOURCES, JAKARTA_SERVLET_RESOURCES);
-			packageRenames.put(JAVAX_SERVLET_SCI, JAKARTA_SERVLET_SCI);
-
-			packageRenames.put(JAVAX_TRANSACTION, JAKARTA_TRANSACTION);
-			// Do not rename javax.transaction.xa
-			packageRenames.put(JAVAX_TRANSACTION_TM, JAKARTA_TRANSACTION_TM);
-			packageRenames.put(JAVAX_TRANSACTION_TSR, JAKARTA_TRANSACTION_TSR);
-			packageRenames.put(JAVAX_TRANSACTION_UT, JAKARTA_TRANSACTION_UT);
-		}
 		return packageRenames;
 	}
 
-	protected Map<String, String> packageVersions;
-
 	public Map<String, String> getPackageVersions() {
-		if (packageVersions == null) {
-			packageVersions = new HashMap<>();
-			packageVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION);
-			packageVersions.put(JAKARTA_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION);
-			packageVersions.put(JAKARTA_SERVLET_DESCRIPTOR, JAKARTA_SERVLET_DESCRIPTOR_VERSION);
-			// Leave out "jakarta.servlet.http": That gives us a slot to test having
-			// a specific version update where there is no generic version update.
-			// packageVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION);
-			packageVersions.put(JAKARTA_SERVLET_RESOURCES, JAKARTA_SERVLET_RESOURCES_VERSION);
-		}
 		return packageVersions;
 	}
 
@@ -159,23 +120,7 @@ public class TestTransformManifest extends CaptureTest {
 	// "Provide-Capability"
 	// "Require-Capability"
 
-	protected Map<String, Map<String, String>> specificPackageVersions;
-
 	public Map<String, Map<String, String>> getSpecificPackageVersions() {
-		if ( specificPackageVersions == null ) {
-			specificPackageVersions = new HashMap<>();
-
-			Map<String, String> importVersions = new HashMap<>(1);
-			importVersions.put(JAKARTA_SERVLET, JAKARTA_SERVLET_VERSION_IMPORT);
-			// Note that 'jakarta.servlet.http' does NOT have a generic update.
-			importVersions.put(JAKARTA_SERVLET_HTTP, JAKARTA_SERVLET_HTTP_VERSION_IMPORT);
-			specificPackageVersions.put("Import-Package", importVersions);
-
-			Map<String, String> exportVersions = new HashMap<>(1);
-			exportVersions.put(JAKARTA_SERVLET_ANNOTATION, JAKARTA_SERVLET_ANNOTATION_VERSION_EXPORT);
-			specificPackageVersions.put("Export-Package", exportVersions);
-		}
-
 		return specificPackageVersions;
 	}
 
@@ -410,19 +355,15 @@ public class TestTransformManifest extends CaptureTest {
 
 			int numLines = outputLines.size();
 
-			if ( numLines != expectedLines.size() ) {
-				System.out.println("Actual output lines [ " + numLines + " ] Expected [ " + expectedLines.size() + " ]");
-				Assertions.assertEquals(expectedLines.size(), numLines, "Incorrect number of output lines");
-			}
+			assertThat(outputLines).as("Incorrect number of output lines")
+				.hasSameSizeAs(inputLines);
 
 			for ( int lineNo = 0; lineNo < numLines; lineNo++ ) {
 				String actualLine = outputLines.get(lineNo);
 				String expectedLine = expectedLines.get(lineNo);
 
-				if ( !actualLine.equals(expectedLine) ) {
-					System.out.println("Line [ " + lineNo + " ] actual unequal to expected");
-					Assertions.assertEquals(actualLine, expectedLine, "Line [ " + lineNo + " ] mismatch");
-				}
+				assertThat(actualLine).as("Line [ %s ] mismatch", lineNo)
+					.isEqualTo(expectedLine);
 			}
 		}
 
@@ -436,10 +377,8 @@ public class TestTransformManifest extends CaptureTest {
 			System.out.println("Verify identity update [ " + inputPath + " ]");
 
 			String errorMessage = validate(outputLines, identityUpdates);
-			if (errorMessage != null) {
-				System.out.println("Bundle identity update failure: " + errorMessage);
-				Assertions.assertNull(errorMessage, "Bundle identity update failure");
-			}
+			assertThat(errorMessage).as("Bundle identity update failure")
+				.isNull();
 		}
 
 		System.out.println("Transform [ " + inputPath + " ] using [ " + manifestAction.getName() + " ] ... done");
@@ -948,23 +887,23 @@ public class TestTransformManifest extends CaptureTest {
 
 	// No overrides.  All use the generic version update.
 	public static final String SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT =
-		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
-		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		"jakarta.servlet;version=\"[2.6,6.0)\"" +
+		",jakarta.servlet.annotation;version=\"[2.6,6.0)\"" +
 		",jakarta.servlet.http;version=\"4.0.0\"" +
 		",jakarta.annotation.security;version=\"4.0.0\"";
 
 	// "jakarta.servlet" is overridden.
 	public static final String SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT =
 		"jakarta.servlet;version=\"5.0\"" +
-		",jakarta.servlet.annotation;version=\"[2.6, 6.0)\"" +
+		",jakarta.servlet.annotation;version=\"[2.6,6.0)\"" +
 		",jakarta.servlet.http;version=\"6.0\"" +
 		",jakarta.annotation.security;version=\"4.0.0\"";
 
 	// "jakarta.servlet.annotation" is overridden.
 	public static final String SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT =
-		"jakarta.servlet;version=\"[2.6, 6.0)\"" +
-		",jakarta.servlet.annotation;version=\"[3.0, 6.0)\"" +
-		",jakarta.servlet.http;version=\"4.0.0\"" +
+		"jakarta.servlet;version=\"6.0\"" +														//
+			",jakarta.servlet.annotation;version=\"6.0\"" +										//
+			",jakarta.servlet.http;version=\"6.0\"" +											//
 		",jakarta.annotation.security;version=\"4.0.0\"";
 
 	@Test
@@ -972,13 +911,16 @@ public class TestTransformManifest extends CaptureTest {
 		ManifestActionImpl_Test specificManifestAction = getSpecificManifestAction();
 
 		String dynamicOutput = specificManifestAction.callReplacePackages(DYNAMIC_IMPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
-		assertEquals(SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT, dynamicOutput, "'DynamicImport-Package' transform failure");
+		assertThat(dynamicOutput).as("'DynamicImport-Package' transform failure")
+			.isEqualTo(SPECIFIC_ATTRIBUTE_DYNAMIC_OUTPUT);
 
 		String importOutput = specificManifestAction.callReplacePackages(IMPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
-		assertEquals(SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT, importOutput, "'Import-Packages' transform failure");
+		assertThat(importOutput).as("'Import-Packages' transform failure")
+			.isEqualTo(SPECIFIC_ATTRIBUTE_IMPORT_OUTPUT);
 
 		String exportOutput = specificManifestAction.callReplacePackages(EXPORT_PACKAGE, SPECIFIC_ATTRIBUTE_INPUT);
-		assertEquals(SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT, exportOutput, "'Export-Packages' transform failure");
+		assertThat(exportOutput).as("'Export-Packages' transform failure")
+			.isEqualTo(SPECIFIC_ATTRIBUTE_EXPORT_OUTPUT);
 	}
 
 	public static final String MANIFEST_PATH_SPECIFIC =
@@ -995,126 +937,5 @@ public class TestTransformManifest extends CaptureTest {
 			UNUSED_OCCURRENCES,
 			UNUSED_IDENTITY_UPDATES,
 			getSpecificJakartaManifestAction());
-	}
-
-	public Properties loadProperties(String path) throws IOException {
-		try ( InputStream inputStream = TestUtils.getResourceStream(path) ) {
-			return PropertiesUtils.loadProperties(inputStream);
-		}
-	}
-
-	public static final String SPECIFIC_VERSION_PROPERTIES_PATH =
-		"transformer/test/data/specific/version.properties";
-
-	@Test
-	public void testSpecificProperties() throws Exception {
-		Map<String, String> expectedGeneric = getPackageVersions();
-		Map<String, Map<String, String>> expectedSpecific = getSpecificPackageVersions();
-
-		Map<String, String> loadedGeneric = new HashMap<>();
-		Map<String, Map<String, String>> loadedSpecific = new HashMap<>();
-		Properties properties = loadProperties(SPECIFIC_VERSION_PROPERTIES_PATH);
-		TransformProperties.setPackageVersions(properties, loadedGeneric, loadedSpecific);
-
-		validateMap("Generic version updates", loadedGeneric, expectedGeneric);
-		validateMap("Specific version updates", loadedGeneric, expectedGeneric);
-	}
-
-	public void validateSize(String tag, Map<?, ?> actual, Map<?, ?> expected) {
-		int actualSize = actual.keySet().size();
-		int expectedSize = expected.keySet().size();
-
-		String prefix = "Properties [ " + tag + " ]";
-		if ( actualSize != expectedSize ) {
-			String msg = prefix + ": Wrong size";
-			System.out.println(msg +
-				": Expected [ " + expectedSize + " ]" +
-				": Actual [ " + actualSize + " ]");
-			Assertions.assertEquals(expectedSize, actualSize, msg);
-		} else {
-			System.out.println(prefix + ": Size [ " + actualSize + " ]");
-		}
-	}
-
-	public void validateMaps(String tag,
-		Map<String, Map<String, String>> actual,
-		Map<String, Map<String, String>> expected) {
-
-		System.out.println("Validating [ " + tag + " ] properties");
-
-		String prefix = "Properties [ " + tag + " ]";
-
-		validateSize(tag, actual, expected);
-
-		for ( String actualKey : actual.keySet() ) {
-			boolean expectKey = expected.containsKey(actualKey);
-
-			if ( !expectKey ) {
-				String msg = prefix + ": Extra key [ " + actualKey + " ]";
-				System.out.println(msg);
-				Assertions.assertTrue(expectKey, msg);
-			}
-		}
-
-		for ( String expectedKey : expected.keySet() ) {
-			boolean foundKey = actual.containsKey(expectedKey);
-
-			if ( !foundKey) {
-				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
-				System.out.println(msg);
-				Assertions.assertTrue(foundKey, msg);
-			}
-		}
-
-		for ( String actualKey : actual.keySet() ) {
-			validateMap(tag + " [ " + actualKey + " ]", actual.get(actualKey), expected.get(actualKey));
-		}
-	}
-
-	public void validateMap(String tag,
-		Map<String, String> actual,
-		Map<String, String> expected) {
-
-		System.out.println("Validating [ " + tag + " ] properties");
-
-		String prefix = "Properties [ " + tag + " ]";
-
-		validateSize(tag, actual, expected);
-
-		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
-			String actualKey = actualEntry.getKey();
-			String actualValue = actualEntry.getValue();
-
-			String expectedValue = expected.get(actualKey);
-
-			if ( expectedValue == null ) {
-				String msg = prefix + ": Extra key [ " + actualKey + " ]";
-				System.out.println(msg);
-				Assertions.assertNotNull(expectedValue, msg);
-			}
-
-			if ( !actualValue.equals(expectedValue) ) {
-				String msg = prefix + ": Incorrect value for [ " + actualKey + " ]";
-				System.out.println(msg +
-					": Actual value [ " + actualValue + " ]" +
-					": expected value [ " + expectedValue + " ]");
-				Assertions.assertEquals(expectedValue, actualValue, msg);
-			}
-		}
-
-		for ( Map.Entry<String, String> expectedEntry : expected.entrySet() ) {
-			String expectedKey = expectedEntry.getKey();
-			String expectedValue = expectedEntry.getValue();
-
-			String actualValue = actual.get(expectedKey);
-
-			if ( actualValue == null ) {
-				String msg = prefix + ": Missing key [ " + expectedKey + " ]";
-				System.out.println(msg);
-				Assertions.assertNotNull(actualValue, msg);
-			}
-
-			// The values were checked in the first loop.
-		}
 	}
 }
