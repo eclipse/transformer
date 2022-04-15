@@ -63,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import aQute.bnd.unmodifiable.Sets;
 import aQute.lib.io.IO;
 import aQute.libg.uri.URIUtil;
 
@@ -200,13 +201,9 @@ public class Transformer {
 		return buffer;
 	}
 
-	public static final AppOption[] TARGETABLE_RULES = new AppOption[] {
-		AppOption.RULES_SELECTIONS,
-
-		AppOption.RULES_RENAMES, AppOption.RULES_VERSIONS, AppOption.RULES_DIRECT, AppOption.RULES_PER_CLASS_CONSTANT,
-
-		AppOption.RULES_BUNDLES, AppOption.RULES_MASTER_TEXT
-	};
+	public static final Set<AppOption> TARGETABLE_RULES = Sets.of(AppOption.RULES_SELECTIONS, AppOption.RULES_RENAMES,
+		AppOption.RULES_VERSIONS, AppOption.RULES_DIRECT, AppOption.RULES_PER_CLASS_CONSTANT, AppOption.RULES_BUNDLES,
+		AppOption.RULES_MASTER_TEXT);
 
 	public AppOption getTargetOption(String targetText) {
 		for (AppOption appOption : TARGETABLE_RULES) {
