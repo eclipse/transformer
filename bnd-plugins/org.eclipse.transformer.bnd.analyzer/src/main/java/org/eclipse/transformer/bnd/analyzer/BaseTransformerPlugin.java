@@ -61,7 +61,8 @@ public class BaseTransformerPlugin implements Plugin {
 			return false;
 		}
 
-		TransformOptions options = new TransformerPluginOptions(parameters, getOptionDefaults(), getRuleLoader());
+		TransformOptions options = new TransformerPluginOptions(analyzer, parameters, getOptionDefaults(),
+			getRuleLoader());
 		Transformer transformer = new Transformer(getLogger(), options);
 
 		boolean validRules;
