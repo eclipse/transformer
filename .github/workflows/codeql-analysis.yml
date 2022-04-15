@@ -36,11 +36,13 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     permissions:
-      # required for all workflows
-      security-events: write
+      security-events: write  # for github/codeql-action/analyze to upload SARIF results
     strategy:
       fail-fast: false
       matrix:
