@@ -15,9 +15,11 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.eclipse.transformer.AppOption;
@@ -32,18 +34,48 @@ public class TransformerPluginOptions implements TransformOptions {
 	private final Map<String, String>	optionDefaults;
 	private final Function<String, URL>	ruleLoader;
 
-	public TransformerPluginOptions(Parameters parameters, Map<String, String> optionDefaults,
+	public TransformerPluginOptions(Processor processor, Parameters parameters, Map<String, String> optionDefaults,
 		Function<String, URL> ruleLoader) {
 		this.parameters = requireNonNull(parameters);
 		this.optionDefaults = requireNonNull(optionDefaults);
 		this.ruleLoader = requireNonNull(ruleLoader);
+		AppOption[] values = AppOption.values();
+		parameters.forEach((key, args) -> {
+			String tag = Processor.removeDuplicateMarker(key);
+			Optional<AppOption> matching = Arrays.stream(values)
+				.filter(option -> {
+					String longTag = option.getLongTag();
+					String shortTag = option.getShortTag();
+					return Objects.equals(longTag, tag) || Objects.equals(shortTag, tag);
+				})
+				.findFirst();
+			if (matching.isPresent()) {
+				AppOption appOption = matching.get();
+				if (appOption.getHasArg() || appOption.getHasArgs()) {
+					if (args.isEmpty()) {
+						processor.warning("The transformer option %s requires arguments", tag);
+					}
+				} else if (appOption.getHasArgCount()) {
+					if (appOption.getArgCount() != args.size()) {
+						processor.warning("The transformer option %s requires %d arguments", tag,
+							appOption.getArgCount());
+					}
+				}
+			} else {
+				processor.error("The transformer option %s is unrecognized", tag);
+			}
+		});
 	}
 
 	private List<String> keys(AppOption option) {
 		String longTag = option.getLongTag();
+		String shortTag = option.getShortTag();
 		List<String> keys = parameters.keySet()
 			.stream()
-			.filter(key -> Objects.equals(longTag, Processor.removeDuplicateMarker(key)))
+			.filter(key -> {
+				String tag = Processor.removeDuplicateMarker(key);
+				return Objects.equals(longTag, tag) || Objects.equals(shortTag, tag);
+			})
 			.collect(toList());
 		return keys;
 	}
@@ -89,6 +121,10 @@ public class TransformerPluginOptions implements TransformOptions {
 	public String getDefaultValue(AppOption option) {
 		String longTag = option.getLongTag();
 		String defaultValue = optionDefaults.get(longTag);
+		if (defaultValue == null) {
+			String shortTag = option.getShortTag();
+			defaultValue = optionDefaults.get(shortTag);
+		}
 		return defaultValue;
 	}
 

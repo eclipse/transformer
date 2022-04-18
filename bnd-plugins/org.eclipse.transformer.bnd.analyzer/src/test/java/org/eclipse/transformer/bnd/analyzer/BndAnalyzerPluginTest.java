@@ -205,19 +205,23 @@ class BndAnalyzerPluginTest {
 	@Test
 	void options_test() throws Exception {
 		try (Processor processor = new Processor()) {
-			processor.setProperty("-transformer", "bundles;arg=value1");
+			processor.setProperty("-transformer", "tb;arg=value1");
 			processor.setProperty("-transformer.overwrite", "overwrite");
 			processor.setProperty("-transformer.morebundles", "bundles;arg=value2");
 			processor.setProperty("-transformer.immediate",
 				"immediate;option=tv;package=org.eclipse.transformer.test.api;version=\"[2.0\\,3.0);Export-Package=2.0.0\"");
 			Parameters parameters = processor.decorated("-transformer", true);
-			Map<String, String> defaultValues = Maps.of("bundles", "value3");
-			TransformOptions options = new TransformerPluginOptions(parameters, defaultValues, getClass()::getResource);
-
+			Map<String, String> defaultValues = Maps.of("bundles", "value3", "o", "true");
+			TransformOptions options = new TransformerPluginOptions(processor, parameters, defaultValues,
+				getClass()::getResource);
+			assertThat(processor.check())
+				.as("Errors:\n%s\nWarnings:\n%s", processor.getErrors(), processor.getWarnings())
+				.isTrue();
 			assertThat(options.getDefaultValue(AppOption.RULES_BUNDLES)).isEqualTo("value3");
 			assertThat(options.getOptionValue(AppOption.RULES_BUNDLES)).isEqualTo("value1");
 			assertThat(options.getOptionValues(AppOption.RULES_BUNDLES)).containsExactly("value1", "value2");
 
+			assertThat(options.getDefaultValue(AppOption.OVERWRITE)).isEqualTo("true");
 			assertThat(options.hasOption(AppOption.OVERWRITE)).isTrue();
 			assertThat(options.getOptionValues(AppOption.OVERWRITE)).isEmpty();
 			assertThat(options.getOptionValue(AppOption.OVERWRITE)).isNull();
@@ -228,6 +232,28 @@ class BndAnalyzerPluginTest {
 
 			assertThat(options.getOptionValues(AppOption.RULES_IMMEDIATE_DATA)).containsExactly("tv",
 				"org.eclipse.transformer.test.api", "[2.0\\,3.0);Export-Package=2.0.0");
+		}
+	}
+
+	@Test
+	void options_test_validation() throws Exception {
+		try (Processor processor = new Processor()) {
+			processor.setProperty("-transformer", "tb;overwrite,foo,renames");
+			processor.setProperty("-transformer.immediate", "immediate;option=versions");
+			Parameters parameters = processor.decorated("-transformer", true);
+			Map<String, String> defaultValues = Maps.of("bundles", "value3", "o", "true");
+			TransformOptions options = new TransformerPluginOptions(processor, parameters, defaultValues,
+				getClass()::getResource);
+			assertThat(processor.check("The transformer option tb requires arguments",
+				"The transformer option foo is unrecognized", "The transformer option renames requires arguments",
+				"The transformer option immediate requires 3 arguments"))
+				.as("Errors:\n%s\nWarnings:\n%s", processor.getErrors(), processor.getWarnings())
+				.isTrue();
+
+			assertThat(options.getDefaultValue(AppOption.OVERWRITE)).isEqualTo("true");
+			assertThat(options.hasOption(AppOption.OVERWRITE)).isTrue();
+			assertThat(options.getOptionValues(AppOption.OVERWRITE)).isEmpty();
+			assertThat(options.getOptionValue(AppOption.OVERWRITE)).isNull();
 		}
 	}
 }
