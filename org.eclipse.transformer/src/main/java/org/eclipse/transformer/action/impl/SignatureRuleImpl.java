@@ -346,7 +346,7 @@ public class SignatureRuleImpl implements SignatureRule {
 
 	@Override
 	public String replacePackages(String text) {
-		return replacePackages(text, this.dottedPackageRenames);
+		return replacePackages(text, getPackageRenames());
 	}
 
 	/**
