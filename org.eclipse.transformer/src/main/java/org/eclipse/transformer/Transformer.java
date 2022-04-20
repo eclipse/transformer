@@ -48,9 +48,9 @@ import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
-import org.eclipse.transformer.action.impl.NullActionImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.RarActionImpl;
+import org.eclipse.transformer.action.impl.RenameActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
@@ -1102,7 +1102,7 @@ public class Transformer {
 
 			ContainerActionImpl zipAction = useRootAction.addUsing(ZipActionImpl::new);
 
-			Action nullAction = useRootAction.addUsing(NullActionImpl::new);
+			Action renameAction = useRootAction.addUsing(RenameActionImpl::new);
 
 			// Directory actions know about all actions except for directory
 			// actions.
@@ -1180,16 +1180,16 @@ public class Transformer {
 				zipAction.addAction(zipAction);
 			}
 
-			// Null actions must be added last: The null
+			// Rename actions must be added last: The rename action
 			// is always selected, which prevents selection of
-			// any action added after the null action.
+			// any action added after the rename action.
 
-			directoryAction.addAction(nullAction);
-			jarAction.addAction(nullAction);
-			warAction.addAction(nullAction);
-			rarAction.addAction(nullAction);
-			earAction.addAction(nullAction);
-			zipAction.addAction(nullAction);
+			directoryAction.addAction(renameAction);
+			jarAction.addAction(renameAction);
+			warAction.addAction(renameAction);
+			rarAction.addAction(renameAction);
+			earAction.addAction(renameAction);
+			zipAction.addAction(renameAction);
 
 			rootAction = useRootAction;
 		}

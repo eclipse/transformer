@@ -108,13 +108,6 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 		getActiveChanges().record(action);
 	}
 
-	// Byte base container conversion is not supported.
-
-	@Override
-	public boolean useStreams() {
-		return true;
-	}
-
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());

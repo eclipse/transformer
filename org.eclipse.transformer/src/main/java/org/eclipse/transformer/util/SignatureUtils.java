@@ -227,4 +227,24 @@ public final class SignatureUtils {
 			}
 		}
 	}
+
+	private static final String	CLASS_EXTENSION			= ".class";
+	private static final int	CLASS_EXTENSION_LENGTH	= CLASS_EXTENSION.length();
+
+	public static String resourceNameToClassName(String resourceName) {
+		String className = resourceName.endsWith(CLASS_EXTENSION)
+			? resourceName.substring(resourceName.length() - CLASS_EXTENSION_LENGTH)
+			: resourceName;
+		className = className.replace('/', '.');
+		return className;
+	}
+
+	public static String classNameToResourceName(String className) {
+		String resourceName = classNameToBinaryTypeName(className).concat(CLASS_EXTENSION);
+		return resourceName;
+	}
+
+	public static String classNameToBinaryTypeName(String className) {
+		return className.replace('.', '/');
+	}
 }

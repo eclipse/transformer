@@ -27,6 +27,7 @@ import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.SignatureUtils;
 
 import aQute.lib.io.ByteBufferInputStream;
 
@@ -55,7 +56,7 @@ public class TransformClassLoader extends ClassLoader {
 	}
 
 	public String getResourceName(String className) {
-		return ClassActionImpl.classNameToResourceName(className);
+		return SignatureUtils.classNameToResourceName(className);
 	}
 
 	//

@@ -42,6 +42,7 @@ import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.jakarta.JakartaTransform;
 import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.SignatureUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -215,10 +216,10 @@ public class TestTransformClass extends CaptureTest {
 	public Set<String> getIncludes() {
 		if (includes == null) {
 			includes = new HashSet<>();
-			includes.add(ClassActionImpl.classNameToResourceName(INJECT_JAVAX_CLASS_NAME));
-			includes.add(ClassActionImpl.classNameToResourceName(INJECT_JAKARTA_CLASS_NAME));
+			includes.add(SignatureUtils.classNameToResourceName(INJECT_JAVAX_CLASS_NAME));
+			includes.add(SignatureUtils.classNameToResourceName(INJECT_JAKARTA_CLASS_NAME));
 
-			includes.add(ClassActionImpl.classNameToResourceName(REPEAT_TARGET_CLASS_NAME));
+			includes.add(SignatureUtils.classNameToResourceName(REPEAT_TARGET_CLASS_NAME));
 
 			// includes.add( TEST_DATA_RESOURCE_NAME + '/' +
 			// ANNOTATED_SERVLET_SIMPLE_CLASS_NAME);
@@ -253,7 +254,7 @@ public class TestTransformClass extends CaptureTest {
 
 	public static final String	OVERRIDE_TARGET_CLASS_NAME		= "transformer.test.data.Sample_DirectOverride";
 
-	public static final String	OVERRIDE_TARGET_RESOURCE_NAME	= ClassActionImpl
+	public static final String	OVERRIDE_TARGET_RESOURCE_NAME	= SignatureUtils
 		.classNameToResourceName(OVERRIDE_TARGET_CLASS_NAME);
 
 	public Set<String> getOverrideIncludes() {
@@ -876,30 +877,25 @@ public class TestTransformClass extends CaptureTest {
 		new ClassRelocation("sample/com/ibm/test/Sample.class", "com.ibm.test.Sample", "com.ibm.prod.Sample",
 			"sample/com/ibm/prod/Sample.class", IS_EXACT),
 
-		// new ClassRelocation(
-		// "com/ibm/broken/Sample.class", "com.ibm.test.Sample",
-		// "com.ibm.prod.Sample", "com/ibm/prod/Sample.class", !IS_EXACT),
-		// new ClassRelocation(
-		// "WEB-INF/classes/com/ibm/broken/Sample.class", "com.ibm.test.Sample",
-		// "com.ibm.prod.Sample", "WEB-INF/classes/com/ibm/prod/Sample.class",
-		// !IS_EXACT),
-		// new ClassRelocation(
-		// "META-INF/versions/9/com/ibm/broken/Sample.class",
-		// "com.ibm.test.Sample",
-		// "com.ibm.prod.Sample",
-		// "META-INF/versions/9/com/ibm/prod/Sample.class", !IS_EXACT),
+		new ClassRelocation("com/ibm/broken/Sample.class", "com.ibm.test.Sample", "com.ibm.prod.Sample",
+			"com/ibm/prod/Sample.class", !IS_EXACT),
+		new ClassRelocation("WEB-INF/classes/com/ibm/broken/Sample.class", "com.ibm.test.Sample", "com.ibm.prod.Sample",
+			"WEB-INF/classes/com/ibm/prod/Sample.class", !IS_EXACT),
+		new ClassRelocation("META-INF/versions/9/com/ibm/broken/Sample.class", "com.ibm.test.Sample",
+			"com.ibm.prod.Sample", "META-INF/versions/9/com/ibm/prod/Sample.class", !IS_EXACT)
 
 	};
 
-	public static final String		APPROXIMATE_TEXT	= "Approximate relocation of class";
+	public static final String		APPROXIMATE_TEXT	= "Approximate relocation";
 
 	@Test
 	public void testClassRelocation() {
+		ClassActionImpl classAction = createDirectClassAction();
 		for (ClassRelocation relocationCase : RELOCATION_CASES) {
-			String outputPath = ClassActionImpl.relocateClass(getCaptureLogger(), relocationCase.inputPath,
+			String outputPath = classAction.relocateClass(relocationCase.inputPath,
 				relocationCase.inputName, relocationCase.outputName);
 
-			List<? extends CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
+			List<CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
 
 			System.out.printf("Relocation [ %s ] as [ %s ]\n" + "        to [ %s ] as [ %s ]\n",
 				relocationCase.inputPath, relocationCase.inputName, relocationCase.outputName, outputPath);

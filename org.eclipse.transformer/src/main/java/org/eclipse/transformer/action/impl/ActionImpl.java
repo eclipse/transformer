@@ -491,4 +491,32 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	protected BufferedWriter writer(OutputStream outputStream) {
 		return FileUtils.writer(outputStream);
 	}
+
+	@Override
+	public String relocateResource(String inputPath) {
+		String prefix;
+		String inputName;
+		if (inputPath.startsWith("WEB-INF/classes/")) {
+			prefix = "WEB-INF/classes/";
+			inputName = inputPath.substring(prefix.length());
+		} else if (inputPath.startsWith("META-INF/versions/")) {
+			prefix = "META-INF/versions/";
+			int nextSlash = inputPath.indexOf('/', prefix.length());
+			if (nextSlash != -1) {
+				prefix = inputPath.substring(0, nextSlash + 1);
+			}
+			inputName = inputPath.substring(prefix.length());
+		} else {
+			prefix = "";
+			inputName = inputPath;
+		}
+		if (!inputName.isEmpty()) {
+			String outputName = transformBinaryType(inputName);
+			if (outputName != null) {
+				String outputPath = prefix.isEmpty() ? outputName : prefix.concat(outputName);
+				return outputPath;
+			}
+		}
+		return inputPath;
+	}
 }

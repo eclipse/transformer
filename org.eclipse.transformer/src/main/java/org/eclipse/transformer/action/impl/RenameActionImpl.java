@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import aQute.lib.io.IO;
 import aQute.lib.io.NonClosingInputStream;
 
-public class NullActionImpl extends ActionImpl<Changes> {
+public class RenameActionImpl extends ActionImpl<Changes> {
 
-	public NullActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
+	public RenameActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
 		super(logger, buffer, selectionRule, signatureRule);
 	}
 
@@ -38,12 +38,12 @@ public class NullActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public String getName() {
-		return "Null Action";
+		return "Rename Action";
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ActionType.NULL;
+		return ActionType.RENAME;
 	}
 
 	//
@@ -60,17 +60,22 @@ public class NullActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		String inputName = inputData.name();
+		startRecording(inputName);
 		try {
-			setResourceNames(inputData.name(), inputData.name());
-			return inputData;
+			String outputName = relocateResource(inputName);
+			ByteData outputData = (outputName != null) ? new ByteDataImpl(outputName, inputData.buffer()) : inputData;
+			setResourceNames(inputName, outputData.name());
+			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputName);
 		}
 	}
 
-	/*
+	/**
 	 * Optimized method for file copy.
+	 * <p>
+	 * The caller must handle any renames for the outputFile.
 	 */
 	@Override
 	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
@@ -86,8 +91,10 @@ public class NullActionImpl extends ActionImpl<Changes> {
 		}
 	}
 
-	/*
+	/**
 	 * Optimized method for stream copy.
+	 * <p>
+	 * The caller must handle any renames for the outputStream.
 	 */
 	@Override
 	public void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)

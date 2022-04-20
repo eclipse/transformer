@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static org.eclipse.transformer.util.SignatureUtils.classNameToResourceName;
+
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -90,25 +92,6 @@ import aQute.lib.io.ByteBufferDataOutput;
  * Transform class bytes.
  */
 public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
-
-	public static String resourceNameToClassName(String resourceName) {
-		String className = resourceName.substring(resourceName.length() - ".class".length());
-		className = className.replace('/', '.');
-		return className;
-	}
-
-	public static String classNameToResourceName(String className) {
-		String resourceName = className.replace('.', '/');
-		resourceName = resourceName + ".class";
-		return resourceName;
-	}
-
-	public static String classNameToBinaryTypeName(String className) {
-		return className.replace('.', '/');
-	}
-
-	// public static for unit testing
-
 	/**
 	 * Adjust an input path according to the changes made to the name of the
 	 * class stored at that path. The input path is expected to match the input
@@ -119,7 +102,6 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	 * Otherwise, use the usual path for the output class name using java class
 	 * resource placement.
 	 *
-	 * @param logger Logger for messaging
 	 * @param inputPath The initial path to the class.
 	 * @param inputClassName The initial class name.
 	 * @param outputClassName The final class name.
@@ -127,48 +109,48 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	 *         the same relationship to the output path as the input class name
 	 *         has relative to the input path.
 	 */
-	public static String relocateClass(Logger logger, String inputPath, String inputClassName, String outputClassName) {
-
-		String directInputPath = classNameToResourceName(inputClassName);
-		String directOutputPath = classNameToResourceName(outputClassName);
-
-		// Expected cases:
-		// The class was located at the usual relative location,
-		// or the class was located under a sub-path.
-
-		if (directInputPath.equals(inputPath)) {
-			return directOutputPath;
-		} else if (inputPath.endsWith(directInputPath)) {
-			return inputPath.substring(0, inputPath.length() - directInputPath.length()) + directOutputPath;
+	public String relocateClass(String inputPath, String inputClassName, String outputClassName) {
+		String resourceInputPath = classNameToResourceName(inputClassName);
+		String resourceOutputPath = classNameToResourceName(outputClassName);
+		/*
+		 * Expected cases: The class was located at the usual relative location,
+		 * or the class was located under a sub-path.
+		 */
+		if (resourceInputPath.equals(inputPath)) {
+			return resourceOutputPath;
+		}
+		if (inputPath.endsWith("/".concat(resourceInputPath))) {
+			return inputPath.substring(0, inputPath.length() - resourceInputPath.length())
+				.concat(resourceOutputPath);
 		}
 
-		// Unexpected cases:
-		// The class was not properly named. Do our best to place the class in
-		// the
-		// same relative location.
-
+		/*
+		 * Unexpected cases: The class was not properly named. Do our best to
+		 * place the class in the same relative location.
+		 */
 		String relocationCase;
 		String outputPath;
 
 		if (inputPath.startsWith("WEB-INF/classes/")) {
 			relocationCase = "WEB-INF/classes";
-			outputPath = "WEB-INF/classes/" + directOutputPath;
+			outputPath = "WEB-INF/classes/".concat(resourceOutputPath);
 		} else if (inputPath.startsWith("META-INF/versions/")) {
 			int nextSlash = inputPath.indexOf('/', "META-INF/versions/".length());
 			if (nextSlash == -1) {
 				relocationCase = "META-INF/versions with no version number";
-				outputPath = "META-INF/versions/" + directOutputPath;
+				outputPath = "META-INF/versions/".concat(resourceOutputPath);
 			} else {
 				relocationCase = "META-INF/versions";
-				outputPath = inputPath.substring(0, nextSlash + 1) + directOutputPath;
+				outputPath = inputPath.substring(0, nextSlash + 1)
+					.concat(resourceOutputPath);
 			}
 		} else {
 			relocationCase = "Unknown location";
-			outputPath = directOutputPath;
+			outputPath = resourceOutputPath;
 		}
 
-		logger.error(
-			"Approximate relocation of class; case {}:" + " initial class name [ {} ]; final class name [ {} ];"
+		getLogger().error(
+			"Approximate relocation; case {}:" + " initial name [ {} ]; final name [ {} ];"
 				+ " initial resource location [ {} ]; final resource location [ {} ].",
 			relocationCase, inputClassName, outputClassName, inputPath, outputPath);
 
@@ -299,7 +281,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			String outputName;
 			if (outputClassName != null) {
 				classBuilder.this_class(outputClassName);
-				outputName = relocateClass(getLogger(), inputData.name(), inputClassName, outputClassName);
+				outputName = relocateClass(inputData.name(), inputClassName, outputClassName);
 				getLogger().debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
 			} else {
 				outputClassName = inputClassName;

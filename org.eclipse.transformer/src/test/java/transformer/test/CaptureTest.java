@@ -39,9 +39,9 @@ public class CaptureTest {
 		return captureLogger;
 	}
 
-	public List<? extends CaptureLoggerImpl.LogEvent> consumeCapturedEvents() {
+	public List<CaptureLoggerImpl.LogEvent> consumeCapturedEvents() {
 		if (captureLogger != null) {
-			List<? extends CaptureLoggerImpl.LogEvent> capturedEvents = captureLogger.consumeCapturedEvents();
+			List<CaptureLoggerImpl.LogEvent> capturedEvents = captureLogger.consumeCapturedEvents();
 			System.out.println("Cleared [ " + capturedEvents.size() + " ] events");
 			return capturedEvents;
 
@@ -51,7 +51,7 @@ public class CaptureTest {
 	}
 
 	public void displayCapturedEvents() {
-		List<? extends CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
+		List<CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
 
 		for (CaptureLoggerImpl.LogEvent event : capturedEvents) {
 			System.out.printf("Captured Event [ %s ]\n", event.toStringFormatted());

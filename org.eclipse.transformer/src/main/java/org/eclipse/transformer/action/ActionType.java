@@ -12,7 +12,7 @@
 package org.eclipse.transformer.action;
 
 public enum ActionType {
-	NULL,
+	RENAME,
 
 	CLASS,
 	MANIFEST,
