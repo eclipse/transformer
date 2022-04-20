@@ -48,15 +48,6 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 
 	//
 
-	/**
-	 * The choice of using a stream or using an input stream should never occur
-	 * on a directory action.
-	 */
-	@Override
-	public boolean useStreams() {
-		throw new UnsupportedOperationException();
-	}
-
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 		return (resourceFile != null) && resourceFile.isDirectory();
@@ -118,13 +109,19 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 				copy(inputName, inputFile, outputFolder);
 				return;
 			}
-			if (selectedAction.getActionType() == ActionType.NULL) {
+			if (selectedAction.getActionType() == ActionType.RENAME) {
 				/*
-				 * For the NULL action type, we are not transforming the
+				 * For the RENAME action type, we are not transforming the
 				 * inputFile, so we use the optimized file-to-file apply method.
+				 * This requires us to do the name transform work here since the
+				 * resource can be in a renamed package.
 				 */
-				File outputFile = new File(outputFolder, inputName);
+				String outputName = selectedAction.relocateResource(inputName);
+				File outputFile = IO.getBasedFile(outputFolder, outputName);
 				selectedAction.apply(inputName, inputFile, outputFile);
+				// Record the output name since the apply method does not know
+				selectedAction.getLastActiveChanges()
+					.setOutputResourceName(outputName);
 				recordTransform(selectedAction, inputName);
 				return;
 			}
@@ -148,7 +145,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 				outputData = inputData;
 				getLogger().error(t.getMessage(), t);
 			}
-			File outputFile = new File(outputFolder, outputData.name());
+			File outputFile = IO.getBasedFile(outputFolder, outputData.name());
 			IO.mkdirs(outputFile.getParentFile());
 			try (OutputStream outputStream = IO.outputStream(outputFile)) {
 				write(outputData, outputStream);
@@ -161,7 +158,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 	}
 
 	private void copy(String inputName, File inputFile, File outputFolder) throws IOException {
-		File outputFile = new File(outputFolder, inputName);
+		File outputFile = IO.getBasedFile(outputFolder, inputName);
 		IO.mkdirs(outputFile.getParentFile());
 		IO.copy(inputFile, outputFile);
 	}

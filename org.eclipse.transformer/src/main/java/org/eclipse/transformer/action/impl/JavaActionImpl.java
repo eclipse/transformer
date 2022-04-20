@@ -15,7 +15,6 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
@@ -55,78 +54,6 @@ public class JavaActionImpl extends ActionImpl<Changes> {
 
 	//
 
-	/**
-	 * Replace all embedded packages of specified text with replacement
-	 * packages.
-	 *
-	 * @param text Text embedding zero, one, or more package names.
-	 * @return The text with all embedded package names replaced. Null if no
-	 *         replacements were performed.
-	 */
-	protected String replacePackages(String text) {
-		// System.out.println("replacePackages: Initial text [ " + text + " ]");
-
-		String initialText = text;
-
-		for (Map.Entry<String, String> renameEntry : getPackageRenames().entrySet()) {
-			String key = renameEntry.getKey();
-			int keyLen = key.length();
-
-			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
-			if (matchSubpackages) {
-				key = SignatureRuleImpl.stripWildcard(key);
-			}
-
-			// System.out.println("replacePackages: Next target [ " + key + "
-			// ]");
-			int textLimit = text.length() - keyLen;
-
-			int lastMatchEnd = 0;
-			while (lastMatchEnd <= textLimit) {
-				int matchStart = text.indexOf(key, lastMatchEnd);
-				if (matchStart == -1) {
-					break;
-				}
-
-				if (!SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
-					lastMatchEnd = matchStart + keyLen;
-					continue;
-				}
-
-				String value = renameEntry.getValue();
-				int valueLen = value.length();
-
-				String head = text.substring(0, matchStart);
-				String tail = text.substring(matchStart + keyLen);
-
-				// int tailLenBeforeReplaceVersion = tail.length();
-				// tail = replacePackageVersion(tail,
-				// getPackageVersions().get(value));
-				// int tailLenAfterReplaceVersion = tail.length();
-
-				text = head + value + tail;
-
-				lastMatchEnd = matchStart + valueLen;
-
-				// Replacing the key or the version can increase or decrease the
-				// text length.
-				textLimit += (valueLen - keyLen);
-				// textLimit += (tailLenAfterReplaceVersion -
-				// tailLenBeforeReplaceVersion);
-
-				// System.out.println("Next text [ " + text + " ]");
-			}
-		}
-
-		if (initialText == text) {
-			// System.out.println("Final text is unchanged");
-			return null;
-		} else {
-			// System.out.println("Final text [ " + text + " ]");
-			return text;
-		}
-	}
-
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
 		startRecording(inputData.name());
@@ -157,7 +84,7 @@ public class JavaActionImpl extends ActionImpl<Changes> {
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
-			String outputLine = replacePackages(inputLine);
+			String outputLine = getSignatureRule().replacePackages(inputLine);
 			if (outputLine == null) {
 				outputLine = inputLine;
 			} else {

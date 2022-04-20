@@ -58,6 +58,11 @@ public class ZipActionImpl extends ContainerActionImpl {
 		return ".zip";
 	}
 
+	@Override
+	public boolean useStreams() {
+		return true;
+	}
+
 	//
 
 	@Override
@@ -127,13 +132,20 @@ public class ZipActionImpl extends ContainerActionImpl {
 						 * archive can be very large. A read of non-archive data
 						 * must be performed, since non-archive data may change
 						 * the name associated with the data, and that can only
-						 * be determined after reading the data.
+						 * be determined after reading the data. We do the name
+						 * transform work here since the resource can be in a
+						 * renamed package.
 						 */
-						ZipEntry outputEntry = new ZipEntry(inputName);
+						String outputName = cleanPath(acceptedAction.relocateResource(inputName));
+						ZipEntry outputEntry = new ZipEntry(outputName);
 						outputEntry.setExtra(inputEntry.getExtra());
 						outputEntry.setComment(inputEntry.getComment());
 						zipOutputStream.putNextEntry(outputEntry);
 						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
+						// Record the output name since the apply method does
+						// not know
+						acceptedAction.getLastActiveChanges()
+							.setOutputResourceName(outputName);
 						recordTransform(acceptedAction, inputName);
 						zipOutputStream.closeEntry();
 						continue;

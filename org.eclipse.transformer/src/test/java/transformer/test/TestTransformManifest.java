@@ -35,6 +35,7 @@ import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.util.PropertiesUtils;
+import org.eclipse.transformer.util.SignatureUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -605,7 +606,7 @@ public class TestTransformManifest extends CaptureTest {
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {
-			return SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, false);
+			return SignatureUtils.packageMatch(text, matchStart, matchStart + keyLen, false) != -1;
 		}
 
 		public String callReplacePackages(String attributeName, String text) {
@@ -861,10 +862,12 @@ public class TestTransformManifest extends CaptureTest {
 		ManifestActionImpl_Test manifestAction = getManifestAction();
 
 		String txProvideOutput = manifestAction.callReplacePackages(TX_PROVIDE_ATTRIBUTE_NAME, TX_PROVIDE_TEXT_INPUT);
-		assertEquals(TX_PROVIDE_TEXT_OUTPUT, txProvideOutput, "'Provide-Capability' transform failure");
+		assertThat(txProvideOutput).as("'Provide-Capability' transform failure")
+			.isEqualTo(TX_PROVIDE_TEXT_OUTPUT);
 
 		String txRequireOutput = manifestAction.callReplacePackages(TX_REQUIRE_ATTRIBUTE_NAME, TX_REQUIRE_TEXT_INPUT);
-		assertEquals(TX_REQUIRE_TEXT_OUTPUT, txRequireOutput, "'Require-Capability' transform failure");
+		assertThat(txRequireOutput).as("'Require-Capability' transform failure")
+			.isEqualTo(TX_REQUIRE_TEXT_OUTPUT);
 	}
 
 	//

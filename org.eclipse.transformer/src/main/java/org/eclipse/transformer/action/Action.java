@@ -179,6 +179,16 @@ public interface Action {
 	void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
 		throws TransformException;
 
+	/**
+	 * Adjust an input path according to the changes made to the name of the
+	 * resource stored at that path. Special prefixes "WEB-INF/classes/" and
+	 * "META-INF/versions/n/" are handled.
+	 *
+	 * @param inputPath The initial path to the resource.
+	 * @return An output path for the resource.
+	 */
+	String relocateResource(String inputPath);
+
 	//
 
 	/**

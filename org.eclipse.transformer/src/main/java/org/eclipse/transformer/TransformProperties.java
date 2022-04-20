@@ -11,6 +11,9 @@
 
 package org.eclipse.transformer;
 
+import static org.eclipse.transformer.util.SignatureUtils.containsWildcard;
+import static org.eclipse.transformer.util.SignatureUtils.stripWildcard;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -109,9 +112,13 @@ public class TransformProperties {
 
 	public static Map<String, String> invert(Map<String, String> properties) {
 		Map<String, String> inverseProperties = new HashMap<>(properties.size());
-		for (Map.Entry<String, String> entry : properties.entrySet()) {
-			inverseProperties.put(entry.getValue(), entry.getKey());
-		}
+		properties.forEach((key, value) -> {
+			if (containsWildcard(key)) {
+				value = value.concat(key.substring(key.length() - 2));
+				key = stripWildcard(key);
+			}
+			inverseProperties.put(value, key);
+		});
 		return inverseProperties;
 	}
 

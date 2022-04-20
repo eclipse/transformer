@@ -52,30 +52,30 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 	public void apply(Analyzer analyzer) {
 		Jar jar = analyzer.getJar();
 		String manifestName = jar.getManifestName();
-		String inputPath = analyzer.getBsn();
-		startRecording(inputPath);
+		String bundleSymbolicName = analyzer.getBsn();
+		startRecording(bundleSymbolicName);
 		try {
-			setResourceNames(inputPath, inputPath);
+			setResourceNames(bundleSymbolicName, bundleSymbolicName);
 
 			Map<String, Resource> resources = jar.getResources();
-			List<String> paths = new ArrayList<>(resources.size() + 1);
+			List<String> inputPaths = new ArrayList<>(resources.size() + 1);
 			if (!resources.containsKey(manifestName)) {
-				paths.add(manifestName); // process manifest first
+				inputPaths.add(manifestName); // process manifest first
 			}
-			paths.addAll(resources.keySet());
-			for (String path : paths) {
-				Action selectedAction = acceptAction(path);
+			inputPaths.addAll(resources.keySet());
+			for (String inputPath : inputPaths) {
+				Action selectedAction = acceptAction(inputPath);
 				if (selectedAction == null) {
-					recordUnaccepted(path);
+					recordUnaccepted(inputPath);
 					continue;
 				}
-				if (!select(path)) {
-					recordUnselected(selectedAction, path);
+				if (!select(inputPath)) {
+					recordUnselected(selectedAction, inputPath);
 					continue;
 				}
 				try {
-					Resource resource = jar.getResource(path);
-					if (path.equals(manifestName)) {
+					Resource resource = jar.getResource(inputPath);
+					if (inputPath.equals(manifestName)) {
 						if (resource == null) {
 							Manifest manifest = jar.getManifest();
 							if (manifest == null) {
@@ -87,13 +87,13 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 					ByteBuffer bb = resource.buffer();
 					ByteData inputData;
 					if (bb != null) {
-						inputData = new ByteDataImpl(path, bb);
+						inputData = new ByteDataImpl(inputPath, bb);
 					} else {
-						inputData = selectedAction.collect(path, resource.openInputStream(),
+						inputData = selectedAction.collect(inputPath, resource.openInputStream(),
 							Math.toIntExact(resource.size()));
 					}
 					ByteData outputData = selectedAction.apply(inputData);
-					recordTransform(selectedAction, path);
+					recordTransform(selectedAction, inputPath);
 					Changes changes = selectedAction.getLastActiveChanges();
 					if (changes.hasChanges()) {
 						String outputPath = outputData.name();
@@ -103,10 +103,10 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 							if (!overwrite && (jar.getResource(outputPath) != null)) {
 								analyzer.error(
 									"Transform for %s overwrites existing resource %s. Use 'overwrite' option to allow overwriting.",
-									path, outputPath);
+									inputPath, outputPath);
 								continue;
 							}
-							jar.remove(path);
+							jar.remove(inputPath);
 						}
 						Resource outputResource = changes.hasNonResourceNameChanges()
 							? new EmbeddedResource(outputData.buffer(), resource.lastModified())
@@ -114,11 +114,11 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 						jar.putResource(outputPath, outputResource);
 					}
 				} catch (Exception e) {
-					analyzer.exception(e, "Failure while transforming %s", path);
+					analyzer.exception(e, "Failure while transforming %s", inputPath);
 				}
 			}
 		} finally {
-			stopRecording(inputPath);
+			stopRecording(bundleSymbolicName);
 		}
 	}
 }
