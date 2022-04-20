@@ -96,11 +96,9 @@ public class TestTransformClass extends CaptureTest {
 
 	public static final String	JAVAX_ANNO_PACKAGE_NAME				= "javax.annotation";
 	public static final String	JAVAX_SERVLET_PACKAGE_NAME			= "javax.servlet";
-	public static final String	JAVAX_SERVLET_ANNO_PACKAGE_NAME		= "javax.servlet.annotation";
 
 	public static final String	JAKARTA_ANNO_PACKAGE_NAME			= "jakarta.annotation";
 	public static final String	JAKARTA_SERVLET_PACKAGE_NAME		= "jakarta.servlet";
-	public static final String	JAKARTA_SERVLET_ANNO_PACKAGE_NAME	= "jakarta.servlet.annotation";
 
 	// These test classes are build within the project:
 
@@ -240,14 +238,13 @@ public class TestTransformClass extends CaptureTest {
 	public Map<String, String> getToJakartaRenames() {
 		if (toJakartaRenames == null) {
 			toJakartaRenames = new HashMap<>();
-			toJakartaRenames.put(JAVAX_INJECT_PACKAGE_NAME, JAKARTA_INJECT_PACKAGE_NAME);
+			toJakartaRenames.put(JAVAX_INJECT_PACKAGE_NAME + ".*", JAKARTA_INJECT_PACKAGE_NAME);
 			toJakartaRenames.put(JAVAX_SECURITY_AUTH_MESSAGE_CONFIG, JAKARTA_SECURITY_AUTH_MESSAGE_CONFIG);
 
 			toJakartaRenames.put(JAVAX_REPEAT_PACKAGE_NAME, JAKARTA_REPEAT_PACKAGE_NAME);
 
 			toJakartaRenames.put(JAVAX_ANNO_PACKAGE_NAME, JAKARTA_ANNO_PACKAGE_NAME);
-			toJakartaRenames.put(JAVAX_SERVLET_PACKAGE_NAME, JAKARTA_SERVLET_PACKAGE_NAME);
-			toJakartaRenames.put(JAVAX_SERVLET_ANNO_PACKAGE_NAME, JAKARTA_SERVLET_ANNO_PACKAGE_NAME);
+			toJakartaRenames.put(JAVAX_SERVLET_PACKAGE_NAME + ".*", JAKARTA_SERVLET_PACKAGE_NAME);
 		}
 		return toJakartaRenames;
 	}

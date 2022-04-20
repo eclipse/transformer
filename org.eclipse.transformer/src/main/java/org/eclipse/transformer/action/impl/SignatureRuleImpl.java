@@ -11,9 +11,15 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static org.eclipse.transformer.util.SignatureUtils.containsWildcard;
+import static org.eclipse.transformer.util.SignatureUtils.keyStream;
+import static org.eclipse.transformer.util.SignatureUtils.packageMatch;
+import static org.eclipse.transformer.util.SignatureUtils.stripWildcard;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -22,6 +28,7 @@ import java.util.regex.Pattern;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.SignatureUtils;
 import org.slf4j.Logger;
 
 import aQute.bnd.signatures.ArrayTypeSignature;
@@ -38,6 +45,7 @@ import aQute.bnd.signatures.ThrowsSignature;
 import aQute.bnd.signatures.TypeArgument;
 import aQute.bnd.signatures.TypeParameter;
 import aQute.bnd.signatures.TypeVariableSignature;
+import aQute.bnd.stream.MapStream;
 import aQute.libg.glob.Glob;
 
 public class SignatureRuleImpl implements SignatureRule {
@@ -57,25 +65,23 @@ public class SignatureRuleImpl implements SignatureRule {
 		if ((renames == null) || renames.isEmpty()) {
 			useRenames = Collections.emptyMap();
 			useBinaryRenames = Collections.emptyMap();
-
 		} else {
-			useRenames = new HashMap<>(renames.size());
-			useBinaryRenames = new HashMap<>(renames.size());
+			/*
+			 * Order the rename keys to have more specific packages first and
+			 * wild cards last.
+			 */
+			useRenames = new LinkedHashMap<>(renames.size());
+			useBinaryRenames = new LinkedHashMap<>(renames.size());
 
-			for (Map.Entry<String, String> renameEntry : renames.entrySet()) {
-				// System.out.println("Binary conversion from [ " +
-				// renameEntry.getKey() + " ] to [ " + renameEntry.getValue() +
-				// " ]");
-				String initialName = renameEntry.getKey();
-				String finalName = renameEntry.getValue();
+			MapStream.of(renames)
+				.sortedByKey(new SignatureUtils.RenameKeyComparator('.'))
+				.forEachOrdered((initialName, finalName) -> {
+					useRenames.put(initialName, finalName);
 
-				useRenames.put(initialName, finalName);
-
-				String initialBinaryName = initialName.replace('.', '/');
-				String finalBinaryName = finalName.replace('.', '/');
-
-				useBinaryRenames.put(initialBinaryName, finalBinaryName);
-			}
+					String initialBinaryName = initialName.replace('.', '/');
+					String finalBinaryName = finalName.replace('.', '/');
+					useBinaryRenames.put(initialBinaryName, finalBinaryName);
+				});
 		}
 
 		this.dottedPackageRenames = useRenames;
@@ -170,6 +176,8 @@ public class SignatureRuleImpl implements SignatureRule {
 		}
 		this.perClassDirectStrings = localPerClassDirectStrings;
 	}
+
+
 
 	//
 
@@ -324,7 +332,17 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	@Override
 	public String replacePackage(String initialName) {
-		return dottedPackageRenames.getOrDefault(initialName, null);
+		String finalName = keyStream(initialName, ".*").filter(dottedPackageRenames::containsKey)
+			.findFirst()
+			.map(key -> {
+				String name = dottedPackageRenames.get(key);
+				if (containsWildcard(key)) {
+					name = name.concat(initialName.substring(key.length() - 2));
+				}
+				return name;
+			})
+			.orElse(null);
+		return finalName;
 	}
 
 	/**
@@ -338,9 +356,16 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	@Override
 	public String replaceBinaryPackage(String initialName) {
-		String finalName = slashedPackageRenames.getOrDefault(initialName, null);
-		// System.out.println("Initial binary [ " + initialName + " ] Final [ "
-		// + finalName + " ]");
+		String finalName = keyStream(initialName, "/*").filter(slashedPackageRenames::containsKey)
+			.findFirst()
+			.map(key -> {
+				String name = slashedPackageRenames.get(key);
+				if (containsWildcard(key)) {
+					name = name.concat(initialName.substring(key.length() - 2));
+				}
+				return name;
+			})
+			.orElse(null);
 		return finalName;
 	}
 
@@ -360,144 +385,50 @@ public class SignatureRuleImpl implements SignatureRule {
 	 */
 	@Override
 	public String replacePackages(String text, Map<String, String> packageRenames) {
-		// System.out.println("Initial text [ " + text + " ]");
-
 		String initialText = text;
 
 		for (Map.Entry<String, String> renameEntry : packageRenames.entrySet()) {
 			String key = renameEntry.getKey();
-			int keyLen = key.length();
 
-			boolean matchSubpackages = containsWildcard(key);
-			if (matchSubpackages) {
+			boolean matchPackageStem = containsWildcard(key);
+			if (matchPackageStem) {
 				key = stripWildcard(key);
 			}
 
-			// System.out.println("Next target [ " + key + " ]");
-
+			final int keyLen = key.length();
 			int textLimit = text.length() - keyLen;
 
-			int lastMatchEnd = 0;
-			while (lastMatchEnd <= textLimit) {
-				int matchStart = text.indexOf(key, lastMatchEnd);
+			for (int matchEnd = 0; matchEnd <= textLimit;) {
+				final int matchStart = text.indexOf(key, matchEnd);
 				if (matchStart == -1) {
 					break;
 				}
 
-				if (!isTruePackageMatch(text, matchStart, keyLen, matchSubpackages)) {
-					lastMatchEnd = matchStart + keyLen;
+				matchEnd = matchStart + keyLen;
+				int packageEnd = packageMatch(text, matchStart, matchEnd, matchPackageStem);
+				if (packageEnd == -1) {
 					continue;
 				}
 
 				String value = renameEntry.getValue();
-				int valueLen = value.length();
+				if (matchEnd < packageEnd) {
+					value = value.concat(text.substring(matchEnd, packageEnd));
+				}
 
 				String head = text.substring(0, matchStart);
-				String tail = text.substring(matchStart + keyLen);
+				String tail = text.substring(packageEnd);
 				text = head + value + tail;
 
-				lastMatchEnd = matchStart + valueLen;
-				textLimit += (valueLen - keyLen);
-
-				// System.out.println("Next text [ " + text + " ]");
+				matchEnd = matchStart + value.length();
+				textLimit = text.length() - keyLen;
 			}
 		}
 
 		if (initialText == text) {
-			// System.out.println("RETURN Final text is unchanged");
 			return null;
 		} else {
-			// System.out.println("RETURN Final text [ " + text + " ]");
 			return text;
 		}
-	}
-
-	/**
-	 * Checks the character before and after a match to verify that the match is
-	 * not a subset of a larger package, and thus not really a match.
-	 *
-	 * @param text The text to examine for a match.
-	 * @param matchStart Where the match starts in the text.
-	 * @param keyLen The length of the match text.
-	 * @param matchSubpackages Control parameter: Are sub-package matches
-	 *            allowed.
-	 * @return True or false telling if the match is not a subset of a larger
-	 *         package.
-	 */
-	public static boolean isTruePackageMatch(String text, int matchStart, int keyLen, boolean matchSubpackages) {
-		// System.out.println("isTruePackageMatch:"
-		//  + " text[" + text + "]"
-		//  + " key[" + text.substring(matchStart, matchStart + keyLen) + "]"
-		//  + " tail[" + text.substring(matchStart + keyLen)
-		//  + " *************");
-
-		int textLength = text.length();
-
-		if (matchStart > 0) {
-			char charBeforeMatch = text.charAt(matchStart - 1);
-			if (Character.isJavaIdentifierPart(charBeforeMatch) || (charBeforeMatch == '.')) {
-				return false;
-			}
-		}
-
-		int matchEnd = matchStart + keyLen;
-		if (textLength > matchEnd) {
-
-			char charAfterMatch = text.charAt(matchEnd);
-
-			// Check the next character can also be part of a package name then
-			// we are looking at a larger package name, and thus not a match.
-			if (Character.isJavaIdentifierPart(charAfterMatch)) {
-				return false;
-			}
-
-			// If the next char is dot, check the character after the dot.
-			// Assume an upper case letter indicates the start of a
-			// class name and thus the end of the package name which indicates a
-			// match. ( This means this doesn't work
-			// for package names that do not follow the convention of using
-			// lower case characters ).
-			// If lower case, then it indicates we are looking at a larger
-			// package name, and thus not a match.
-			// If the character after the dot is a number, also assume the
-			// number is a continuation of the package name.
-			if (!matchSubpackages) {
-				if (charAfterMatch == '.' || charAfterMatch == '/') {
-					if (textLength > (matchEnd + 1)) {
-						char charAfterSeparator = text.charAt(matchEnd + 1);
-						if (Character.isLowerCase(charAfterSeparator) || Character.isDigit(charAfterSeparator)) {
-							return false;
-						}
-					}
-				}
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Determines if the key contains a wildcard suffix which indicates that
-	 * sub-package names are to be matched. Packages names and their
-	 * replacements are specified in properties files in key=value pairs or more
-	 * specifically oldPackageName=newPackageName The key can contain a ".*"
-	 * suffix which indicates that sub-packages are a match.
-	 *
-	 * @param key package name
-	 * @return true if sub-packages are to be matched
-	 */
-	public static boolean containsWildcard(String key) {
-
-		if (key.endsWith(".*")) {
-			return true;
-		}
-		return false;
-	}
-
-	public static String stripWildcard(String key) {
-		if (key.endsWith(".*")) {
-			key = key.substring(0, key.length() - 2);
-		}
-		return key;
 	}
 
 	public static boolean matches(Pattern p, CharSequence input) {
@@ -720,7 +651,7 @@ public class SignatureRuleImpl implements SignatureRule {
 		}
 
 		if ((outputDescriptor == null) && allowSimpleSubstitution) {
-			outputDescriptor = replacePackages(inputDescriptor, dottedPackageRenames);
+			outputDescriptor = replacePackages(inputDescriptor);
 		}
 
 		if (outputDescriptor == null) {

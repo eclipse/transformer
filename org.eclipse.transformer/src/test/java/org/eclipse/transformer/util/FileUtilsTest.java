@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-package transformer.test;
+package org.eclipse.transformer.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,7 +18,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.Test;
 
 class FileUtilsTest {

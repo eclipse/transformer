@@ -11,6 +11,10 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static org.eclipse.transformer.util.SignatureUtils.containsWildcard;
+import static org.eclipse.transformer.util.SignatureUtils.packageMatch;
+import static org.eclipse.transformer.util.SignatureUtils.stripWildcard;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -302,71 +306,54 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	 *         replacements were performed.
 	 */
 	protected String replacePackages(String attributeName, String text) {
-		// System.out.println("Initial text [ " + text + " ]");
-
 		String initialText = text;
 
 		for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
 			String key = renameEntry.getKey(); // Package name match data.
-			int keyLen = key.length();
 
-			boolean matchSubpackages = SignatureRuleImpl.containsWildcard(key);
-			if ( matchSubpackages ) {
-				key = SignatureRuleImpl.stripWildcard(key);
+			boolean matchPackageStem = containsWildcard(key);
+			if (matchPackageStem) {
+				key = stripWildcard(key);
 			}
 
-			// System.out.println("Next target [ " + key + " ]");
-			// System.out.println("Text [ " + text + " ]");
-
+			final int keyLen = key.length();
 			int textLimit = text.length() - keyLen;
 
-			int lastMatchEnd = 0;
-			while ( lastMatchEnd <= textLimit ) {
-				int matchStart = text.indexOf(key, lastMatchEnd);
+			for (int matchEnd = 0; matchEnd <= textLimit;) {
+				final int matchStart = text.indexOf(key, matchEnd);
 				if ( matchStart == -1 ) {
 					break;
 				}
 
-				if ( !SignatureRuleImpl.isTruePackageMatch(text, matchStart, keyLen, matchSubpackages) ) {
-					// System.out.println("Near match at [ " + matchStart + " ]");
-					lastMatchEnd = matchStart + keyLen;
+				matchEnd = matchStart + keyLen;
+				int packageEnd = packageMatch(text, matchStart, matchEnd, matchPackageStem);
+				if (packageEnd == -1) {
 					continue;
 				}
-				// System.out.println("Actual match at [ " + matchStart + " ]");
 
 				String value = renameEntry.getValue();
-				int valueLen = value.length();
+				if (matchEnd < packageEnd) {
+					value = value.concat(text.substring(matchEnd, packageEnd));
+				}
 
 				String head = text.substring(0, matchStart);
-				String tail = text.substring(matchStart + keyLen);
+				String tail = text.substring(packageEnd);
 
-				int tailLenBeforeReplaceVersion = tail.length();
-
-				// Logging in 'getReplacementVersion'.
 				String newVersion = getReplacementVersion(attributeName, value, tail);
-				if ( newVersion != null ) {
+				if (newVersion != null) {
 					tail = replacePackageVersion(tail, newVersion);
 				}
 
 				text = head + value + tail;
-				int tailLenAfterReplaceVersion = tail.length();
 
-				lastMatchEnd = matchStart + valueLen;
-
-				// Replacing the key or the version can increase or decrease the
-				// text length.
-				textLimit += (valueLen - keyLen);
-				textLimit += (tailLenAfterReplaceVersion - tailLenBeforeReplaceVersion);
-
-				// System.out.println("Next text [ " + text + " ]");
+				matchEnd = matchStart + value.length();
+				textLimit = text.length() - keyLen;
 			}
 		}
 
 		if (initialText == text) {
-			// System.out.println("Final text is unchanged");
 			return null;
 		} else {
-			// System.out.println("Final text [ " + text + " ]");
 			return text;
 		}
 	}
