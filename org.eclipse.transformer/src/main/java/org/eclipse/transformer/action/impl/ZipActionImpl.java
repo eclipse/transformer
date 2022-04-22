@@ -17,6 +17,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -98,12 +100,18 @@ public class ZipActionImpl extends ContainerActionImpl {
 		String prevName = null;
 		String inputName = null;
 		byte[] copyBuffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
+		Set<String> seen = new HashSet<>();
 
 		try {
 			for (ZipEntry inputEntry; (inputEntry = zipInputStream
 				.getNextEntry()) != null; prevName = inputName, inputName = null) {
 				// Sanitize inputName to avoid ZipSlip
 				inputName = cleanPath(inputEntry.getName());
+				// In case the input archive is flawed and has duplicate entries
+				if (!seen.add(inputName)) {
+					getLogger().error("Duplicate archive entry [ {} ] in [ {} ] ignored.", inputName, inputPath);
+					continue;
+				}
 				int inputLength = Math.toIntExact(inputEntry.getSize());
 
 				getLogger().debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName,
