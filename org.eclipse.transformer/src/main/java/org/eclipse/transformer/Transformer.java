@@ -341,6 +341,9 @@ public class Transformer {
 
 				Map<String, String> substitutions =
 					loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
+				if (invert) {
+					substitutions = TransformProperties.invert(substitutions);
+				}
 
 				textMasterProperties.put(simpleNameSelector, substitutionsRef);
 				masterUpdates.put(simpleNameSelector, substitutions);
@@ -355,6 +358,9 @@ public class Transformer {
 		}
 
 		if ( !directProperties.isEmpty() ) {
+			if (invert) {
+				directProperties = TransformProperties.invert(directProperties);
+			}
 			directStrings = directProperties;
 			getLogger().info(consoleMarker, "Java direct string updates will be performed");
 		} else {
@@ -371,6 +377,9 @@ public class Transformer {
 				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
 
 				Map<String, String> substitutions = loadSubstitutions(masterDirect, classSelector, substitutionsRef);
+				if (invert) {
+					substitutions = TransformProperties.invert(substitutions);
+				}
 				masterUpdates.put(classSelector, substitutions);
 			}
 
