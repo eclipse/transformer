@@ -38,9 +38,9 @@ public class TransformProperties {
 
 	//
 
-	public static void addSelections(Set<String> included, Set<String> excluded, Properties selections) {
-		for (Map.Entry<Object, Object> selectionEntry : selections.entrySet()) {
-			String selection = (String) selectionEntry.getKey();
+	public static void addSelections(Set<String> included, Set<String> excluded, Map<String, String> selections) {
+		for (Map.Entry<String, String> selectionEntry : selections.entrySet()) {
+			String selection = selectionEntry.getKey();
 			addSelection(included, excluded, selection);
 		}
 	}
@@ -94,22 +94,6 @@ public class TransformProperties {
 		}
 	}
 
-	public static Map<String, String> getPackageRenames(Properties renameProperties) {
-		Map<String, String> packageRenames = new HashMap<>(renameProperties.size());
-		for (Map.Entry<Object, Object> renameEntry : renameProperties.entrySet()) {
-			packageRenames.put((String) renameEntry.getKey(), (String) renameEntry.getValue());
-		}
-		return packageRenames;
-	}
-
-	public static Map<String, String> getDirectStrings(Properties directProperties) {
-		Map<String, String> directStrings = new HashMap<>(directProperties.size());
-		for (Map.Entry<Object, Object> directEntry : directProperties.entrySet()) {
-			directStrings.put((String) directEntry.getKey(), (String) directEntry.getValue());
-		}
-		return directStrings;
-	}
-
 	public static Map<String, String> invert(Map<String, String> properties) {
 		Map<String, String> inverseProperties = new HashMap<>(properties.size());
 		properties.forEach((key, value) -> {
@@ -123,11 +107,11 @@ public class TransformProperties {
 	}
 
 	public static void setPackageVersions(
-		Properties versionProperties,
+		Map<?, ?> versionProperties,
 		Map<String, String> packageVersions,
 		Map<String, Map<String, String>> specificPackageVersions) {
 
-		for ( Map.Entry<Object, Object> versionEntry : versionProperties.entrySet() ) {
+		for (Map.Entry<?, ?> versionEntry : versionProperties.entrySet()) {
 			setPackageVersions(
 				(String) versionEntry.getKey(), (String) versionEntry.getValue(),
 				packageVersions, specificPackageVersions);
@@ -284,18 +268,21 @@ public class TransformProperties {
 		}
 	}
 
-	public static Map<String, BundleData> getBundleUpdates(Properties updateProperties) {
+	public static Map<String, BundleData> getBundleUpdates(Map<?, ?> updateProperties) {
 		Map<String, BundleData> bundleUpdates = new HashMap<>(updateProperties.size());
-		for (Map.Entry<Object, Object> updateEntry : updateProperties.entrySet()) {
+		for (Map.Entry<?, ?> updateEntry : updateProperties.entrySet()) {
 			bundleUpdates.put((String) updateEntry.getKey(), new BundleDataImpl((String) updateEntry.getValue()));
 		}
 		return bundleUpdates;
 	}
 
 	public static Map<String, String> convertPropertiesToMap(Properties properties) {
-		Map<String, String> map = new HashMap<>(properties.size());
-		for (Map.Entry<Object, Object> fileEntry : properties.entrySet()) {
-			map.put((String) fileEntry.getKey(), (String) fileEntry.getValue());
+		return copyPropertiesToMap(properties, new HashMap<>(properties.size()));
+	}
+
+	public static <MAP extends Map<String, String>> MAP copyPropertiesToMap(Properties properties, MAP map) {
+		for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+			map.put((String) entry.getKey(), (String) entry.getValue());
 		}
 		return map;
 	}

@@ -56,7 +56,7 @@ public class TestTransformManifest extends CaptureTest {
 		prior.putAll(System.getProperties());
 		Properties renameProperties = PropertiesUtils
 			.loadProperties(getClass().getResourceAsStream("manifest-renames.properties"));
-		packageRenames = TransformProperties.getPackageRenames(renameProperties);
+		packageRenames = TransformProperties.convertPropertiesToMap(renameProperties);
 
 		packageVersions = new HashMap<>();
 		specificPackageVersions = new HashMap<>();

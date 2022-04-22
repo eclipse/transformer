@@ -65,6 +65,7 @@ import org.slf4j.MarkerFactory;
 
 import aQute.bnd.unmodifiable.Sets;
 import aQute.lib.io.IO;
+import aQute.lib.strings.Strings;
 import aQute.libg.uri.URIUtil;
 
 public class Transformer {
@@ -280,13 +281,13 @@ public class Transformer {
 
 		Set<String> orphanedFinalPackages = new HashSet<>();
 
-		Properties selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
-		Properties renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
-		Properties versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
-		Properties updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
-		Properties directProperties = loadProperties(AppOption.RULES_DIRECT, null);
-		Properties textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
-		Properties perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT,
+		Map<String, String> selectionProperties = loadProperties(AppOption.RULES_SELECTIONS, null);
+		Map<String, String> renameProperties = loadProperties(AppOption.RULES_RENAMES, orphanedFinalPackages);
+		Map<String, String> versionProperties = loadProperties(AppOption.RULES_VERSIONS, null);
+		Map<String, String> updateProperties = loadProperties(AppOption.RULES_BUNDLES, null);
+		Map<String, String> directProperties = loadProperties(AppOption.RULES_DIRECT, null);
+		Map<String, String> textMasterProperties = loadProperties(AppOption.RULES_MASTER_TEXT, null);
+		Map<String, String> perClassConstantProperties = loadProperties(AppOption.RULES_PER_CLASS_CONSTANT,
 			null);
 
 		invert = options.hasOption(AppOption.INVERT);
@@ -302,11 +303,10 @@ public class Transformer {
 		}
 
 		if ( !renameProperties.isEmpty() ) {
-			Map<String, String> renames = TransformProperties.getPackageRenames(renameProperties);
-			if ( invert ) {
-				renames = TransformProperties.invert(renames);
+			if (invert) {
+				renameProperties = TransformProperties.invert(renameProperties);
 			}
-			packageRenames = renames;
+			packageRenames = renameProperties;
 			getLogger().info(consoleMarker, "Package renames are in use");
 		} else {
 			packageRenames = null;
@@ -334,32 +334,28 @@ public class Transformer {
 		if ( !textMasterProperties.isEmpty() ) {
 			masterTextRef = options.normalize(options.getOptionValue(AppOption.RULES_MASTER_TEXT));
 
-			Map<String, String> substitutionRefs =
-				TransformProperties.convertPropertiesToMap(textMasterProperties);
-
 			Map<String, Map<String, String>> masterUpdates = new HashMap<>();
-			for (Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet()) {
+			for (Map.Entry<String, String> substitutionRefEntry : textMasterProperties.entrySet()) {
 				String simpleNameSelector = substitutionRefEntry.getKey();
 				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
 
-				Map<String, String> substitutionsMap =
+				Map<String, String> substitutions =
 					loadSubstitutions(masterTextRef, simpleNameSelector, substitutionsRef);
 
-				substitutionRefs.put(simpleNameSelector, substitutionsRef);
-				masterUpdates.put(simpleNameSelector, substitutionsMap);
+				textMasterProperties.put(simpleNameSelector, substitutionsRef);
+				masterUpdates.put(simpleNameSelector, substitutions);
 			}
 
-			masterSubstitutionRefs = substitutionRefs;
+			masterSubstitutionRefs = textMasterProperties;
 			masterTextUpdates = masterUpdates;
 			getLogger().info(consoleMarker, "Text files will be updated");
-
 		} else {
 			masterTextRef = null;
 			masterTextUpdates = null;
 		}
 
 		if ( !directProperties.isEmpty() ) {
-			directStrings = TransformProperties.getDirectStrings(directProperties);
+			directStrings = directProperties;
 			getLogger().info(consoleMarker, "Java direct string updates will be performed");
 		} else {
 			directStrings = null;
@@ -369,22 +365,13 @@ public class Transformer {
 		if ( !perClassConstantProperties.isEmpty() ) {
 			String masterDirect = options.normalize(options.getOptionValue(AppOption.RULES_PER_CLASS_CONSTANT));
 
-			Map<String, String> substitutionRefs =
-				TransformProperties.convertPropertiesToMap(perClassConstantProperties);
-
 			Map<String, Map<String, String>> masterUpdates = new HashMap<>();
-			for ( Map.Entry<String, String> substitutionRefEntry : substitutionRefs.entrySet() ) {
+			for (Map.Entry<String, String> substitutionRefEntry : perClassConstantProperties.entrySet()) {
 				String classSelector = substitutionRefEntry.getKey();
 				String substitutionsRef = options.normalize(substitutionRefEntry.getValue());
 
-				Properties substitutions = PropertiesUtils.createProperties();
-				if ( masterDirect == null ) {
-					substitutions = loadProperties0("Substitutions matching [ " + classSelector + " ]",
-						substitutionsRef);
-				}
-				Map<String, String> substitutionsMap =
-					TransformProperties.convertPropertiesToMap(substitutions);
-				masterUpdates.put(classSelector, substitutionsMap);
+				Map<String, String> substitutions = loadSubstitutions(masterDirect, classSelector, substitutionsRef);
+				masterUpdates.put(classSelector, substitutions);
 			}
 
 			perClassConstantStrings = masterUpdates;
@@ -545,7 +532,7 @@ public class Transformer {
 	 * @throws URISyntaxException Thrown if the load failed because a non-valid
 	 *             URI was specified.
 	 */
-	public Properties loadProperties(AppOption ruleOption, Set<String> orphanedValues)
+	public Map<String, String> loadProperties(AppOption ruleOption, Set<String> orphanedValues)
 		throws IOException, URISyntaxException {
 		List<String> rulesReferences = options.normalize(options.getOptionValues(ruleOption));
 
@@ -559,19 +546,13 @@ public class Transformer {
 			}
 		}
 		if (rulesReferences.isEmpty()) {
-			return PropertiesUtils.createProperties();
+			return new HashMap<>();
 		}
 		String referenceName = ruleOption.name();
 		String baseReference = rulesReferences.get(0);
-		if (rulesReferences.size() == 1) {
-			return loadProperties0(referenceName, baseReference);
-		}
-		Properties mergedProperties = rulesReferences.stream()
-			.reduce(null, asBiFunction((props, ref) -> {
+		Map<String, String> mergedProperties = rulesReferences.stream()
+			.reduce(new HashMap<>(), asBiFunction((props, ref) -> {
 				Properties p = loadProperties0(referenceName, ref);
-				if (props == null) {
-					return p;
-				}
 				merge(baseReference, props, ref, p, orphanedValues);
 				return props;
 			}), (props1, props2) -> {
@@ -618,13 +599,13 @@ public class Transformer {
 		return PropertiesUtils.loadProperties(url);
 	}
 
-	protected void merge(String sinkName, Properties sink, String sourceName, Properties source,
+	protected void merge(String sinkName, Map<String, String> sink, String sourceName, Properties source,
 		Set<String> orphanedValues) {
 
 		for (Map.Entry<Object, Object> sourceEntry : source.entrySet()) {
 			String key = (String) sourceEntry.getKey();
 			String newValue = (String) sourceEntry.getValue();
-			String oldValue = (String) sink.put(key, newValue);
+			String oldValue = sink.put(key, newValue);
 
 			if (orphanedValues != null) {
 				processOrphan(sourceName, sinkName, key, oldValue, newValue, orphanedValues);
@@ -672,25 +653,24 @@ public class Transformer {
 
 	private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef)
 		throws IOException, URISyntaxException {
-		Properties substitutions;
-		if ( masterRef == null ) {
-			substitutions = loadProperties0(
-				"Substitutions matching [ " + selector + " ]", substitutionsRef);
-		} else {
-			String relativeSubstitutionsRef = relativize(substitutionsRef, masterRef);
-			if ( !relativeSubstitutionsRef.equals(substitutionsRef) ) {
-				getLogger().debug(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]",
-					substitutionsRef, relativeSubstitutionsRef);
-			}
+		String referenceName = "Substitutions matching [ " + selector + " ]";
+		List<String> substitutionsRefs = Strings.split(substitutionsRef);
 
-			substitutions = loadProperties0(
-				"Substitutions matching [ " + selector + " ]", relativeSubstitutionsRef);
-		}
+		Map<String, String> substitutions = substitutionsRefs.stream()
+			.reduce(new HashMap<>(), asBiFunction((props, ref) -> {
+				String relativeSubstitutionsRef = (masterRef != null) ? relativize(ref, masterRef) : ref;
+				if (!relativeSubstitutionsRef.equals(ref)) {
+					getLogger().debug(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]", ref,
+						relativeSubstitutionsRef);
+				}
+				Properties p = loadProperties0(referenceName, relativeSubstitutionsRef);
+				return TransformProperties.copyPropertiesToMap(p, props);
+			}), (props1, props2) -> {
+				props1.putAll(props2);
+				return props1;
+			});
 
-		Map<String, String> substitutionsMap =
-			TransformProperties.convertPropertiesToMap(substitutions);
-
-		return substitutionsMap;
+		return substitutions;
 	}
 
 	private void addImmediateMasterText(
@@ -832,18 +812,6 @@ public class Transformer {
 		getLogger().info(consoleMarker, "Package [ {} ] has a version update but was not renamed.", finalPackage);
 		return true;
 	}
-
-	// protected List<String> getRuleFileNames(AppOption ruleOption) {
-	// List<String> rulesFileNames =
-	// options.normalize(options.getOptionValues(ruleOption));
-	// if (rulesFileNames != null) {
-	// return rulesFileNames;
-	// } else {
-	// String defaultReference = options.getDefaultReference(ruleOption);
-	// return ( (defaultReference == null) ? null : new String[] {
-	// defaultReference } );
-	// }
-	// }
 
 	public void logRules() {
 		if (!getLogger().isDebugEnabled()) {
