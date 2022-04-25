@@ -85,11 +85,6 @@ public class CompositeActionImpl extends ActionImpl<Changes> implements Composit
 	}
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public Action acceptAction(String resourceName, File resourceFile) {
 		for (Action action : getActions()) {
 			if (action.accept(resourceName, resourceFile)) {

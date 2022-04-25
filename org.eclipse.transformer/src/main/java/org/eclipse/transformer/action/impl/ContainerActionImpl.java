@@ -66,11 +66,6 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 	}
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public Action acceptAction(String resourceName) {
 		return acceptAction(resourceName, null);
 	}

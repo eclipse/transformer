@@ -47,11 +47,6 @@ public class TextActionImpl extends ActionImpl<Changes> {
 	}
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException("Text does not use this API");
-	}
-
-	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 		if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 			return true;
