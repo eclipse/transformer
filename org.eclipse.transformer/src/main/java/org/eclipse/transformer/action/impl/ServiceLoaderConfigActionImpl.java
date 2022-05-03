@@ -80,11 +80,6 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 	//
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 		return resourceName.contains(META_INF_SERVICES) && !resourceName.endsWith(META_INF_SERVICES);
 	}

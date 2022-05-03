@@ -47,11 +47,6 @@ public class TextActionImpl extends ActionImpl<Changes> {
 	}
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException("Text does not use this API");
-	}
-
-	@Override
 	public boolean accept(String resourceName, File resourceFile) {
 		if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 			return true;
@@ -63,18 +58,19 @@ public class TextActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		String inputName = inputData.name();
+		startRecording(inputName);
 		try {
-			String outputName = inputData.name();
+			String outputName = relocateResource(inputName);
 
-			setResourceNames(inputData.name(), outputName);
+			setResourceNames(inputName, outputName);
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
 			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
-				transform(inputData.name(), reader, writer);
+				transform(inputName, reader, writer);
 			} catch (IOException e) {
-				throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
+				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
 			}
 
 			if (!hasChanges()) {
@@ -85,7 +81,7 @@ public class TextActionImpl extends ActionImpl<Changes> {
 			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
 			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputName);
 		}
 	}
 

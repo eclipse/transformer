@@ -279,7 +279,9 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 
 	//
 
-	protected abstract String getAcceptExtension();
+	public String getAcceptExtension() {
+		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
+	}
 
 	@Override
 	public boolean accept(String resourceName, File resourceFile) {

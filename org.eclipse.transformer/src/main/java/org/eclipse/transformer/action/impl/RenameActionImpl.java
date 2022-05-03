@@ -49,11 +49,6 @@ public class RenameActionImpl extends ActionImpl<Changes> {
 	//
 
 	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public boolean accept(String resourcePath, File resourceFile) {
 		return true;
 	}

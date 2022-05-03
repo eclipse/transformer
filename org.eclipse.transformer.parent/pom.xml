@@ -566,7 +566,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				</property>
 			</activation>
 			<properties>
-				<bnd.version>6.3.0-SNAPSHOT</bnd.version>
+				<bnd.version>6.3.0-RC1</bnd.version>
 			</properties>
 			<repositories>
 				<repository>

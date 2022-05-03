@@ -437,8 +437,8 @@ public class SignatureRuleImpl implements SignatureRule {
 	}
 
 	@Override
-	public Map<String, String> getTextSubstitutions(String inputFileName) {
-		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputFileName);
+	public Map<String, String> getTextSubstitutions(String inputName) {
+		String simpleFileName = FileUtils.getFileNameFromFullyQualifiedFileName(inputName);
 
 		Map<String, Map<String, String>> specificUpdates = getSpecificTextUpdates();
 		Map<String, String> updates = specificUpdates.get(simpleFileName);
@@ -457,11 +457,11 @@ public class SignatureRuleImpl implements SignatureRule {
 	}
 
 	@Override
-	public String replaceText(String inputFileName, String text) {
-		Map<String, String> substitutions = getTextSubstitutions(inputFileName);
+	public String replaceText(String inputName, String text) {
+		Map<String, String> substitutions = getTextSubstitutions(inputName);
 		if (substitutions == null) {
 			throw new IllegalStateException(
-				"Input [ " + inputFileName + " ] selected for TEXT transformation, but found no substitutions");
+				"Input [ " + inputName + " ] selected for TEXT transformation, but found no substitutions");
 		}
 
 		String initialText = text;
