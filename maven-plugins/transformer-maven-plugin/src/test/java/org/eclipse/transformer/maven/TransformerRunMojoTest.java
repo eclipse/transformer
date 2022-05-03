@@ -33,8 +33,15 @@ import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.junit.rules.TestName;
 
-public class TransformMojoTest {
+public class TransformerRunMojoTest {
+
+	@Rule
+	public TestName			name		= new TestName();
+	@Rule
+	public TemporaryFolder	tmp			= new TemporaryFolder(new File("target"));
 
 	@Rule
 	public MojoRule			rule		= new MojoRule();
@@ -42,12 +49,13 @@ public class TransformMojoTest {
 	@Rule
 	public TestResources	resources	= new TestResources();
 
+
 	@Test
 	public void testProjectArtifactTransformerPlugin() throws Exception {
-		final TransformMojo mojo = new TransformMojo();
+		final TransformerRunMojo mojo = new TransformerRunMojo();
 		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
 		mojo.setOverwrite(true);
-		mojo.setOutputDirectory(new File("target"));
+		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 		mojo.setAttach(true);
 
 		assertNotNull(mojo);
@@ -87,7 +95,7 @@ public class TransformMojoTest {
 
 	@Test
 	public void testMultipleArtifactTransformerPlugin() throws Exception {
-		final TransformMojo mojo = new TransformMojo();
+		final TransformerRunMojo mojo = new TransformerRunMojo();
 		mojo.setOverwrite(true);
 		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
 		mojo.setAttach(true);
@@ -102,7 +110,7 @@ public class TransformMojoTest {
 
 		mojo.setProject(mavenProject);
 		mojo.setClassifier("transformed");
-		mojo.setOutputDirectory(new File("target"));
+		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 
 		mojo.getProjectHelper()
 			.attachArtifact(mavenProject, "zip", "test1", createService());
@@ -149,10 +157,10 @@ public class TransformMojoTest {
 
 	@Test
 	public void testProjectArtifactTransformerPluginNoAttach() throws Exception {
-		final TransformMojo mojo = new TransformMojo();
+		final TransformerRunMojo mojo = new TransformerRunMojo();
 		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
 		mojo.setOverwrite(true);
-		mojo.setOutputDirectory(new File("target"));
+		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 		mojo.setAttach(false);
 
 		assertNotNull(mojo);
