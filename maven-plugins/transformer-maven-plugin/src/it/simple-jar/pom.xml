@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	* Copyright (c) Contributors to the Eclipse Foundation
+	*
+	* This program and the accompanying materials are made available under the
+	* terms of the Eclipse Public License 2.0 which is available at
+	* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+	* which is available at https://www.apache.org/licenses/LICENSE-2.0.
+	*
+	* SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.eclipse.transformer-simple-jar</groupId>
+	<artifactId>smallrye-common-annotation</artifactId>
+	<version>1.11.0</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<project.build.outputTimestamp>2022-01-02T12:43:14Z</project.build.outputTimestamp>
+		<version.jakarta.enterprise.cdi.api>3.0.1</version.jakarta.enterprise.cdi.api>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.smallrye.common</groupId>
+				<artifactId>smallrye-common-annotation</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	<dependencies>
+		<dependency>
+			<groupId>jakarta.enterprise</groupId>
+			<artifactId>jakarta.enterprise.cdi-api</artifactId>
+			<version>${version.jakarta.enterprise.cdi.api}</version>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>jakarta.el</groupId>
+					<artifactId>jakarta.el-api</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>jakarta.interceptor</groupId>
+					<artifactId>jakarta.interceptor-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.eclipse.transformer</groupId>
+					<artifactId>transformer-maven-plugin</artifactId>
+					<version>${transformer.version}</version>
+					<extensions>true</extensions>
+					<configuration>
+						<rules>
+							<jakartaDefaults>true</jakartaDefaults>
+						</rules>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.2.7</version>
+					<configuration>
+						<flattenMode>oss</flattenMode>
+					</configuration>
+					<executions>
+						<execution>
+							<id>flatten</id>
+							<phase>process-resources</phase>
+							<goals>
+								<goal>flatten</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>flatten-clean</id>
+							<phase>clean</phase>
+							<goals>
+								<goal>clean</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.transformer</groupId>
+				<artifactId>transformer-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-jar</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<artifact>
+								<groupId>io.smallrye.common</groupId>
+								<artifactId>smallrye-common-annotation</artifactId>
+								<excludes>
+									<exclude>META-INF/jandex.idx</exclude>
+								</excludes>
+							</artifact>
+						</configuration>
+					</execution>
+					<execution>
+						<id>javadoc-jar</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<skip>${maven.javadoc.skip}</skip>
+							<artifact>
+								<groupId>io.smallrye.common</groupId>
+								<artifactId>smallrye-common-annotation</artifactId>
+								<classifier>javadoc</classifier>
+							</artifact>
+						</configuration>
+					</execution>
+					<execution>
+						<id>source-jar</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+						<configuration>
+							<skip>${maven.source.skip}</skip>
+							<artifact>
+								<groupId>io.smallrye.common</groupId>
+								<artifactId>smallrye-common-annotation</artifactId>
+								<classifier>sources</classifier>
+							</artifact>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

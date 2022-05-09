@@ -21,9 +21,9 @@
 	</parent>
 
 	<artifactId>transformer-maven-plugin</artifactId>
-	<description>Eclipse Transformer Maven Plugin</description>
+	<name>Eclipse Transformer Maven Plugin</name>
+	<description>Eclipse Transformer provides tools and runtime components that transform Java binaries, such as individual class files and complete JARs and WARs, mapping changes to Java packages, type names, and related resource names.</description>
 	<packaging>maven-plugin</packaging>
-	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://projects.eclipse.org/projects/technology.transformer</url>
 	<scm>
 		<url>https://github.com/eclipse/transformer</url>
@@ -43,9 +43,19 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>biz.aQute.bnd</groupId>
+			<artifactId>biz.aQute.bndlib</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.eclipse.transformer</groupId>
 			<artifactId>org.eclipse.transformer</artifactId>
 			<version>${project.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>biz.aQute.bnd</groupId>
+					<artifactId>biz.aQute.bnd.transform</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.transformer</groupId>
@@ -71,6 +81,14 @@
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.maven.shared</groupId>
+			<artifactId>maven-artifact-transfer</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.sonatype.plexus</groupId>
+			<artifactId>plexus-build-api</artifactId>
 		</dependency>
 
 		<!-- TESTS -->
@@ -126,8 +144,24 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.codehaus.plexus</groupId>
+				<artifactId>plexus-component-metadata</artifactId>
+				<executions>
+					<execution>
+						<id>merge</id>
+						<goals>
+							<goal>generate-metadata</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-plugin-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-invoker-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>

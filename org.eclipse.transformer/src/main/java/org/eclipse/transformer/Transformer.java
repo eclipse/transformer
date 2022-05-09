@@ -111,6 +111,11 @@ public class Transformer {
 		this.options = requireNonNull(options);
 	}
 
+	/**
+	 * Base URI for transformer. Initialize to current working directory.
+	 */
+	private URI								base	= IO.work.toURI();
+
 	public Set<String>						includes;
 	public Set<String>						excludes;
 
@@ -587,9 +592,8 @@ public class Transformer {
 			// reference has a scheme
 			url = uri.toURL();
 		} else {
-			// First resolve against current directory
-			URI fileUri = IO.work.toURI()
-				.resolve(uri);
+			// First resolve against base URI
+			URI fileUri = getBase().resolve(uri);
 			if (Files.exists(Paths.get(fileUri))) {
 				url = fileUri.toURL();
 			} else {
@@ -1214,5 +1218,23 @@ public class Transformer {
 			return acceptedAction.getLastActiveChanges();
 		}
 		return null;
+	}
+
+	/**
+	 * Base URI for transformer. Used to resolve references to resources.
+	 *
+	 * @return The base URI for transformer.
+	 */
+	public URI getBase() {
+		return base;
+	}
+
+	/**
+	 * Set the base URI for transformer.
+	 *
+	 * @param base The base URI for transformer.
+	 */
+	public void setBase(URI base) {
+		this.base = requireNonNull(base);
 	}
 }

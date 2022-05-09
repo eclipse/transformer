@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	* Copyright (c) Contributors to the Eclipse Foundation
+	*
+	* This program and the accompanying materials are made available under the
+	* terms of the Eclipse Public License 2.0 which is available at
+	* http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+	* which is available at https://www.apache.org/licenses/LICENSE-2.0.
+	*
+	* SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>org.eclipse.transformer-shaded</groupId>
+	<artifactId>shading-example</artifactId>
+	<version>1.0.0</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<project.build.outputTimestamp>2022-01-02T12:43:14Z</project.build.outputTimestamp>
+	</properties>
+	
+	<dependencies>
+		<dependency>
+			<groupId>org.osgi</groupId>
+			<artifactId>osgi.annotation</artifactId>
+			<version>8.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.2.7</version>
+					<configuration>
+						<flattenMode>oss</flattenMode>
+					</configuration>
+					<executions>
+						<execution>
+							<id>flatten</id>
+							<phase>process-resources</phase>
+							<goals>
+								<goal>flatten</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>flatten-clean</id>
+							<phase>clean</phase>
+							<goals>
+								<goal>clean</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.10.1</version>
+					<configuration>
+						<showWarnings>true</showWarnings>
+						<showDeprecation>true</showDeprecation>
+						<compilerArgs>
+							<arg>-Xlint:unchecked</arg>
+						</compilerArgs>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>3.2.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.2.2</version>
+				</plugin>
+				<plugin>
+					<groupId>biz.aQute.bnd</groupId>
+					<artifactId>bnd-maven-plugin</artifactId>
+					<version>${bnd.version}</version>
+					<extensions>true</extensions>
+					<dependencies>
+						<dependency>
+							<groupId>org.eclipse.transformer</groupId>
+							<artifactId>org.eclipse.transformer.bnd.analyzer</artifactId>
+							<version>${transformer.version}</version>
+						</dependency>
+					</dependencies>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>biz.aQute.bnd</groupId>
+				<artifactId>bnd-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-jar</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<bnd><![CDATA[
+-exportcontents: main
+-plugin.transformer: org.eclipse.transformer.bnd.analyzer.TransformerAnalyzerPlugin;command:=-transformer
+-transformer: renames;properties=renames.properties
+]]></bnd>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+</project>

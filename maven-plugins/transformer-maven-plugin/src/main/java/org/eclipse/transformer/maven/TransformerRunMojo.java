@@ -40,12 +40,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is a Maven plugin which runs the Eclipse Transformer on build artifacts
- * as part of the build.
+ * Transforms all the project's artifacts.
+ * <p>
+ * This goal is deprecated. Executions of the "jar" goal should be used instead.
+ * <p>
+ * This goal has the default phase of "package".
  */
-@Mojo(name = "run", requiresDependencyResolution = ResolutionScope.RUNTIME_PLUS_SYSTEM, defaultPhase = LifecyclePhase.PACKAGE, requiresProject = true, threadSafe = true)
-public class TransformMojo extends AbstractMojo {
-	static final Logger			logger	= LoggerFactory.getLogger(TransformMojo.class);
+@Mojo(name = "run", defaultPhase = LifecyclePhase.PACKAGE, requiresDependencyResolution = ResolutionScope.RUNTIME_PLUS_SYSTEM, requiresProject = true, threadSafe = true)
+public class TransformerRunMojo extends AbstractMojo {
+	static final Logger			logger	= LoggerFactory.getLogger(TransformerRunMojo.class);
 
 	@Parameter(defaultValue = "${project}", readonly = true, required = true)
 	private MavenProject		project;

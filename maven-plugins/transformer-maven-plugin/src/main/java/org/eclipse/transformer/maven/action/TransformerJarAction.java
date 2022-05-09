@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-package org.eclipse.transformer.bnd.analyzer;
+package org.eclipse.transformer.maven.action;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -25,23 +25,22 @@ import org.eclipse.transformer.action.CompositeAction;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ContainerActionImpl;
 
-import aQute.bnd.osgi.Analyzer;
 import aQute.bnd.osgi.EmbeddedResource;
 import aQute.bnd.osgi.Jar;
 import aQute.bnd.osgi.ManifestResource;
 import aQute.bnd.osgi.Resource;
 
-public class AnalyzerActionImpl extends ContainerActionImpl {
-	private final boolean		overwrite;
+public class TransformerJarAction extends ContainerActionImpl {
+	private final boolean	overwrite;
 
-	public AnalyzerActionImpl(CompositeAction rootAction, boolean overwrite) {
+	public TransformerJarAction(CompositeAction rootAction, boolean overwrite) {
 		super(rootAction);
 		this.overwrite = overwrite;
 	}
 
 	@Override
 	public String getName() {
-		return "Bnd Analyzer Action";
+		return "Transformer Maven Plugin Action";
 	}
 
 	@Override
@@ -49,13 +48,26 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 		return ActionType.JAR;
 	}
 
-	public void apply(Analyzer analyzer) {
-		Jar jar = analyzer.getJar();
+	@Override
+	protected TransformerJarChanges newChanges() {
+		return new TransformerJarChanges();
+	}
+
+	@Override
+	public TransformerJarChanges getActiveChanges() {
+		return (TransformerJarChanges) super.getActiveChanges();
+	}
+
+	@Override
+	public TransformerJarChanges getLastActiveChanges() {
+		return (TransformerJarChanges) super.getLastActiveChanges();
+	}
+
+	public void apply(Jar jar, String inputName, String outputName) {
 		String manifestName = jar.getManifestName();
-		String bundleSymbolicName = analyzer.getBsn();
-		startRecording(bundleSymbolicName);
+		startRecording(inputName);
 		try {
-			setResourceNames(bundleSymbolicName, bundleSymbolicName);
+			setResourceNames(inputName, outputName);
 
 			Map<String, Resource> resources = jar.getResources();
 			List<String> inputPaths = new ArrayList<>(resources.size() + 1);
@@ -100,25 +112,34 @@ public class AnalyzerActionImpl extends ContainerActionImpl {
 						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", selectedAction.getClass()
 							.getSimpleName(), inputPath, outputPath);
 						if (changes.hasResourceNameChange()) {
-							if (!overwrite && (jar.getResource(outputPath) != null)) {
-								analyzer.error(
-									"Transform for %s overwrites existing resource %s. Use 'overwrite' option to allow overwriting.",
+							if (!isOverwrite() && (jar.getResource(outputPath) != null)) {
+								getLogger().error(
+									"Transform for {} overwrites existing resource {}. Use 'overwrite' option to allow overwriting.",
 									inputPath, outputPath);
 								continue;
 							}
 							jar.remove(inputPath);
+							getActiveChanges().addRemoved(inputPath);
 						}
 						Resource outputResource = changes.hasNonResourceNameChanges()
 							? new EmbeddedResource(outputData.buffer(), resource.lastModified())
 							: resource;
 						jar.putResource(outputPath, outputResource);
+						getActiveChanges().addChanged(outputPath);
 					}
 				} catch (Exception e) {
-					analyzer.exception(e, "Failure while transforming %s", inputPath);
+					getLogger().error("Failure while transforming {}", inputPath, e);
 				}
 			}
 		} finally {
-			stopRecording(bundleSymbolicName);
+			stopRecording(inputName);
 		}
+	}
+
+	/**
+	 * @return the overwrite
+	 */
+	public boolean isOverwrite() {
+		return overwrite;
 	}
 }
