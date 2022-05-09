@@ -51,11 +51,13 @@
 					<artifactId>biz.aQute.bnd.transform</artifactId>
 				</exclusion>
 			</exclusions>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.transformer</groupId>
 			<artifactId>org.eclipse.transformer.jakarta</artifactId>
 			<version>${project.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- TESTS -->
