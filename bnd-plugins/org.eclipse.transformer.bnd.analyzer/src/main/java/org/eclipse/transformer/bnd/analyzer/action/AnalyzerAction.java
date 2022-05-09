@@ -9,7 +9,7 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-package org.eclipse.transformer.bnd.analyzer;
+package org.eclipse.transformer.bnd.analyzer.action;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -31,10 +31,10 @@ import aQute.bnd.osgi.Jar;
 import aQute.bnd.osgi.ManifestResource;
 import aQute.bnd.osgi.Resource;
 
-public class AnalyzerActionImpl extends ContainerActionImpl {
+public class AnalyzerAction extends ContainerActionImpl {
 	private final boolean		overwrite;
 
-	public AnalyzerActionImpl(CompositeAction rootAction, boolean overwrite) {
+	public AnalyzerAction(CompositeAction rootAction, boolean overwrite) {
 		super(rootAction);
 		this.overwrite = overwrite;
 	}

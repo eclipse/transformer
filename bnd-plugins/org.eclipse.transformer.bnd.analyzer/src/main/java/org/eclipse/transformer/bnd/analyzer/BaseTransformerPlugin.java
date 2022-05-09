@@ -11,6 +11,7 @@
 
 package org.eclipse.transformer.bnd.analyzer;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
@@ -21,6 +22,7 @@ import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.action.CompositeAction;
 import org.eclipse.transformer.action.ContainerChanges;
+import org.eclipse.transformer.bnd.analyzer.action.AnalyzerAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +66,12 @@ public class BaseTransformerPlugin implements Plugin {
 		TransformOptions options = new TransformerPluginOptions(analyzer, parameters, getOptionDefaults(),
 			getRuleLoader());
 		Transformer transformer = new Transformer(getLogger(), options);
+		// For use as the resolve base
+		URI base = analyzer.getBaseURI();
+		if (base != null) {
+			getLogger().debug("Setting Transformer base {}", base);
+			transformer.setBase(base);
+		}
 
 		boolean validRules;
 		try {
@@ -79,7 +87,7 @@ public class BaseTransformerPlugin implements Plugin {
 		transformer.logRules();
 
 		CompositeAction rootAction = transformer.getRootAction();
-		AnalyzerActionImpl analyzerAction = new AnalyzerActionImpl(rootAction, options.hasOption(AppOption.OVERWRITE));
+		AnalyzerAction analyzerAction = new AnalyzerAction(rootAction, options.hasOption(AppOption.OVERWRITE));
 
 		analyzerAction.apply(analyzer);
 
