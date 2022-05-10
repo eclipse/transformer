@@ -29,7 +29,7 @@
 		<java.release>8</java.release>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<bnd.version>6.3.0-RC1</bnd.version>
+		<bnd.version>6.4.0-SNAPSHOT</bnd.version>
 		<junit-jupiter.version>5.8.2</junit-jupiter.version>
 		<assertj.version>3.22.0</assertj.version>
 		<xmlunit.version>2.9.0</xmlunit.version>
