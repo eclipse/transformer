@@ -1,6 +1,6 @@
 # transformer-maven-plugin
 
-The Eclipse Transformer Maven Plugin provides a means to use the Transformer in a maven build.
+The Eclipse Transformer Maven Plugin provides a means to use the Transformer in a Maven build.
 
 This plugin contains the following goals:
 
@@ -19,36 +19,36 @@ The `jar` goal is not executed by default, therefore at least one explicit execu
 ### `jar` Goal Configuration Parameters
 
 |Configuration Parameter | Description |
-| ---                   | ---         |
-|`rules`              | The transformation rules. See [Rules](#rules) below.|
-|`packagingTypes`                | The list of maven packaging types for which the goal will execute. _Defaults to `jar,war,ear,ejb,ejb3,par,rar,maven-plugin`_. Override with property `transformer.packagingTypes`. |
-|`skip`                 | Skip executing this goal. _Defaults to `false`_. Override with property `transform.skip`.|
-|`artifact`              | The input artifact to transform. See [Artifact](#artifact) below.|
-|`buildDirectory`         | The build directory into which the new transformed artifact is written. _Defaults to `${project.build.outputDirectory}`_.|
-|`baseName`         | The base name of the transformed artifact. The classifier and type will be suffixed to the base name. _Defaults to `${project.build.finalName}`_.|
-|`classifier`         | The classifier of the transformed artifact. The default value is comes from the `classifier` value in the `artifact` configuration. The value `-` (Hyphen-minus) is treated as no classifier specified. So to avoid inheriting the `classifier` of the `artifact` configuration, use `-`.|
-|`type`         | The file type of the transformed artifact. _Defaults to `${project.packaging}`_.|
-|`outputTimestamp`         | Time stamp for [reproducible builds](https://maven.apache.org/guides/mini/guide-reproducible-builds.html), either formatted as ISO 8601 `yyyy-MM-dd'T'HH:mm:ssXXX` or as an int representing seconds since the epoch (like SOURCE_DATE_EPOCH). _Defaults to `${project.build.outputTimestamp}`_.|
-|`attach`         | Attach the transformed artifact to the project. _Defaults to `true`_.|
+| --- | --- |
+|`rules` | The transformation rules. See [Rules](#rules).|
+|`packagingTypes` | The list of maven packaging types for which the goal will execute. _Defaults to `jar,war,ear,ejb,ejb3,par,rar,maven-plugin`_. Override with property `transformer.packagingTypes`. |
+|`skip` | Skip executing this goal. _Defaults to `false`_. Override with property `transform.skip`.|
+|`artifact` | The input artifact to transform. See [Artifact](#artifact).|
+|`buildDirectory` | The build directory into which the new transformed artifact is written. _Defaults to `${project.build.outputDirectory}`_.|
+|`baseName` | The base name of the transformed artifact. The classifier and extension, based upon the type, will be suffixed to the base name. _Defaults to `${project.build.finalName}`_.|
+|`classifier` | The classifier of the transformed artifact. The default value is comes from the `classifier` value in the `artifact` configuration. The value `-` (Hyphen-minus) is treated as no classifier specified. So use `-` to have no classifier when the `artifact` configuration specifies a classifier.|
+|`type` | The type of the transformed artifact. _Defaults to `${project.packaging}`_.|
+|`outputTimestamp` | Time stamp for [reproducible builds](https://maven.apache.org/guides/mini/guide-reproducible-builds.html), either formatted as ISO 8601 `yyyy-MM-dd'T'HH:mm:ssXXX` or as an int representing seconds since the epoch (like SOURCE_DATE_EPOCH). _Defaults to `${project.build.outputTimestamp}`_.|
+|`attach` | Attach the transformed artifact to the project. _Defaults to `true`_.|
 
 #### Rules
 
 The `rules` configuration paramater has the following nested parameters.
 All URIs are resolved relative to the project base directory.
-A URI value of `-` (Hyphen-minus) is ingored but if used as the only value results in an empty list as opposed to being unspecified.
+A list value of `-` (Hyphen-minus) is ignored. This can be used to configure an empty list to override the default value when `jakartaDefaults` is `true`.
 
 |Configuration Parameter | Description |
-| --- | ---  |
-|`selections` | A list of URIs to selections. |
-|`renames` | A list of URIs to renames. |
-|`versions` | A list of URIs to versions. |
-|`bundles` | A list of URIs to bundles. |
-|`directs` | A list of URIs to directs. |
-|`texts` | A list of URIs to texts. |
-|`perClassConstants` | A list of URIs to perClassConstants. |
-|`immediates` | A list of URIs to immediates. |
+| --- | --- |
+|`selections` | A list of URIs to selections properties. |
+|`renames` | A list of URIs to renames properties. |
+|`versions` | A list of URIs to versions properties. |
+|`bundles` | A list of URIs to bundles properties. |
+|`directs` | A list of URIs to directs properties. |
+|`texts` | A list of URIs to texts properties. |
+|`perClassConstants` | A list of URIs to perClassConstants properties. |
+|`immediates` | A list of immediate options. |
 |`invert` | If `true`, invert the rename rules. _Defaults to `false`_. |
-|`overwrite` | If `true`, the renames items which have the same name of existing items are overwritten. _Defaults to `false`_. |
+|`overwrite` | If `true`, the items which transform to the same path as an existing item overwrite the existing item. _Defaults to `false`_. |
 |`widen` | If `true`, By default, archive nesting is restricted to JavaEE active locations. This may be relaxed to enable JAR and ZIP within JAR, ZIP within ZIP, and ZIP within EAR, WAR, and RAR. _Defaults to `false`_. |
 |`jakartaDefaults` | If `true`, the Jakarta rule defaults are included. _Defaults to `false`_. |
 
@@ -72,13 +72,13 @@ A URI value of `-` (Hyphen-minus) is ingored but if used as the only value resul
 The `artifact` configuration paramater has the following nested parameters.
 
 |Configuration Parameter | Description |
-| --- | ---  |
+| --- | --- |
 |`groupId` | The groupId of the artifact to transform. This must be specified. |
 |`artifactId` | The artifactId of the artifact to transform. This must be specified. |
-|`version` | The version of the artifact to transform. This can be inferred from the `dependencies` or `dependencyManagement` configuration. |
-|`type` | The type of the artifact to transform. _Defaults to `${project.packaging}`_. |
+|`version` | The version of the artifact to transform. This can be inferred from inspecting the project main and attached artifacts,  `dependencies`, and `dependencyManagement` configuration to find the specified groupId and artifactId and using the version of the matching artifact. |
 |`classifier` | The classifier of the artifact to transform. _Defaults to no classfier_. |
-|`excludes` | A list of exclusion globs which are to be excluded from the artifact to transform. `META-INF/maven/**` is always excluded as the Maven metadata for the result comes from the project. |
+|`type` | The type of the artifact to transform. _Defaults to `${project.packaging}`_. |
+|`excludes` | A list of exclusion globs which are paths to be excluded from the artifact to transform. `META-INF/maven/**` is always excluded as the Maven metadata for the result artifact comes from the project. |
 
 ```xml
 <artifact>
@@ -115,7 +115,6 @@ The `artifact` configuration paramater has the following nested parameters.
         </execution>
         <execution>
             <id>javadoc-jar</id>
-            <phase>verify</phase>
             <goals>
                 <goal>jar</goal>
             </goals>
@@ -131,7 +130,6 @@ The `artifact` configuration paramater has the following nested parameters.
         </execution>
         <execution>
             <id>source-jar</id>
-            <phase>verify</phase>
             <goals>
                 <goal>jar</goal>
             </goals>
@@ -149,7 +147,7 @@ The `artifact` configuration paramater has the following nested parameters.
 </plugin>
 ```
 
-**Note**: In this example, the execution for the empty classifier **replaces** the _matching_ execution of the `maven-jar-plugin`.
+**Note**: In this example, the execution for no classifier **replaces** the _matching_ execution of the `maven-jar-plugin`.
 
 #### Matching executions
 
@@ -163,15 +161,14 @@ The `transform` goal operates at the directory level and transforms the specifie
 
 The `transform` goal is not executed by default, therefore at least one explicit execution needs to be configured (by default bound to `process-classes` phase)
 
-
 ### `transform` Goal Configuration Parameters
 
 |Configuration Parameter | Description |
-| ---                   | ---         |
-|`rules`              | The transformation rules. See See [Rules](#rules) above.|
-|`packagingTypes`                | The list of maven packaging types for which the goal will execute. _Defaults to `jar,war,ear,ejb,ejb3,par,rar,maven-plugin`_. Override with property `transformer.packagingTypes`. |
-|`skip`                 | Skip executing this goal. _Defaults to `false`_. Override with property `transform.skip`.|
-|`transformDirectory`                 | The directory to transform. _Defaults to `${project.build.outputDirectory}`_.|
+| --- | --- |
+|`rules` | The transformation rules. See [Rules](#rules).|
+|`packagingTypes` | The list of maven packaging types for which the goal will execute. _Defaults to `jar,war,ear,ejb,ejb3,par,rar,maven-plugin`_. Override with property `transformer.packagingTypes`. |
+|`skip` | Skip executing this goal. _Defaults to `false`_. Override with property `transform.skip`.|
+|`transformDirectory` | The directory to transform. This directory must already be populated with content to transform before this goal executes. _Defaults to `${project.build.outputDirectory}`_.|
 
 #### `transform` Goal Plugin Configuration Example
 
@@ -242,23 +239,11 @@ The `maven-jar-plugin` will NOT currently use the data from the transformed `MAN
 It is therefore necessary to configure the `maven-jar-plugin` as follows:
 
 ```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-jar-plugin</artifactId>
-    <executions>
-       <execution>
-            <id>default-jar</id>
-            <goals>
-                <goal>jar</goal>
-            </goals>
-            <configuration>
-                <archive>
-                    <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-                </archive>
-            </configuration>
-       </execution>
-    </executions>
-</plugin>
+<configuration>
+    <archive>
+        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+    </archive>
+</configuration>
 ```
 
 ## `help` Goal
