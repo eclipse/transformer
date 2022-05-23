@@ -88,7 +88,7 @@ For example:
 
 For example:
 
-    *=*.jakarta,2.0,+" Jakarta",+"; Jarkata Enabled"
+    *=*.jakarta,2.0,+" Jakarta",+"; Jakarta Enabled"
 
 **Wildcard support**: The initial and final bundle symbolic IDs may include a '*'.  The final bundle symbolic ID may include a '*', in which case, the bundle symbolic name is updated by replacing the '*' with the initial bundle symbolic name.
 
