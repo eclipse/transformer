@@ -88,7 +88,7 @@ For example:
 
 For example:
 
-    *=*.jakarta,2.0,+" Jakarta",+"; Jarkata Enabled"
+    *=*.jakarta,2.0,+" Jakarta",+"; Jakarta Enabled"
 
 **Wildcard support**: The initial and final bundle symbolic IDs may include a '*'.  The final bundle symbolic ID may include a '*', in which case, the bundle symbolic name is updated by replacing the '*' with the initial bundle symbolic name.
 
@@ -102,9 +102,9 @@ The bundle version is not updated when the initial bundle symbolic name is '*'.
 
 ### Case: Class simple string update
 
-**Command line argument**: -td, --direct 
+**Command line argument**: -td, --direct
 
-**Property format**: An initial text value mapped to a final text value. 
+**Property format**: An initial text value mapped to a final text value.
 
 **Wildcard support**: None
 
@@ -123,12 +123,12 @@ jakarta-text-master.properties
 ~~~
 
 ~~~
-application.xml=jakarta-xml-dd.properties
-application-client.xml=jakarta-xml-dd.properties
+application.xml=jakarta-direct.properties
+application-client.xml=jakarta-direct.properties
 ~~~
 
 ~~~
-jakarta-xml-dd.properties
+jakarta-direct.properties
 ~~~
 
 ~~~
@@ -137,6 +137,7 @@ javax.ejb.MessageDrivenContext=jakarta.ejb.MessageDrivenContext
 javax.ejb.SessionContext=jakarta.ejb.SessionContext
 javax.ejb.Timer=jakarta.ejb.Timer
 javax.ejb.TimerService=jakarta.ejb.TimerService
+...
 ~~~
 
 **Wildcard support**: File name patterns may include a single '*' wildcard.
@@ -171,6 +172,6 @@ javax.servlet=jakarta.servlet
 
 **Wildcard support**: None
 
-**Description**: Updates target classes. All occurrences of mapping keys present in constant strings are replaced with mapping values. 
+**Description**: Updates target classes. All occurrences of mapping keys present in constant strings are replaced with mapping values.
 
 **Used by**: Class action
