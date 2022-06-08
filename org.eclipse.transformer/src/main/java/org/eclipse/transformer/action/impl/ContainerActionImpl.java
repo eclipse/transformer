@@ -12,67 +12,93 @@
 package org.eclipse.transformer.action.impl;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
-import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
-import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.CompositeAction;
+import org.eclipse.transformer.action.ActionSelector;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ContainerAction;
-import org.eclipse.transformer.action.ContainerChanges;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
 
-import aQute.lib.io.ByteBufferOutputStream;
+/**
+ * Action type used to transform a collection of resources.
+ * <p>
+ * Container actions share responsibility with selection actions for
+ * transforming resource containers. Responsibility is divided, with
+ * {@link ActionSelectorImpl} being responsible for selecting and applying a
+ * single action to a single specified resource, and with
+ * {@link ContainerActionImpl} responsible for invoking its selection action on
+ * a collection of resources.
+ * <p>
+ * Container actions currently have two main varieties: Directory actions and
+ * ZIP (archive) actions. While several kinds of ZIP actions exist, these are
+ * minor variations of the basic ZIP action.
+ * <p>
+ * The main difference between the directory and ZIP actions is that the
+ * directory action knows how to recursively walk a target directory. Zip
+ * actions know how to open and iterate across the elements of the target
+ * archive.
+ */
+public abstract class ContainerActionImpl extends ActionImpl implements ContainerAction {
 
-public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImpl> implements ContainerAction {
+	public ContainerActionImpl(ActionInitData initData, ActionSelector actionSelector) {
+		super(initData);
+		this.actionSelector = actionSelector;
+	}
+
+	public ContainerActionImpl(ActionInitData initData) {
+		this(initData, new ActionSelectorImpl());
+	}
+
+	@Override
+	public abstract String getName();
+
+	@Override
+	public abstract ActionType getActionType();
+
+	// Used only for testing.
+
+	private Action.ActionInitData getInitData() {
+		return new ActionImpl.ActionInitDataImpl(getLogger(), getBuffer(), getResourceSelectionRule(),
+			getSignatureRule());
+	}
 
 	public <A extends Action> A addUsing(ActionInit<A> init) {
-		A action = createUsing(init);
+		A action = createUsing(init, getInitData());
 		addAction(action);
 		return action;
 	}
 
-	public ContainerActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
-		this.compositeAction = createUsing(CompositeActionImpl::new);
-	}
-
-	public ContainerActionImpl(CompositeAction compositeAction) {
-		super(compositeAction.getLogger(), compositeAction.getBuffer(), compositeAction.getSelectionRule(),
-			compositeAction.getSignatureRule());
-		this.compositeAction = compositeAction;
-	}
-
 	//
 
-	private final CompositeAction compositeAction;
+	private final ActionSelector actionSelector;
 
 	@Override
-	public CompositeAction getAction() {
-		return compositeAction;
+	public ActionSelector getActionSelector() {
+		return actionSelector;
 	}
 
 	public void addAction(Action action) {
-		getAction().addAction(action);
+		getActionSelector().addAction(action);
+	}
+
+	public void addActions(Collection<Action> actions) {
+		getActionSelector().addActions(actions);
 	}
 
 	@Override
 	public List<Action> getActions() {
-		return getAction().getActions();
+		return getActionSelector().getActions();
 	}
 
 	@Override
-	public Action acceptAction(String resourceName) {
-		return acceptAction(resourceName, null);
+	public Action selectAction(String resourceName) {
+		return selectAction(resourceName, null);
 	}
 
 	@Override
-	public Action acceptAction(String resourceName, File resourceFile) {
-		return getAction().acceptAction(resourceName, resourceFile);
+	public Action selectAction(String resourceName, File resourceFile) {
+		return getActionSelector().selectAction(resourceName, resourceFile);
 	}
 
 	//
@@ -82,37 +108,52 @@ public abstract class ContainerActionImpl extends ActionImpl<ContainerChangesImp
 		return new ContainerChangesImpl();
 	}
 
-	//
-
-	protected void recordUnaccepted(String resourceName) {
-		getLogger().debug("Resource [ {} ]: Not accepted", resourceName);
-
-		getActiveChanges().record();
-	}
-
-	protected void recordUnselected(Action action, String resourceName) {
-		getLogger().debug("Resource [ {} ] Action [ {} ]: Accepted but not selected", resourceName, action.getName());
-
-		getActiveChanges().record(action, !ContainerChanges.HAS_CHANGES);
-	}
-
-	protected void recordTransform(Action action, String resourceName) {
-		getLogger().debug("Resource [ {} ] Action [ {} ]: Changes [ {} ]", resourceName, action.getName(),
-			action.hadChanges());
-
-		getActiveChanges().record(action);
+	@Override
+	public ContainerChangesImpl getActiveChanges() {
+		return (ContainerChangesImpl) super.getActiveChanges();
 	}
 
 	@Override
-	public ByteData apply(ByteData inputData) throws TransformException {
-		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-		apply(inputData.name(), inputData.stream(), inputData.length(), outputStream);
-
-		if (!getLastActiveChanges().hasChanges()) {
-			return inputData;
-		}
-
-		ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
-		return outputData;
+	public ContainerChangesImpl getLastActiveChanges() {
+		return (ContainerChangesImpl) super.getLastActiveChanges();
 	}
+
+	protected void recordUnaccepted(String resourceName) {
+		getLogger().debug("Resource [ {} ]: Not accepted", resourceName);
+		getActiveChanges().recordUnaccepted();
+	}
+
+	protected void recordUnselected(String resourceName) {
+		getLogger().debug("Resource [ {} ]: Not selected", resourceName);
+		getActiveChanges().recordUnselected();
+	}
+
+	protected void recordUnchanged(Action action, String resourceName) {
+		getLogger().debug("Resource [ {} ]: Action [ {} ]: Not changed", action.getName(), resourceName);
+		getActiveChanges().recordUnchanged(action);
+	}
+
+	protected void recordAction(Action action, String resourceName) {
+		getLogger().debug("Resource [ {} ]: Action [ {} ]", action.getName(), resourceName);
+		getActiveChanges().recordAction(action);
+	}
+
+	protected void recordError(Action action, String resourceName, Throwable error) {
+		String actionName = ( (action == null) ? "null" : action.getName() );
+		getLogger().error("Resource [ " + resourceName + " ] Action [ " + actionName + " ]: Failed transform", error);
+		getActiveChanges().recordFailed(action);
+	}
+
+	protected void recordDuplicate(Action action, String resourceName) {
+		String actionName = ( (action == null) ? "null" : action.getName() );
+		getLogger().error("Resource [ {} ] Action [ {} ]: Duplicate", resourceName, actionName);
+		getActiveChanges().recordDuplicated(action);
+	}
+
+	protected void recordNested(ContainerAction action, String resourceName) {
+		getActiveChanges().add(action.getLastActiveChanges());
+	}
+
+	@Override
+	public abstract void apply(String inputName, File inputFile, String outputName, File outputFile);
 }

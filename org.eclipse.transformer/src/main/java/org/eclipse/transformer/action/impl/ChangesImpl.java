@@ -14,18 +14,50 @@ package org.eclipse.transformer.action.impl;
 import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.ContainerChanges;
 import org.slf4j.Logger;
 
-public class ChangesImpl implements Changes {
+public abstract class ChangesImpl implements Changes {
 
 	public ChangesImpl() {
 		// Empty
 	}
 
+	//
+
 	@Override
-	public boolean hasChanges() {
-		return hasResourceNameChange() || hasNonResourceNameChanges();
+	public abstract boolean isContentChanged();
+
+	@Override
+	public abstract String toString();
+
+	//
+
+	@Override
+	public boolean isChanged() {
+		return isRenamed() || isContentChanged();
+	}
+
+	@Override
+	public boolean isRenamed() {
+		String inputResourceName = getInputResourceName();
+		// The input name will be null if the transform fails very early.
+		return ((inputResourceName != null) && !inputResourceName.equals(getOutputResourceName()));
+	}
+
+	@Override
+	public String getChangeText() {
+		boolean nameChanged = isRenamed();
+		boolean contentChanged = isContentChanged();
+
+		if (nameChanged && contentChanged) {
+			return "Name and content changes";
+		} else if (nameChanged) {
+			return "Name changes";
+		} else if (contentChanged) {
+			return "Content changes";
+		} else {
+			return "No changes";
+		}
 	}
 
 	//
@@ -39,8 +71,9 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
-	public void setInputResourceName(String inputResourceName) {
+	public ChangesImpl setInputResourceName(String inputResourceName) {
 		this.inputResourceName = inputResourceName;
+		return this;
 	}
 
 	@Override
@@ -49,80 +82,35 @@ public class ChangesImpl implements Changes {
 	}
 
 	@Override
-	public void setOutputResourceName(String outputResourceName) {
+	public ChangesImpl setOutputResourceName(String outputResourceName) {
 		this.outputResourceName = outputResourceName;
-	}
-
-	@Override
-	public boolean hasResourceNameChange() {
-		String inputResourceName = getInputResourceName();
-		// The input name will be null if the transform fails very early.
-		return ((inputResourceName != null) && !inputResourceName.equals(getOutputResourceName()));
+		return this;
 	}
 
 	//
-
-	private int replacements;
-
-	@Override
-	public int getReplacements() {
-		return replacements;
-	}
-
-	@Override
-	public void addReplacement() {
-		replacements++;
-	}
-
-	@Override
-	public void addReplacements(int additions) {
-		replacements += additions;
-	}
-
-	@Override
-	public boolean hasNonResourceNameChanges() {
-		return getReplacements() > 0;
-	}
-
-	//
-
-	@Override
-	public void addNestedInto(ContainerChanges containerChanges) {
-		// By default do nothing.
-	}
-
-	//
-
-	protected String getChangeTag() {
-		return hasNonResourceNameChanges() ? "Changed" : "Unchanged";
-	}
 
 	@Override
 	public void log(Logger logger, String inputPath, String outputPath) {
-		if (logger.isDebugEnabled(consoleMarker)) {
-			logger.debug(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-			logger.debug(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-			logger.debug(consoleMarker, "Replacements  [ {} ]", getReplacements());
-		} else if (logger.isInfoEnabled(consoleMarker)) {
-			if (!inputPath.equals(outputPath)) {
-				logger.info(consoleMarker, "Input [ {} ] as [ {} ]: {}", inputPath, outputPath, getChangeTag());
+		if (logger.isInfoEnabled(consoleMarker)) {
+			String useInputName = getInputResourceName();
+			String useOutputName = getOutputResourceName();
+
+			if (useInputName.equals(inputPath)) {
+				logger.info(consoleMarker, "Input  [ {} ]", inputPath);
+			} else {
+				logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 			}
+			if (useOutputName.equals(outputPath)) {
+				logger.info(consoleMarker, "Output [ {} ]", outputPath);
+			} else {
+				logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+			}
+
+			logChanges(logger);
 		}
 	}
 
-	@Override
-	public String toString() {
-		String inputResourceName = getInputResourceName();
-		boolean hasChanges = hasChanges();
-		if (inputResourceName != null) {
-			if (hasChanges) {
-				return String.format("%s Changed [%d]", inputResourceName, getReplacements());
-			}
-			return String.format("%s Unchanged", inputResourceName);
-		}
-		if (hasChanges) {
-			return String.format("Changed [%d]", getReplacements());
-		}
-		return "Unchanged";
+	protected void logChanges(Logger logger) {
+		logger.info(consoleMarker, "Changes [ {} ]", getChangeText());
 	}
 }

@@ -21,11 +21,14 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.impl.ActionImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,7 +50,7 @@ public class TestTransformXML extends CaptureTest {
 		System.setProperties(prior);
 	}
 
-	public static final String	TEST_DATA_PREFIX						= "transformer/test/data/transaction";
+	public static final String	TEST_DATA_PREFIX						= "transaction";
 
 	public static final String	UTSERVICE_XML_SIMPLE_NAME				= "UTService.xml";
 	public static final String	UTSERVICE_XML_PATH						= TEST_DATA_PREFIX + '/' + "OSGI-INF" + '/'
@@ -103,10 +106,11 @@ public class TestTransformXML extends CaptureTest {
 		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			textAction = new TextActionImpl(useLogger, new InputBufferImpl(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
 					Collections.emptyMap()));
+			textAction = new TextActionImpl(initData);
 		}
 
 		return textAction;
@@ -172,7 +176,7 @@ public class TestTransformXML extends CaptureTest {
 		List<String> finalLines;
 		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) {
 			ByteData xmlOutput = useTextAction.apply(useTextAction.collect(resourceRef, resourceInput));
-			finalLines = display(resourceRef, xmlOutput.stream());
+			finalLines = display(resourceRef, FileUtils.stream(xmlOutput));
 		}
 
 		verify(resourceRef, "initial lines", initialOccurrences, initialLines);

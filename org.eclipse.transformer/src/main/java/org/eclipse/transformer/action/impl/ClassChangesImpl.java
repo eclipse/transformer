@@ -15,19 +15,28 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.slf4j.Logger;
 
-public class ClassChangesImpl extends ChangesImpl {
+public class ClassChangesImpl extends ElementChangesImpl {
 	public ClassChangesImpl() {
 		super();
 	}
 
 	@Override
-	public boolean hasNonResourceNameChanges() {
+	public boolean isContentChanged() {
 		String inputClassName = getInputClassName();
 		String outputClassName = getOutputClassName();
 		String inputSuperName = getInputSuperName();
 		String outputSuperName = getOutputSuperName();
-		return super.hasNonResourceNameChanges() || //
-			((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName)) || //
+
+		// Other than the input class name and output class name,
+		// change tracking updates 'replacements', which is managed
+		// by the superclass, and which is tested by 'isContentChanged'.
+		//
+		// As a consequence, ** ALL OF THE CHANGE RECORDING ** must invoke
+		// 'addReplacement'. Otherwise, not all content changes will be
+		// detected.
+
+		return super.isContentChanged() ||
+			((inputClassName != null) && (outputClassName != null) && !inputClassName.equals(outputClassName)) ||
 			((inputSuperName != null) && (outputSuperName != null) && !inputSuperName.equals(outputSuperName));
 	}
 
@@ -130,28 +139,27 @@ public class ClassChangesImpl extends ChangesImpl {
 		addReplacement();
 	}
 
+	public void addModifiedConstants(int additions) {
+		modifiedConstants += additions;
+		addReplacements(additions);
+	}
+
 	//
 
 	@Override
-	public void log(Logger logger, String inputPath, String outputPath) {
-		if (logger.isDebugEnabled(consoleMarker)) {
-			logger.debug(consoleMarker, "Input name [ {} ] as [ {} ]", getInputResourceName(), inputPath);
+	public void logChanges(Logger logger) {
+		super.logChanges(logger);
 
-			logger.debug(consoleMarker, "Output name [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+		logger.info(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
 
-			logger.debug(consoleMarker, "Class name [ {} ] [ {} ]", getInputClassName(), getOutputClassName());
-
-			String inputSuperName = getInputSuperName();
-			if (inputSuperName != null) {
-				logger.debug(consoleMarker, "Super class name [ {} ] [ {} ]", inputSuperName, getOutputSuperName());
-			}
-
-			logger.debug(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());
-			logger.debug(consoleMarker, "Modified fields     [ {} ]", getModifiedFields());
-			logger.debug(consoleMarker, "Modified methods    [ {} ]", getModifiedMethods());
-			logger.debug(consoleMarker, "Modified constants  [ {} ]", getModifiedConstants());
-		} else {
-			super.log(logger, inputPath, outputPath);
+		String inputSuperName = getInputSuperName();
+		if (inputSuperName != null) {
+			logger.debug(consoleMarker, "Super class name [ {} ] [ {} ]", inputSuperName, getOutputSuperName());
 		}
+
+		logger.debug(consoleMarker, "Modified interfaces [ {} ]", getModifiedInterfaces());
+		logger.debug(consoleMarker, "Modified fields     [ {} ]", getModifiedFields());
+		logger.debug(consoleMarker, "Modified methods    [ {} ]", getModifiedMethods());
+		logger.debug(consoleMarker, "Modified constants  [ {} ]", getModifiedConstants());
 	}
 }

@@ -7,10 +7,6 @@ All are in package **org.eclipse.transformer.action.impl**:
 * Container Type Actions
 
   * DirectoryActionImpl
-  * EarActionImpl
-  * JarActionImpl
-  * RarActionImpl
-  * WarActionImpl
   * ZipActionImpl
 
 * Leaf Type Actions
@@ -23,9 +19,9 @@ All are in package **org.eclipse.transformer.action.impl**:
   * TextActionImpl
   * XmlActionImpl (not currently in use)
 
-* Null Action
+* Rename Action
 
-  * NullActionImpl
+  * RenameActionImpl
 
 ## Update Cases
 

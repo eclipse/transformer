@@ -22,16 +22,26 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.jar.Manifest;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
@@ -39,6 +49,7 @@ import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 
+import aQute.bnd.exceptions.Exceptions;
 import aQute.lib.io.IO;
 
 public class TestUtils {
@@ -74,17 +85,32 @@ public class TestUtils {
 
 	public static void verify(String tag, String[] expected, List<String> actual) {
 		int actualLen = actual.size();
+		int expectedLen = expected.length;
+		int minLength = ((actualLen < expectedLen) ? actualLen : expectedLen);
 
-		int minLength = expected.length;
-		if (minLength > actualLen) {
-			minLength = actualLen;
+		for (int lineNo = 0; lineNo < minLength; lineNo++) {
+			String expectedLine = expected[lineNo];
+			String actualLine = actual.get(lineNo);
+			if (!expectedLine.equals(actualLine)) {
+				System.out.println("Mismatch [ " + tag + " ] [ " + lineNo + " ]" + " Expected [ " + expectedLine
+					+ " ] Actual [ " + actualLine + " ]");
+			}
+		}
+		if (minLength < actualLen) {
+			for (int extraNo = minLength; extraNo < actualLen; extraNo++) {
+				System.out.println("Extra [ " + tag + " ]: [ " + actual.get(extraNo) + " ]");
+			}
+		} else if (minLength < expectedLen) {
+			for (int missingNo = minLength; missingNo < expectedLen; missingNo++) {
+				System.out.println("Missing [ " + tag + " ]: [ " + expected[missingNo] + " ]");
+			}
 		}
 
-		for (int lineNo = 0; lineNo < expected.length; lineNo++) {
+		for (int lineNo = 0; lineNo < minLength; lineNo++) {
 			Assertions.assertEquals(expected[lineNo], actual.get(lineNo), "Unequal lines [ " + lineNo + " ]");
 		}
 
-		Assertions.assertEquals(expected.length, actual.size(), "String [ " + tag + " ] length mismatch");
+		Assertions.assertEquals(expectedLen, actualLen, "String [ " + tag + " ] length mismatch");
 	}
 
 	public static void filter(List<String> lines) {
@@ -95,6 +121,12 @@ public class TestUtils {
 			if (trimLine.isEmpty() || (trimLine.charAt(0) == '#')) {
 				iterator.remove();
 			}
+		}
+	}
+
+	public static List<String> loadLines(File inputFile) throws IOException {
+		try (InputStream inputStream = new FileInputStream(inputFile)) {
+			return loadLines(inputStream);
 		}
 	}
 
@@ -441,5 +473,554 @@ public class TestUtils {
 			outputWriter.println(text);
 			outputWriter.flush();
 		}
+	}
+
+	//
+
+	public static class ErrorAccumulator {
+		public final String			name;
+
+		public final int			capacity;
+		protected int				size;
+		public final List<String>	errors;
+
+		public ErrorAccumulator(String name, int maxCount) {
+			this.name = name;
+
+			this.capacity = maxCount;
+			this.size = 0;
+			this.errors = new ArrayList<String>(maxCount);
+		}
+
+		/**
+		 * Add a message. Answer true or false telling if the accumulator is
+		 * full after adding the message. (Answer false if the accumulator is
+		 * already full.)
+		 *
+		 * @param message The message which is to be added.
+		 * @return True or full telling if the accumulator is already full, or
+		 *         is full after adding the message.
+		 */
+		public boolean add(String message) {
+			if (capacity == -1) {
+				errors.add(message);
+				return true;
+			} else {
+				if (size == capacity) {
+					return false;
+				} else {
+					errors.add(message);
+					return (++size < capacity);
+				}
+			}
+		}
+
+		/**
+		 * Display the accumulated messages.
+		 *
+		 * @return True or false telling if there were no errors.
+		 */
+		public boolean display() {
+			if (size == 0) {
+				return true;
+			}
+
+			System.out.println("Errors: Output [ " + name + " ]: ");
+			for (String error : errors) {
+				System.out.println("  [ " + error + " ]");
+			}
+
+			if (size == capacity) {
+				System.out.println("Maximum errors reached for output [ " + name + " ]");
+			}
+
+			return false;
+		}
+	}
+
+	/**
+	 * Standard maximum number of errors to accumulate.
+	 */
+	public static final int MAX_ERRORS = 10;
+
+	/**
+	 * Create a new error accumulator. Use {@link #MAX_ERRORS} as the capacity.
+	 *
+	 * @param name The name used by the accumulator.
+	 * @return The new accumulator.
+	 */
+	public static ErrorAccumulator newErrors(String name) {
+		return new ErrorAccumulator(name, MAX_ERRORS);
+	}
+
+	//
+
+	//
+
+	public static class InputMapping {
+		public final File	inputFile;
+		public final String	entryName;
+
+		public InputMapping(File inputFile, String entryName) {
+			this.inputFile = inputFile;
+			this.entryName = entryName;
+		}
+	}
+
+	public static void zip(File sourceDir, File zipFile) throws IOException {
+		zip(sourceDir, zipFile, null);
+	}
+
+	public static void zip(File sourceDir, File zipFile, List<InputMapping> inputMappings) throws IOException {
+		System.out.println("Source dir [ " + sourceDir.getAbsolutePath() + " ]");
+		System.out.println("Output zip [ " + zipFile.getAbsolutePath() + " ]");
+
+		Path rootSrcPath = sourceDir.toPath();
+		Path zipPath = zipFile.toPath();
+
+		IO.mkdirs(zipPath.getParent());
+
+		try (ZipOutputStream zip = new ZipOutputStream(IO.outputStream(zipPath));
+			Stream<Path> srcPaths = Files.walk(rootSrcPath)) {
+			srcPaths.forEach(srcPath -> {
+				boolean isDirectory = Files.isDirectory(srcPath);
+
+				String entryName = rootSrcPath.relativize(srcPath)
+					.toString()
+					.replace('\\', '/');
+				if (isDirectory) {
+					entryName += '/';
+				}
+				if (entryName.equals("/")) {
+					// Streaming includes the root input path.
+					// That generates entry name "/", which should
+					// never be added to the archive.
+					return;
+				}
+
+				System.out.println("Zip entry [ " + entryName + " ]");
+
+				ZipEntry zipEntry = new ZipEntry(entryName);
+				try {
+					zip.putNextEntry(zipEntry);
+					try {
+						if (!isDirectory) {
+							IO.copy(srcPath, zip);
+						}
+					} finally {
+						zip.closeEntry();
+					}
+				} catch (IOException e) {
+					throw Exceptions.duck(e);
+				}
+			});
+
+			if (inputMappings != null) {
+				inputMappings.forEach(inputMapping -> {
+					System.out.println(
+						"Zip entry [ " + inputMapping.inputFile.getPath() + " ] as [ " + inputMapping.entryName + " ]");
+
+					ZipEntry zipEntry = new ZipEntry(inputMapping.entryName);
+					try {
+						zip.putNextEntry(zipEntry);
+						try {
+							IO.copy(inputMapping.inputFile, zip);
+						} finally {
+							zip.closeEntry();
+						}
+					} catch (IOException e) {
+						throw Exceptions.duck(e);
+					}
+				});
+			}
+		}
+	}
+
+	public static void unzip(File zipFile, File outputDir) throws IOException {
+		System.out.println("Source zip [ " + zipFile.getAbsolutePath() + " ]");
+		System.out.println("Output dir [ " + outputDir.getAbsolutePath() + " ]");
+
+		Path out = IO.mkdirs(outputDir.toPath());
+		try (ZipFile zip = new ZipFile(zipFile)) {
+			zip.stream()
+				.filter(entry -> !entry.isDirectory())
+				.forEach(entry -> {
+					System.out.println("Zip entry [ " + entry.getName() + " ]");
+					Path resolved = out.resolve(entry.getName());
+					try {
+						IO.mkdirs(resolved.getParent());
+						IO.copy(zip.getInputStream(entry), resolved);
+					} catch (IOException e) {
+						throw Exceptions.duck(e);
+					}
+				});
+		}
+	}
+
+	//
+
+	public static String addSlash(String path) {
+		if (path.charAt(path.length() - 1) != File.separatorChar) {
+			return path + File.separatorChar;
+		} else {
+			return path;
+		}
+	}
+
+	public static File addSlash(File file) {
+		String path = file.getPath();
+		String slashPath = addSlash(path);
+		if (slashPath != path) {
+			file = new File(slashPath);
+		}
+		return file;
+	}
+
+	public static Set<String> convertSlashes(Set<String> dirNames) {
+		if (File.separatorChar == '/') {
+			return dirNames;
+		}
+		Set<String> convertedDirNames = new HashSet<>(dirNames.size());
+		for (String dirName : dirNames) {
+			dirName = dirName.replace(File.separatorChar, '/');
+			convertedDirNames.add(dirName);
+		}
+		return convertedDirNames;
+	}
+
+	public static Set<String> list(File parent) {
+		Set<String> childNames = new HashSet<>();
+
+		File[] children = parent.listFiles();
+
+		if (children != null) {
+			for (File child : children) {
+				childNames.add(child.getName());
+			}
+		}
+
+		return childNames;
+	}
+
+	public static Set<String> listDirectories(File rootFile) throws IOException {
+		Set<String> dirNames = new HashSet<>();
+
+		rootFile = addSlash(rootFile);
+
+		listDirectories(rootFile, rootFile, dirNames);
+
+		return dirNames;
+	}
+
+	public static void listDirectories(File rootFile, File nextDir, Set<String> dirNames) throws IOException {
+		if (nextDir != rootFile) {
+			String rootPath = rootFile.getPath();
+			String nextPath = nextDir.getPath();
+			String nextRelPath = nextPath.substring(rootPath.length() + 1);
+
+			nextRelPath = addSlash(nextRelPath);
+
+			dirNames.add(nextRelPath);
+		}
+
+		for (File nextFile : nextDir.listFiles()) {
+			if (nextFile.isDirectory()) {
+				listDirectories(rootFile, nextFile, dirNames);
+			}
+		}
+	}
+
+	/**
+	 * Tell if an entry name is the name of an archive entry.
+	 * <p>
+	 * This is a simplistic test which only handles ".zip" and ".jar"
+	 * extensions.
+	 *
+	 * @param name The entry name which is to be tested.
+	 * @return True or false telling if the name is an archive name.
+	 */
+	public static final boolean isArchive(String name) {
+		return (name.endsWith(".zip") || name.endsWith(".jar"));
+	}
+
+	/**
+	 * List the directories of a zip file. Include the names of directories in
+	 * nested archives. Names from nested archives include their enclosing
+	 * archive name, plus "-expanded". This parallels steps taken by
+	 * {@link #unzip}, which uses the same name for expanded nested archives.
+	 *
+	 * @param rawZipFile The raw zip file which is to be listed.
+	 * @return The names of directory entries of the zip file, including the
+	 *         names of directories in nested archives.
+	 * @throws IOException Thrown if an error occurrs reading the zip file.
+	 */
+	public static Set<String> listZipDirectories(File rawZipFile) throws IOException {
+		Set<String> dirNames = new HashSet<>();
+		try (ZipFile zipFile = new ZipFile(rawZipFile)) {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry nextEntry = entries.nextElement();
+				String nextName = nextEntry.getName();
+				if (nextEntry.isDirectory()) {
+					dirNames.add(nextName);
+				} else if (isArchive(nextName)) {
+					try (InputStream inputStream = zipFile.getInputStream(nextEntry)) {
+						listZipDirectories(inputStream, nextName + "-expanded/", dirNames);
+					}
+				} else {
+					// skip it
+				}
+			}
+		}
+		return dirNames;
+	}
+
+	/**
+	 * List the directories of a zip stream. Include the names of directories in
+	 * nested archives. Names from nested archives include their enclosing
+	 * archive name, plus "-expanded". This parallels steps taken by
+	 * {@link #unzip}, which uses the same name for expanded nested archives.
+	 *
+	 * @param inputStream The input stream of a zip archive. Usually, a stream
+	 *            obtained from a zip entry.
+	 * @param prefix The prefix which is to prepended to directory names.
+	 *            Usually, the name of an enclosing entry plus "-expanded".
+	 * @param dirNames The accumulated directory names.
+	 * @throws IOException Thrown if an error occurrs reading the zip file.
+	 */
+	private static void listZipDirectories(InputStream inputStream, String prefix, Set<String> dirNames)
+		throws IOException {
+
+		try (ZipInputStream zipStream = new ZipInputStream(inputStream)) {
+			// A valid archive is not allowed to be empty.
+			dirNames.add(prefix);
+
+			ZipEntry nextEntry;
+			while ((nextEntry = zipStream.getNextEntry()) != null) {
+				String nextName = nextEntry.getName();
+				if (nextEntry.isDirectory()) {
+					dirNames.add(prefix + nextName);
+				} else if (isArchive(nextName)) {
+					listZipDirectories(zipStream, prefix + "-expanded/", dirNames);
+				} else {
+					// skip it
+				}
+			}
+		}
+	}
+
+	/**
+	 * Compare the directory entries of a zip file against an actual directory tree.
+	 * Ignore the root directory of the actual directory.
+	 * <p>
+	 * The allowed missing parameter is necessary to handle incomplete name substitution.
+	 * Parent folders of renamed directories will usually not be renamed.  For example,
+	 * "javax/" is not renamed (as might be expected) when "javax/servlet/" is renamed
+	 * to "jakarta/servlet/".  Also, "javax/servlet/" will be renamed even if there is
+	 * a sub-package which is not renamed, for example, "javax/servlet/sub".
+	 *
+	 * @param zipFile The zip file which is to be tested.
+	 * @param expectedParent The root of the expected directory tree.
+	 * @param allowMissing List of directories which are expected to be missing.
+	 * @param errors An accumulator of errors.
+	 * @return True or false telling if the accumulator has room for more errors.
+	 */
+	public static boolean compareDirectories(
+		File zipFile,
+		File expectedParent, List<String> allowMissing,
+		ErrorAccumulator errors) {
+
+		String zipPath = zipFile.getPath();
+		String expectedPath = expectedParent.getPath();
+		System.out.println("Comparing directories of [ " + zipPath + " ] against [ " + expectedPath + " ]");
+
+		Set<String> zipDirectories;
+		try {
+			zipDirectories = listZipDirectories(zipFile);
+		} catch ( IOException e ) {
+			e.printStackTrace();
+			if ( !errors.add("IOException listing actual [ " + zipPath + " ]") ) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+
+		if ( (allowMissing != null) && !allowMissing.isEmpty() ) {
+			for ( String allow : allowMissing ) {
+				zipDirectories.add(allow);
+				System.out.println("Allow missing directory [ " + allow + " ]");
+			}
+		}
+
+		Set<String> expectedDirectories;
+		try {
+			expectedDirectories = listDirectories(expectedParent);
+		} catch ( IOException e ) {
+			e.printStackTrace();
+			if ( !errors.add("IOException listing expected [ " + expectedPath + " ]") ) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		expectedDirectories = convertSlashes(expectedDirectories);
+
+		return compareNames(zipPath, zipDirectories, expectedPath, expectedDirectories, errors);
+	}
+
+	/**
+	 * Compare two file trees.  The root of both trees are expected to be directories.
+	 *
+	 * @param actualParent The root directory which is to be tested.
+	 * @param expectedParent The root directory which is to be tested against.
+	 * @param errors An accumulator of errors.
+	 * @return True or false telling if the accumulator has room for more errors.
+	 */
+	public static boolean compareFiles(File actualParent, File expectedParent, ErrorAccumulator errors) {
+		String actualPath = actualParent.getPath();
+		String expectedPath = expectedParent.getPath();
+		System.out.println("Comparing [ " + actualPath + " ] against [ " + expectedPath + " ]");
+
+		if (!actualParent.exists()) {
+			return errors.add("actual [ " + actualPath + " ] does not exist");
+		} else if (!actualParent.isDirectory()) {
+			return errors.add("actual [ " + actualPath + " ] is not a directory");
+		} else {
+			Set<String> actualChildNames = list(actualParent);
+			Set<String> expectedChildNames = list(expectedParent);
+			return ( compareNames(actualPath, actualChildNames,
+				                  expectedPath, expectedChildNames, errors) &&
+				     compareChildren(actualParent, actualChildNames,
+				    	             expectedParent, expectedChildNames, errors) );
+		}
+	}
+
+	private static boolean compareChildren(
+		File actualParent, Set<String> actualChildNames,
+		File expectedParent, Set<String> expectedNames,
+		ErrorAccumulator errors) {
+
+		for (String childName : actualChildNames) {
+			if (!expectedNames.contains(childName)) {
+				continue;
+			}
+
+			File actualChild = new File(actualParent, childName);
+			File expectedChild = new File(expectedParent, childName);
+
+			if (expectedChild.isDirectory()) {
+				if (!actualChild.isDirectory()) {
+					if ( !errors.add("actual [ " + childName + " ] is not a directory") ) {
+						return false;
+					}
+				} else {
+					if ( !compareFiles(actualChild, expectedChild, errors) ) {
+						return false;
+					}
+				}
+				continue;
+			}
+
+			if (actualChild.isDirectory()) {
+				if ( !errors.add("actual [ " + childName + " ] is a directory") ) {
+					return false;
+				} else {
+					continue;
+				}
+			}
+
+			List<String> actualLines;
+			try {
+				actualLines = TestUtils.loadLines(actualChild);
+			} catch (IOException e) {
+				if ( !errors.add("failed to read actual [ " + childName + " ]") ) {
+					return false;
+				} else {
+					continue;
+				}
+			}
+
+			List<String> expectedLines;
+			try {
+				expectedLines = TestUtils.loadLines(actualChild);
+			} catch (IOException e) {
+				if ( !errors.add("failed to read expected [ " + childName + " ]") ) {
+					return false;
+				} else {
+					continue;
+				}
+			}
+
+			if ( !compareLines(childName, actualLines, childName, expectedLines, errors) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public static boolean compareLines(
+		String actualTag, List<String> actualLines,
+		String expectedTag, List<String> expectedLines,
+		ErrorAccumulator errors) {
+
+		int actualCount = actualLines.size();
+		int expectedCount = expectedLines.size();
+
+		if (actualCount != expectedCount) {
+			if ( !errors.add("actual size [ " + actualCount + " ] expected size [ " + expectedCount + " ]") ) {
+				return false;
+			}
+		}
+
+		int minCount = ((actualCount > expectedCount) ? expectedCount : actualCount);
+
+		for (int lineNo = 0; lineNo < minCount; lineNo++) {
+			String actualLine = actualLines.get(lineNo);
+			String expectedLine = expectedLines.get(lineNo);
+			if (actualLine.equals(expectedLine)) {
+				continue;
+			}
+
+			if (!errors.add("line [ " + lineNo + " ] actual [ " + actualLine + " ] expected [ " + expectedLine + " ]")) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	public static boolean compareNames(
+		String actualTag, Set<String> actual,
+		String expectedTag, Set<String> expected,
+		ErrorAccumulator errors) {
+
+		int actualCount = actual.size();
+		int expectedCount = expected.size();
+
+		if (actualCount != expectedCount) {
+			if (!errors.add("actual size [ " + actualCount + " ] expected size [ " + expectedCount + " ]")) {
+				return false;
+			}
+		}
+
+		for (String nextExpected : expected) {
+			if (!actual.contains(nextExpected)) {
+				if (!errors.add("missing [ " + nextExpected + " ]")) {
+					return false;
+				}
+			}
+		}
+
+		for (String nextActual : actual) {
+			if (!expected.contains(nextActual)) {
+				if (!errors.add("extra [ " + nextActual + " ]")) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 }

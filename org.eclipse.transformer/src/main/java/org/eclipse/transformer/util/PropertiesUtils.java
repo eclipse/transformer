@@ -20,7 +20,9 @@ import aQute.lib.utf8properties.UTF8Properties;
 
 public class PropertiesUtils {
 
-	private PropertiesUtils() {}
+	private PropertiesUtils() {
+		// EMPTY
+	}
 
 	public static Properties loadProperties(URL url) throws IOException {
 		try (InputStream stream = url.openStream()) {

@@ -12,8 +12,6 @@
 package org.eclipse.transformer.action;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.slf4j.Logger;
@@ -38,14 +36,50 @@ public interface Action {
 	ActionType getActionType();
 
 	/**
+	 * Tell if this is an element type action.
+	 *
+	 * @return True or false telling if this is an element type action.
+	 */
+	default boolean isElementAction() {
+		return false;
+	}
+
+	/**
+	 * Tell if this is an container type action.
+	 *
+	 * @return True or false telling if this is an container type action.
+	 */
+	default boolean isContainerAction() {
+		return false;
+	}
+
+	/**
+	 * Tell if this is a rename type action.
+	 *
+	 * @return True or false telling if this is a rename type action.
+	 */
+	default boolean isRenameAction() {
+		return false;
+	}
+
+	/**
+	 * Tell if this is an archive type action.
+	 *
+	 * @return True or false telling if this is an archive type action.
+	 */
+	default boolean isArchiveAction() {
+		return false;
+	}
+
+	/**
 	 * Tell if a resource is of a type which is handled by this action.
 	 *
 	 * @param resourceName The name of the resource.
 	 * @return True or false telling if the resource can be handled by this
 	 *         action.
 	 */
-	default boolean accept(String resourceName) {
-		return accept(resourceName, null);
+	default boolean acceptResource(String resourceName) {
+		return acceptResource(resourceName, null);
 	}
 
 	/**
@@ -56,22 +90,19 @@ public interface Action {
 	 * @return True or false telling if the resource can be handled by this
 	 *         action.
 	 */
-	boolean accept(String resourceName, File resourceFile);
-
-	//
+	boolean acceptResource(String resourceName, File resourceFile);
 
 	/**
-	 * Tell if this action uses streams. This is necessary for handing resources
-	 * off to composite actions which are run as container actions (except for
-	 * directories). To stream a child resource forces a write of the resource
-	 * name. But, for certain actions, the output resource name is not known
-	 * until after the transform is performed. Leaf actions are expected to use
-	 * ByteData, while nested archives must use streams.
+	 * Tell if the action matches the specified action type name.
+	 * <p>
+	 * See {@link ActionType#matches(String)}.
 	 *
-	 * @return True or false telling if the action processes streams.
+	 * @param actionTypeName An action type name.
+	 * @return True or false telling if the action's type matches the specified
+	 *         name.
 	 */
-	default boolean useStreams() {
-		return false;
+	default boolean acceptType(String actionTypeName) {
+		return getActionType().matches(actionTypeName);
 	}
 
 	//
@@ -82,16 +113,9 @@ public interface Action {
 	 * @param resourceName The name of the resource.
 	 * @return True or false telling if the resource is to be transformed.
 	 */
-	boolean select(String resourceName);
+	boolean selectResource(String resourceName);
 
 	//
-
-	/**
-	 * Answer the logger.
-	 *
-	 * @return The logger.
-	 */
-	Logger getLogger();
 
 	/**
 	 * Answer the rules widget for signature type updates.
@@ -105,79 +129,32 @@ public interface Action {
 	 *
 	 * @return The rules widget for selection.
 	 */
-	SelectionRule getSelectionRule();
+	SelectionRule getResourceSelectionRule();
 
 	//
 
 	/**
-	 * Collect the data for an action on an input stream. Returns a data
-	 * structure containing input data upon which the action can be performed.
-	 * The input count may be {@code -1}, in which case all available data will
-	 * be read from the input stream.
-	 *
-	 * @param inputName A name associated with the input data.
-	 * @param inputStream A stream containing input data.
-	 * @param inputCount The count of bytes available in the input stream.
-	 * @return The input data.
-	 * @throws TransformException Thrown if the input data cannot be read.
-	 */
-	ByteData collect(String inputName, InputStream inputStream, int inputCount) throws TransformException;
-
-	/**
-	 * Collect the data for an action on an input stream. Returns a data
-	 * structure containing input data upon which the action can be performed.
-	 * All available data will be read from the input stream.
-	 *
-	 * @param inputName A name associated with the input data.
-	 * @param inputStream A stream containing input data.
-	 * @return The input data.
-	 * @throws TransformException Thrown if the input data cannot be read.
-	 */
-	default ByteData collect(String inputName, InputStream inputStream) throws TransformException {
-		return collect(inputName, inputStream, -1);
-	}
-
-	/**
-	 * Apply this action on an input data. Answer a data structure containing
-	 * output data. The output data will be the original input data if this
-	 * action declined to process the input data.
-	 *
-	 * @param inputData The input data.
-	 * @return Transformed input data.
-	 * @throws TransformException Thrown if the transform failed.
-	 */
-	ByteData apply(ByteData inputData) throws TransformException;
-
-	/**
-	 * Apply this action onto an input file, writing output onto an output file.
+	 * Apply this action to an input file. Write the transformed content to the
+	 * specified output file. Ignore any renames.
 	 * <p>
-	 * This method can be overridden to provide a more optimized implementation
-	 * when the input and output are known to be files.
+	 * This is the usual entry point for top level invocations.
 	 *
-	 * @param inputName A name associated with the input file.
+	 * @param inputName The name of the input file.
 	 * @param inputFile The input file.
+	 * @param outputName The name of the output file.
 	 * @param outputFile The output file.
-	 * @throws TransformException Thrown if the action could not be applied.
-	 */
-	void apply(String inputName, File inputFile, File outputFile) throws TransformException;
-
-	/**
-	 * Apply this action on an input stream. Write transformed data to the
-	 * output stream. The input count may be {@code -1}, in which case all
-	 * available data will be read from the input stream.
-	 * <p>
-	 * This method can be overridden to provide a more optimized implementation
-	 * when no transformation is necessary so that the input can be streamed
-	 * directly to the output.
-	 *
-	 * @param inputName A name associated with the input data.
-	 * @param inputStream A stream containing input data.
-	 * @param inputCount The count of bytes available in the input stream.
-	 * @param outputStream A stream to which to write transformed data.
 	 * @throws TransformException Thrown if the transform failed.
 	 */
-	void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
-		throws TransformException;
+	void apply(String inputName, File inputFile, String outputName, File outputFile) throws TransformException;
+
+	//
+
+	/**
+	 * Start recording transformation of a resource.
+	 *
+	 * @param inputName The name of the resource.
+	 */
+	void startRecording(String inputName);
 
 	/**
 	 * Adjust an input path according to the changes made to the name of the
@@ -189,7 +166,12 @@ public interface Action {
 	 */
 	String relocateResource(String inputPath);
 
-	//
+	/**
+	 * Stop recording transformation of a resource.
+	 *
+	 * @param inputName The name of the resource.
+	 */
+	void stopRecording(String inputName);
 
 	/**
 	 * Answer the last active changes.
@@ -206,16 +188,12 @@ public interface Action {
 	Changes getActiveChanges();
 
 	/**
-	 * Record a single replacement to the changes of this action.
-	 */
-	void addReplacement();
-
-	/**
-	 * Add to the count of replacements made by this action.
+	 * Record the input and output resource names to the active changes.
 	 *
-	 * @param additions The count of replacements to add.
+	 * @param inputResourceName The input resource name.
+	 * @param outputResourceName The output resource name.
 	 */
-	void addReplacements(int additions);
+	void setResourceNames(String inputResourceName, String outputResourceName);
 
 	//
 
@@ -225,7 +203,7 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         had changes.
 	 */
-	boolean hasChanges();
+	boolean isChanged();
 
 	/**
 	 * Tell if the current application of this action had changes other than a
@@ -234,7 +212,7 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         had changes other than resource name changes.
 	 */
-	boolean hasNonResourceNameChanges();
+	boolean isContentChanged();
 
 	/**
 	 * Tell if the current application of this action changed the name of the
@@ -243,37 +221,21 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         changed the name of the resource.
 	 */
-	boolean hasResourceNameChange();
+	boolean isRenamed();
 
 	//
 
-	/**
-	 * Tell if the last application of this action had changes.
-	 *
-	 * @return True or false telling if the last application of this action had
-	 *         changes.
-	 */
-	boolean hadChanges();
+	public interface ActionInit<A extends Action> {
+		A apply(ActionInitData initData);
+	}
 
-	/**
-	 * Tell if the last application of this action had changes other than a
-	 * resource name change.
-	 *
-	 * @return True or false telling if the last application of this action had
-	 *         changes other than resource name changes.
-	 */
-	boolean hadNonResourceNameChanges();
+	public interface ActionInitData {
+		Logger getLogger();
 
-	/**
-	 * Tell if the last application of this action changed the name of the
-	 * resource.
-	 *
-	 * @return True or false telling if the last application of this action
-	 *         changed the name of the resource.
-	 */
-	boolean hadResourceNameChange();
+		InputBuffer getBuffer();
 
-	//
+		SelectionRule getSelectionRule();
 
-	InputBuffer getBuffer();
+		SignatureRule getSignatureRule();
+	}
 }

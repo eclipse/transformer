@@ -15,26 +15,51 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.util.FileUtils;
 
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class TextActionImpl extends ActionImpl<Changes> {
+/**
+ * Action for general text updates. This action performs text updates, either
+ * for specific text resources, or for wildcard selected text resources.
+ * <p>
+ * Extended for Java and JSP resources. {@link JavaActionImpl} and
+ * {@link JSPActionImpl} perform the usual text updates, and add in replacements
+ * derived from class update rule data. The Java action adds package
+ * replacements, direct string constant updates, and direct per-class string
+ * constant updates. The JSP action adds package replacements and direct
+ * constant updates.
+ */
+public class TextActionImpl extends ElementActionImpl {
 
-	public TextActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public TextActionImpl(ActionInitData initData) {
+		super(initData);
+
+		List<StringReplacement> replacements = createActiveReplacements(initData.getSignatureRule());
+		this.activeReplacements = replacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : replacements;
 	}
 
-	//
+	private final List<StringReplacement> activeReplacements;
+
+	@Override
+	protected List<StringReplacement> getActiveReplacements() {
+		return activeReplacements;
+	}
+
+	protected List<StringReplacement> createActiveReplacements(SignatureRule signatureRule) {
+		List<StringReplacement> replacements = new ArrayList<>();
+		if ( signatureRule.hasTextUpdates() ) {
+			replacements.add(this::textUpdate);
+		}
+		return replacements;
+	}
 
 	@Override
 	public String getName() {
@@ -47,11 +72,13 @@ public class TextActionImpl extends ActionImpl<Changes> {
 	}
 
 	@Override
-	public boolean accept(String resourceName, File resourceFile) {
-		if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
-			return true;
-		}
-		return false;
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		return (getTextSubstitutions(resourceName) != null);
+	}
+
+	@Override
+	public String getAcceptExtension() {
+		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
 	}
 
 	//
@@ -62,24 +89,24 @@ public class TextActionImpl extends ActionImpl<Changes> {
 		startRecording(inputName);
 		try {
 			String outputName = relocateResource(inputName);
-
 			setResourceNames(inputName, outputName);
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
+			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
 				transform(inputName, reader, writer);
 			} catch (IOException e) {
 				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
 			}
 
-			if (!hasChanges()) {
+			if (!isChanged()) {
 				return inputData;
+			} else if (!isContentChanged()) {
+				return inputData.copy(outputName);
+			} else {
+				return new ByteDataImpl(outputName, outputStream.toByteBuffer());
 			}
 
-			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
-			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
-			return outputData;
 		} finally {
 			stopRecording(inputName);
 		}
@@ -90,14 +117,19 @@ public class TextActionImpl extends ActionImpl<Changes> {
 	protected void transform(String inputName, BufferedReader reader, BufferedWriter writer) throws IOException {
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
-			String outputLine = replaceText(inputName, inputLine);
-			if (outputLine == null) {
-				outputLine = inputLine;
+			String outputLine = transformString(inputName, "text line", inputLine);
+			if (outputLine != null) {
+				addReplacement(); // Count lines, not individual replacements.
 			} else {
-				addReplacement();
+				outputLine = inputLine;
 			}
+
 			writer.write(outputLine);
 			writer.write('\n');
 		}
+	}
+
+	protected String transformString(String inputName, String inputCase, String initialValue) {
+		return updateString(inputName, inputCase, initialValue);
 	}
 }

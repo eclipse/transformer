@@ -79,7 +79,7 @@ public class TestLoad {
 		}
 	}
 
-	public static final String		SIMPLE_RESOURCE_PATH	= "transformer/test/data/simple.resource";
+	public static final String		SIMPLE_RESOURCE_PATH	= "simple.resource";
 	public static final String[]	SIMPLE_RESOURCE_LINES	= {
 		"Simple Resource 1", "Simple Resource 2"
 	};
@@ -88,13 +88,9 @@ public class TestLoad {
 	public void testSimpleLoad() throws IOException {
 		System.out.println("Load [ " + SIMPLE_RESOURCE_PATH + " ]");
 
-		InputStream simpleInput = TestUtils.getResourceStream(SIMPLE_RESOURCE_PATH);
-
 		List<String> actualLines;
-		try {
+		try (InputStream simpleInput = TestUtils.getResourceStream(SIMPLE_RESOURCE_PATH)) {
 			actualLines = TestUtils.loadLines(simpleInput);
-		} finally {
-			simpleInput.close();
 		}
 
 		System.out.println("Loaded [ " + SIMPLE_RESOURCE_PATH + " ] [ " + actualLines.size() + " ]");

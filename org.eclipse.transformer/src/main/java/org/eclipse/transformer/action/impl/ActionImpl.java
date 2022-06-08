@@ -11,19 +11,21 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
@@ -34,90 +36,139 @@ import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
 
-import aQute.bnd.signatures.ArrayTypeSignature;
-import aQute.bnd.signatures.ClassSignature;
-import aQute.bnd.signatures.ClassTypeSignature;
-import aQute.bnd.signatures.FieldSignature;
-import aQute.bnd.signatures.JavaTypeSignature;
-import aQute.bnd.signatures.MethodSignature;
-import aQute.bnd.signatures.ReferenceTypeSignature;
-import aQute.bnd.signatures.Result;
-import aQute.bnd.signatures.SimpleClassTypeSignature;
-import aQute.bnd.signatures.ThrowsSignature;
-import aQute.bnd.signatures.TypeArgument;
-import aQute.bnd.signatures.TypeParameter;
 import aQute.lib.io.IO;
 
-public abstract class ActionImpl<CHANGES extends Changes> implements Action {
-	public ActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		this.logger = logger;
+/**
+ * <em>Root action implementation.</em>
+ * <p>
+ * Action selection operations are delegated to a {@link SelectionRule}
+ * instance.
+ * <p>
+ * Update operations are delegated to a {@link SignatureRule} instance. See
+ * {@link SignatureRule#transformBinaryType(String)},
+ * {@link SignatureRule#transformSignature(String, SignatureType)}, and
+ * {@link SignatureRule#transformDescriptor(String)}.
+ * <p>
+ * <em>Transformation state</em>
+ * <p>
+ * As actions form a directed graph, where each action is responsible for
+ * transforming a single resource, and where edges represent a transition to a
+ * nested resource (see {@link ActionSelectorImpl} and
+ * {@link ContainerActionImpl}), action instances are often reused when
+ * transforming a hierarchy of resources. For example, a ZIP archive may contain
+ * a nested ZIP archive, in which case the transformation of the outer zip will
+ * use the Zip action at least twice.
+ * <p>
+ * The consequence is that actions must carefully manage state as relates to the
+ * resource which is being actively transformed.
+ * <p>
+ * First, data -- as relates to resource selection and as relates to the
+ * particular substitutions which are to be performed -- is static and is shared
+ * by actions using shared {@link SelectionRule} and {@link SignatureRule}
+ * instances. (This data is referred to as <em>transformation rules data</em>.)
+ * <p>
+ * Second, resource state data consists of the active resource and the
+ * accumulated change record. The active resource is passed as method
+ * parameters. The accumulated change record is managed within the actions as a
+ * stack, with each 'apply' being required to begin and end with
+ * {@link #startRecording(String)} and {@link #stopRecording(String)}.
+ * <p>
+ * Third, there is data which is not transformation rules data and which is is
+ * not related to the active resource or to accumulated Changes. This additional
+ * data consists of cached transformation values for binary types, binary
+ * descriptors, and binary signatures, and consists of a thread-local read
+ * buffer. The read buffer is managed as a thread-local value to avoid
+ * unnecessary reallocations of the buffer while transforming many resources.
+ */
+public abstract class ActionImpl implements Action {
+	public ActionImpl(ActionInitData initData) {
+		this.logger = initData.getLogger();
 
-		this.buffer = buffer;
+		// Transformation rules data ...
 
-		this.selectionRule = selectionRule;
-		this.signatureRule = signatureRule;
+		this.resourceSelectionRule = initData.getSelectionRule();
+		this.signatureRule = initData.getSignatureRule();
+
+		// Change tracking ...
 
 		this.changes = new ArrayDeque<>();
 		this.activeChanges = null;
 		this.lastActiveChanges = null;
+
+		// Buffer for the resource which is being transformed.
+
+		this.buffer = initData.getBuffer();
 	}
 
 	//
 
-	public interface ActionInit<A extends Action> {
-		A apply(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule);
+	public static class ActionInitDataImpl implements ActionInitData {
+		public ActionInitDataImpl(Logger logger, InputBuffer inputBuffer, SelectionRule selectionRule,
+			SignatureRule signatureRule) {
+			this.logger = logger;
+			this.inputBuffer = inputBuffer;
+			this.selectionRule = selectionRule;
+			this.signatureRule = signatureRule;
+		}
+
+		private final Logger		logger;
+		private final InputBuffer	inputBuffer;
+		private final SelectionRule	selectionRule;
+		private final SignatureRule	signatureRule;
+
+		@Override
+		public Logger getLogger() {
+			return logger;
+		}
+
+		@Override
+		public InputBuffer getBuffer() {
+			return inputBuffer;
+		}
+
+		@Override
+		public SelectionRule getSelectionRule() {
+			return selectionRule;
+		}
+
+		@Override
+		public SignatureRule getSignatureRule() {
+			return signatureRule;
+		}
 	}
 
-	public <A extends Action> A createUsing(ActionInit<A> init) {
-		return init.apply(getLogger(), getBuffer(), getSelectionRule(),
-			getSignatureRule());
+	public <A extends Action> A createUsing(ActionInit<A> init, ActionInitData initData) {
+		return init.apply(initData);
 	}
 
 	//
 
-	private final Logger	logger;
-	@Override
-	public Logger getLogger() {
+	private final Logger logger;
+
+	protected Logger getLogger() {
 		return logger;
 	}
 
 	//
 
-	private final InputBuffer buffer;
+	@Override
+	public abstract String getName();
 
 	@Override
-	public InputBuffer getBuffer() {
-		return buffer;
-	}
-
-	public ByteBuffer getInputBuffer() {
-		return getBuffer().getInputBuffer();
-	}
-
-	public void setInputBuffer(ByteBuffer inputBuffer) {
-		getBuffer().setInputBuffer(inputBuffer);
-	}
+	public abstract ActionType getActionType();
 
 	//
 
-	private final SelectionRule selectionRule;
+	private final SelectionRule resourceSelectionRule;
 
 	@Override
-	public SelectionRule getSelectionRule() {
-		return selectionRule;
+	public SelectionRule getResourceSelectionRule() {
+		return resourceSelectionRule;
 	}
 
 	@Override
-	public boolean select(String resourceName) {
-		return getSelectionRule().select(resourceName);
-	}
-
-	public boolean selectIncluded(String resourceName) {
-		return getSelectionRule().selectIncluded(resourceName);
-	}
-
-	public boolean rejectExcluded(String resourceName) {
-		return getSelectionRule().rejectExcluded(resourceName);
+	public boolean selectResource(String resourceName) {
+		return getResourceSelectionRule().select(resourceName);
 	}
 
 	//
@@ -129,52 +180,8 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		return signatureRule;
 	}
 
-	public BundleData getBundleUpdate(String symbolicName) {
-		return getSignatureRule().getBundleUpdate(symbolicName);
-	}
-
 	public Map<String, String> getPackageRenames() {
 		return getSignatureRule().getPackageRenames();
-	}
-
-	public Map<String, String> getPackageVersions() {
-		return getSignatureRule().getPackageVersions();
-	}
-
-	public Map<String, Map<String, String>> getSpecificPackageVersions() {
-		return getSignatureRule().getSpecificPackageVersions();
-	}
-
-	public String getReplacementVersion(String attributeName, String packageName, String oldVersion) {
-		Map<String, String> versionsForAttribute = getSpecificPackageVersions().get(attributeName);
-
-		String specificVersion;
-		if ( versionsForAttribute != null ) {
-			specificVersion = versionsForAttribute.get(packageName);
-		} else {
-			specificVersion = null;
-		}
-
-		String genericVersion = getPackageVersions().get(packageName);
-
-		if ( (specificVersion == null) && (genericVersion == null) ) {
-			getLogger().trace("Manifest attribute {}: Package {} version {} is unchanged",
-				attributeName, packageName, oldVersion);
-			return null;
-		} else if (specificVersion == null) {
-			getLogger().trace("Manifest attribute {}: Generic update of package {} version {} to {}",
-				attributeName, packageName, oldVersion, genericVersion);
-			return genericVersion;
-		} else if (genericVersion == null) {
-			getLogger().trace("Manifest attribute {}: Specific update of package {} version {} to {}",
-				attributeName, packageName, oldVersion, specificVersion);
-			return specificVersion;
-		} else {
-			getLogger().trace(
-				"Manifest attribute {}: Specific update of package {} version {} to {} overrides generic version update {}",
-				attributeName, packageName, oldVersion, specificVersion, genericVersion);
-			return specificVersion;
-		}
 	}
 
 	public String replacePackage(String initialName) {
@@ -185,258 +192,224 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 		return getSignatureRule().replaceBinaryPackage(initialName);
 	}
 
-	public String replaceEmbeddedPackages(String embeddingText) {
-		return getSignatureRule().replacePackages(embeddingText);
+	public String replacePackages(String initialText) {
+		return getSignatureRule().replacePackages(initialText);
 	}
 
-	public String replaceText(String inputFileName, String text) {
-		return getSignatureRule().replaceText(inputFileName, text);
+	public String replaceBinaryPackages(String initialText) {
+		return getSignatureRule().replaceBinaryPackages(initialText);
 	}
 
-	public String transformConstantAsBinaryType(String inputConstant) {
-		return getSignatureRule().transformConstantAsBinaryType(inputConstant);
+	public String packageRenameInput(String inputName) {
+		return getSignatureRule().packageRenameInput(inputName);
 	}
 
-	public String transformConstantAsBinaryType(String inputConstant, boolean simpleSubstitution) {
-		return getSignatureRule().transformConstantAsBinaryType(inputConstant, simpleSubstitution);
+	public String replacePackageVersion(String attributeName, String packageName, String oldVersion) {
+		return getSignatureRule().replacePackageVersion(attributeName, packageName, oldVersion);
 	}
 
-	public String transformBinaryType(String inputName) {
-		return getSignatureRule().transformBinaryType(inputName);
+	public BundleData getBundleUpdate(String symbolicName) {
+		return getSignatureRule().getBundleUpdate(symbolicName);
 	}
 
-	public String transformConstantAsDescriptor(String inputConstant) {
-		return getSignatureRule().transformConstantAsDescriptor(inputConstant);
+	public Map<String, String> getTextSubstitutions(String inputName) {
+		return getSignatureRule().getTextSubstitutions(inputName);
 	}
 
-	public String transformConstantAsDescriptor(String inputConstant, boolean simpleSubstitution) {
-		return getSignatureRule().transformConstantAsDescriptor(inputConstant, simpleSubstitution);
+	public String replaceText(String inputFileName, String initialText) {
+		return getSignatureRule().replaceText(inputFileName, initialText);
 	}
 
-	public String transformDescriptor(String inputDescriptor) {
-		return getSignatureRule().transformDescriptor(inputDescriptor);
+	public String replaceTextDirectPerClass(String initialValue, String inputName) {
+		return getSignatureRule().replaceTextDirectPerClass(initialValue, inputName);
 	}
 
-	public String transform(String input, SignatureType signatureType) {
-		return getSignatureRule().transform(input, signatureType);
+	public String replaceTextDirectGlobal(String initialValue, String inputName) {
+		return getSignatureRule().replaceTextDirectGlobal(initialValue, inputName);
 	}
 
-	public ClassSignature transform(ClassSignature classSignature) {
-		return getSignatureRule().transform(classSignature);
+	public String transformBinaryType(String inputConstant) {
+		return getSignatureRule().transformBinaryType(inputConstant);
 	}
 
-	public FieldSignature transform(FieldSignature fieldSignature) {
-		return getSignatureRule().transform(fieldSignature);
+	public String transformDescriptor(String inputConstant) {
+		return getSignatureRule().transformDescriptor(inputConstant);
 	}
 
-	public MethodSignature transform(MethodSignature methodSignature) {
-		return getSignatureRule().transform(methodSignature);
+	public String transformSignature(String initialSignature, SignatureType signatureType) {
+		return getSignatureRule().transformSignature(initialSignature, signatureType);
 	}
 
-	public Result transform(Result type) {
-		return getSignatureRule().transform(type);
-	}
-
-	public ThrowsSignature transform(ThrowsSignature type) {
-		return getSignatureRule().transform(type);
-	}
-
-	public ArrayTypeSignature transform(ArrayTypeSignature inputType) {
-		return getSignatureRule().transform(inputType);
-	}
-
-	public TypeParameter transform(TypeParameter inputTypeParameter) {
-		return getSignatureRule().transform(inputTypeParameter);
-	}
-
-	public ClassTypeSignature transform(ClassTypeSignature inputType) {
-		return getSignatureRule().transform(inputType);
-	}
-
-	public SimpleClassTypeSignature transform(SimpleClassTypeSignature inputSignature) {
-		return getSignatureRule().transform(inputSignature);
-	}
-
-	public TypeArgument transform(TypeArgument inputArgument) {
-		return getSignatureRule().transform(inputArgument);
-	}
-
-	public JavaTypeSignature transform(JavaTypeSignature type) {
-		return getSignatureRule().transform(type);
-	}
-
-	public ReferenceTypeSignature transform(ReferenceTypeSignature type) {
-		return getSignatureRule().transform(type);
-	}
-
-	public String transformDirectString(String initialValue) {
-		return getSignatureRule().getDirectString(initialValue);
-	}
-
-	public String transformDirectString(String initialValue, String className) {
-		return getSignatureRule().getDirectString(initialValue, className);
+	@Override
+	public String relocateResource(String inputPath) {
+		return getSignatureRule().relocateResource(inputPath);
 	}
 
 	//
+
+	@Override
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
+	}
+
+	protected boolean acceptExtension(String resourceName, File resourceFile) {
+		String ext = getAcceptExtension();
+		int extLen = ext.length();
+		int resLen = resourceName.length();
+
+		boolean accept = ((resLen >= extLen) && resourceName.regionMatches(true, resLen - extLen, ext, 0, extLen));
+		return accept;
+	}
 
 	public String getAcceptExtension() {
 		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
 	}
 
-	@Override
-	public boolean accept(String resourceName, File resourceFile) {
-		String acceptExtension = getAcceptExtension();
-		int length = acceptExtension.length();
-		return resourceName.regionMatches(true, resourceName.length() - length, acceptExtension, 0, length);
-	}
-
 	//
 
 	@SuppressWarnings("unchecked")
-	protected CHANGES newChanges() {
-		return (CHANGES) new ChangesImpl();
+	protected abstract Changes newChanges();
+
+	private final Deque<Changes>	changes;
+	private Changes					activeChanges;
+	private Changes					lastActiveChanges;
+
+	protected void startRecording(ByteData inputData) {
+		startRecording(inputData.name());
 	}
 
-	private final Deque<CHANGES>	changes;
-	private CHANGES					activeChanges;
-	private CHANGES					lastActiveChanges;
-
-	protected void startRecording(String inputName) {
-		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getActionType());
-
-		CHANGES activeChanges = getActiveChanges();
-		if (activeChanges != null) {
-			changes.addLast(activeChanges);
-		}
-		this.activeChanges = newChanges();
+	protected void stopRecording(ByteData inputData) {
+		stopRecording(inputData.name());
 	}
 
-	protected void stopRecording(String inputName) {
-		CHANGES activeChanges = getActiveChanges();
-		if (getLogger().isDebugEnabled()) {
-			String changeText;
+	@Override
+	public void startRecording(String inputName) {
+		getLogger().debug("Start processing [ {} ] using [ {} ]", inputName, getName());
 
-			boolean nameChanged = activeChanges.hasResourceNameChange();
-			boolean contentChanged = activeChanges.hasNonResourceNameChanges();
-
-			if (nameChanged && contentChanged) {
-				changeText = "Name and content changes";
-			} else if (nameChanged) {
-				changeText = "Name changes";
-			} else if (contentChanged) {
-				changeText = "Content changes";
-			} else {
-				changeText = "No changes";
-			}
-
-			getLogger().debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getActionType(), changeText);
+		Changes useActiveChanges = activeChanges;
+		if (useActiveChanges != null) {
+			changes.addLast(useActiveChanges);
 		}
+		activeChanges = newChanges();
+	}
 
-		this.lastActiveChanges = activeChanges;
-		this.activeChanges = changes.pollLast();
+	@Override
+	public void stopRecording(String inputName) {
+		Changes useActiveChanges = activeChanges;
+		Logger useLogger = getLogger();
+		if (useLogger.isDebugEnabled()) {
+			useLogger.debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getName(),
+				useActiveChanges.getChangeText());
+		}
+		lastActiveChanges = useActiveChanges;
+		activeChanges = changes.pollLast();
 	}
 
 	//
 
 	@Override
-	public CHANGES getActiveChanges() {
+	public Changes getActiveChanges() {
 		return activeChanges;
 	}
 
-	protected void setResourceNames(String inputResourceName, String outputResourceName) {
-		CHANGES useChanges = getActiveChanges();
-		useChanges.setInputResourceName(inputResourceName);
-		useChanges.setOutputResourceName(outputResourceName);
-	}
-
 	@Override
-	public void addReplacement() {
-		getActiveChanges().addReplacement();
-	}
-
-	@Override
-	public void addReplacements(int additions) {
-		getActiveChanges().addReplacements(additions);
+	public void setResourceNames(String inputResourceName, String outputResourceName) {
+		getActiveChanges().setInputResourceName(inputResourceName)
+			.setOutputResourceName(outputResourceName);
 	}
 
 	//
 
 	@Override
-	public boolean hasChanges() {
-		return getActiveChanges().hasChanges();
+	public boolean isChanged() {
+		return getActiveChanges().isChanged();
 	}
 
 	@Override
-	public boolean hasResourceNameChange() {
-		return getActiveChanges().hasResourceNameChange();
+	public boolean isRenamed() {
+		return getActiveChanges().isRenamed();
 	}
 
 	@Override
-	public boolean hasNonResourceNameChanges() {
-		return getActiveChanges().hasNonResourceNameChanges();
+	public boolean isContentChanged() {
+		return getActiveChanges().isContentChanged();
 	}
 
 	//
 
 	@Override
-	public CHANGES getLastActiveChanges() {
+	public Changes getLastActiveChanges() {
 		return lastActiveChanges;
 	}
 
-	@Override
-	public boolean hadChanges() {
-		return getLastActiveChanges().hasChanges();
-	}
+	//
 
-	@Override
-	public boolean hadResourceNameChange() {
-		return getLastActiveChanges().hasResourceNameChange();
-	}
+	private final InputBuffer buffer;
 
-	@Override
-	public boolean hadNonResourceNameChanges() {
-		return getLastActiveChanges().hasNonResourceNameChanges();
+	protected InputBuffer getBuffer() {
+		return buffer;
 	}
 
 	//
 
 	/**
-	 * Read bytes from an input stream. Answer byte data and a count of bytes
-	 * read.
+	 * Collect the data for an action on an input stream. Returns a data
+	 * structure containing input data upon which the action can be performed.
+	 * If the specified count is greater than or equal to zero, read that many
+	 * bytes. Otherwise, read all available bytes.
 	 *
-	 * @param inputName The name of the input stream.
-	 * @param inputStream A stream to be read.
-	 * @param inputCount The count of bytes to read from the stream. {@code -1}
-	 *            if the count of input bytes is not known.
-	 * @return Byte data from the read.
-	 * @throws TransformException Indicates a read failure.
+	 * @param inputName A name associated with the input data.
+	 * @param inputStream A stream containing input data.
+	 * @param inputCount The count of bytes which are to be read. If less than
+	 *            zero, all available bytes are read.
+	 * @return The read data.
+	 * @throws TransformException Thrown if the input data cannot be read.
 	 */
-	@Override
 	public ByteData collect(String inputName, InputStream inputStream, int inputCount)
 		throws TransformException {
-		if (inputCount < 0) {
-			inputCount = -1;
-		} else {
-			inputCount = FileUtils.verifyArray(0, inputCount);
-		}
 
-		getLogger().debug("[ {}.collect ]: Requested [ {} ] [ {} ]", getClass().getSimpleName(), inputName, inputCount);
-		ByteBuffer readData = getInputBuffer();
+		// (BJH, TFB):
+		//
+		// Very large entries are specifically allowed to be read.
+		//
+		// Failing with an out-of-memory error is acceptable.
+		//
+		// This is a good case for a category of files and entries which should
+		// be omitted.
+
 		try {
-			readData = FileUtils.read(inputName, inputStream, readData, inputCount);
+			return FileUtils.read(getLogger(), inputName, inputStream, inputCount, getBuffer());
 		} catch (IOException e) {
-			throw new TransformException("Failed to read raw bytes [ " + inputName + " ] count [ " + inputCount + " ]",
-				e);
+			throw new TransformException("Failed to read [ " + inputName + " ] count [ " + inputCount + " ]", e);
 		}
+	}
 
-		setInputBuffer(readData);
+	/**
+	 * Read all available bytes from an input stream.
+	 *
+	 * @param inputName A name associated with the input stream.
+	 * @param inputStream A stream which is to be read.
+	 * @return The read data.
+	 * @throws TransformException Thrown if the stream cannot be read.
+	 */
+	public ByteData collect(String inputName, InputStream inputStream) throws TransformException {
+		return collect(inputName, inputStream, -1);
+	}
 
-		ByteData inputData = new ByteDataImpl(inputName, readData);
-		if (inputCount != inputData.length()) {
-			getLogger().debug("[ {}.collect ]: Obtained [ {} ] [ {} ]", getClass().getSimpleName(), inputName,
-				inputData.length());
+	/**
+	 * Read all bytes from a file.
+	 *
+	 * @param inputPath A name associated with the file.
+	 * @param inputFile A file which is to be read.
+	 * @return The read data.
+	 * @throws TransformException Thrown if the file cannot be read.
+	 */
+	public ByteData collect(String inputPath, File inputFile) throws TransformException {
+		try (InputStream inputStream = IO.stream(inputFile)) {
+			return collect(inputPath, inputStream, Math.toIntExact(inputFile.length()));
+		} catch (IOException e) {
+			throw new TransformException("Failed to read input [ " + inputFile.getAbsolutePath() + " ]", e);
 		}
-		return inputData;
 	}
 
 	/**
@@ -449,76 +422,295 @@ public abstract class ActionImpl<CHANGES extends Changes> implements Action {
 	 */
 	protected void write(ByteData outputData, OutputStream outputStream) throws TransformException {
 		try {
-			IO.copy(outputData.buffer(), outputStream);
+			outputData.writeTo(outputStream);
 		} catch (IOException e) {
-			throw new TransformException("Failed to write [ " + outputData.name() + " ]" +  " count [ " + outputData.length() + " ]", e);
+			throw new TransformException("Failed to write [ " + outputData + " ]");
+		}
+	}
+
+	/**
+	 * Write data to a file.
+	 *
+	 * @param outputData Data which is to be written. This data structure
+	 *            provides the path from the output folder to the output file.
+	 *            See {@link ByteData#name()}.
+	 * @param outputFolder The folder into which to write the data. This might
+	 *            not be the immediate parent of the file which is written.
+	 * @throws TransformException Thrown if the file is not writable, or if an
+	 *             error occurs during the write.
+	 */
+	protected void writeInto(ByteData outputData, File outputFolder) throws TransformException {
+		writeInto(outputData, outputFolder, outputData.name());
+	}
+
+	/**
+	 * Write data to a file.
+	 *
+	 * @param outputData Data which is to be written. Ignore the name in this
+	 *            data structure.
+	 * @param outputPath The relative path of the file which is to be written.
+	 * @param outputFolder The folder into which to write the data. This might
+	 *            not be the immediate parent of the file which is written.
+	 * @throws TransformException Thrown if the file is not writable, or if an
+	 *             error occurs during the write.
+	 */
+	protected void writeInto(ByteData outputData, File outputFolder, String outputPath) throws TransformException {
+		File outputFile;
+		try {
+			outputFile = IO.getBasedFile(outputFolder, outputPath);
+		} catch (IOException e) {
+			throw new TransformException(
+				"Non-valid file [ " + outputFolder.getAbsolutePath() + " ] [ " + outputPath + " ]", e);
+		}
+
+		write(outputData, outputFile);
+	}
+
+	protected void write(ByteData outputData, File outputFile) {
+		File parentFile = outputFile.getParentFile();
+		try {
+			IO.mkdirs(parentFile);
+		} catch (IOException e) {
+			throw new TransformException(
+				"Failed to create parent directory of [ " + outputFile.getAbsolutePath() + " ]", e);
+		}
+
+		try (OutputStream outputStream = IO.outputStream(outputFile)) {
+			write(outputData, outputStream);
+		} catch (IOException e) {
+			throw new TransformException("Failed to write [ " + outputFile.getAbsolutePath() + " ]", e);
+		}
+	}
+
+	/**
+	 * Copy a file to a folder. Use the input file relative path as the output
+	 * file relative path.
+	 *
+	 * @param inputPath The relative path of the input file.
+	 * @param inputFile The file which is to be copied.
+	 * @param outputFolder The folder into which to copy the file.
+	 * @throws TransformException Thrown if the copy fails.
+	 */
+	protected void copyInto(String inputPath, File inputFile, File outputFolder) throws TransformException {
+		copyInto(inputPath, inputFile, outputFolder, inputPath);
+	}
+
+	/**
+	 * Copy a file to a folder.
+	 *
+	 * @param inputPath The relative path of the input file.
+	 * @param inputFile The file which is to be copied.
+	 * @param outputFolder The folder into which to copy the file.
+	 * @param outputPath The relative path of the output file.
+	 * @throws TransformException Thrown if the copy fails.
+	 */
+	protected void copyInto(String inputPath, File inputFile, File outputFolder, String outputPath)
+		throws TransformException {
+		File outputFile;
+		try {
+			outputFile = IO.getBasedFile(outputFolder, outputPath);
+		} catch (IOException e) {
+			throw new TransformException(
+				"Non-valid file [ " + outputFolder.getAbsolutePath() + " ] [ " + outputPath + " ]", e);
+		}
+
+		File parentFile = outputFile.getParentFile();
+		try {
+			IO.mkdirs(parentFile);
+		} catch (IOException e) {
+			throw new TransformException(
+				"Failed to create parent directory of [ " + outputFile.getAbsolutePath() + " ]", e);
+		}
+
+		try {
+			IO.copy(inputFile, outputFile);
+		} catch (IOException e) {
+			throw new TransformException(
+				"Failed to copy [ " + inputFile.getAbsolutePath() + " ] to [ " + outputFile.getAbsolutePath() + " ]",
+				e);
 		}
 	}
 
 	//
 
-	@Override
-	public void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
-		throws TransformException {
-		ByteData inputData = collect(inputName, inputStream, inputCount);
-		ByteData outputData = apply(inputData);
-		write(outputData, outputStream);
+	@FunctionalInterface
+	public interface StringReplacement {
+		String apply(String inputName, String initialValue, List<String> cases);
 	}
 
-	@Override
-	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
-		int inputCount = Math.toIntExact(inputFile.length());
-		getLogger().debug("Input [ {} ] Length [ {} ]", inputName, inputCount);
+	public static final List<StringReplacement> NO_ACTIVE_REPLACEMENTS = Collections.emptyList();
 
-		try {
-			IO.mkdirs(outputFile.getParentFile());
-		} catch (IOException e) {
-			throw new TransformException("Failed to create directory [ " + outputFile.getParentFile() + " ]", e);
-		}
-		try (InputStream inputStream = IO.stream(inputFile)) {
-			try (OutputStream outputStream = IO.outputStream(outputFile)) {
-				apply(inputName, inputStream, inputCount, outputStream);
-			} catch (IOException e) {
-				throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
-			}
-		} catch (IOException e) {
-			throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
-		}
+	protected List<StringReplacement> getActiveReplacements() {
+		return NO_ACTIVE_REPLACEMENTS;
 	}
 
-	protected BufferedReader reader(ByteBuffer buffer) {
-		return FileUtils.reader(buffer);
+	/**
+	 * Control API: Subclasses should override to control whether they want to
+	 * continue applying updates, or stop after the first update which had a
+	 * non-trivial or null effect. This is being used currently by class
+	 * actions, which, before the active replacements implementation, stopped
+	 * after the first successful update.
+	 *
+	 * @return True or false telling if multiple updates are allowed.
+	 */
+	protected boolean allowMultipleReplacements() {
+		return true;
 	}
 
-	protected BufferedWriter writer(OutputStream outputStream) {
-		return FileUtils.writer(outputStream);
-	}
+	// ClassActionImpl.transformString(String, String, String)
+	// TextActionImpl.transformString(String, String, String)
 
-	@Override
-	public String relocateResource(String inputPath) {
-		String prefix;
-		String inputName;
-		if (inputPath.startsWith("WEB-INF/classes/")) {
-			prefix = "WEB-INF/classes/";
-			inputName = inputPath.substring(prefix.length());
-		} else if (inputPath.startsWith("META-INF/versions/")) {
-			prefix = "META-INF/versions/";
-			int nextSlash = inputPath.indexOf('/', prefix.length());
-			if (nextSlash != -1) {
-				prefix = inputPath.substring(0, nextSlash + 1);
-			}
-			inputName = inputPath.substring(prefix.length());
+	protected String updateString(String inputName, String valueCase, String initialValue) {
+		List<StringReplacement> useReplacements = getActiveReplacements();
+		if ((useReplacements == null) || useReplacements.isEmpty()) {
+			getLogger().trace("    String {} {}: {} (no-active replacements, unchanged)", inputName, valueCase,
+				initialValue);
+			return null;
 		} else {
-			prefix = "";
-			inputName = inputPath;
+			return updateString(inputName, valueCase, initialValue, useReplacements);
 		}
-		if (!inputName.isEmpty()) {
-			String outputName = transformBinaryType(inputName);
-			if (outputName != null) {
-				String outputPath = prefix.isEmpty() ? outputName : prefix.concat(outputName);
-				return outputPath;
+	}
+
+	protected String updateString(
+		String inputName, String valueCase, String initialValue,
+		List<StringReplacement> replacements) {
+
+		Logger useLogger = getLogger();
+
+		if ((initialValue == null) || initialValue.isEmpty()) {
+			useLogger.trace("    String {} {}: {} (empty, unchanged)", inputName, valueCase, initialValue);
+			return null;
+		}
+
+		boolean allowMultiple = allowMultipleReplacements();
+
+		List<String> cases = new ArrayList<>(allowMultiple ? replacements.size() : 1);
+
+		String finalValue = initialValue;
+		for ( StringReplacement replacement : replacements ) {
+			String priorValue = finalValue;
+			finalValue = replacement.apply(inputName, priorValue, cases);
+			if ( finalValue == null ) {
+				finalValue = priorValue;
+			} else {
+				useLogger.trace("Input [ {} ] [ {} ] Initial [ {} ] Final [ {} ] ( {} )",
+					  inputName, valueCase, priorValue, finalValue, cases);
+				if (!allowMultiple) {
+					break;
+				}
 			}
 		}
-		return inputPath;
+
+		if ( finalValue == initialValue ) {
+			useLogger.trace("    String {} {}: {} (unchanged)", inputName, valueCase, initialValue);
+			return null;
+		} else {
+			useLogger.trace("    String {} {}: {} -> {} ({})", inputName, valueCase, initialValue, finalValue, cases);
+			return finalValue;
+		}
+	}
+
+	//
+
+	protected String packagesUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().replacePackages(initialValue);
+		if (finalValue != null) {
+			cases.add("packages");
+		}
+		return finalValue;
+	}
+
+	protected String binaryPackagesUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().replaceBinaryPackages(initialValue);
+		if (finalValue != null) {
+			cases.add("binary packages");
+		}
+		return finalValue;
+	}
+
+	protected String textUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().replaceText(inputName, initialValue);
+		if (finalValue != null) {
+			cases.add("text");
+		}
+		return finalValue;
+	}
+
+	protected String directPerClassUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().replaceTextDirectPerClass(initialValue, inputName);
+		if (finalValue != null) {
+			cases.add("direct per class");
+		}
+		return finalValue;
+	}
+
+	/**
+	 * Modified direct class lookup for Java resources. Change the Java resource
+	 * extension to ".class" then proceed with a usual ".class" text update.
+	 *
+	 * @param inputName The Java resource name. Extension ".java" is expected.
+	 * @param initialValue The initial value which is to be transformed.
+	 * @param cases Record of what substitution cases were triggered.
+	 * @return The modified value. Null if no updates were made.
+	 */
+	protected String directPerClassUpdate_java(String inputName, String initialValue, List<String> cases) {
+		String lookupName = switchExtensionTo(inputName, ".java", ".class");
+		if (lookupName == null) {
+			return null;
+		}
+		String finalValue = getSignatureRule().replaceTextDirectPerClass(initialValue, lookupName);
+		if (finalValue != null) {
+			cases.add("direct per class (java)");
+		}
+		return finalValue;
+	}
+
+	/**
+	 * Switch the extension of an input resource. Remove "WEB-INF/classes" from
+	 * the input name.
+	 * <p>
+	 * This modification is necessary to lookup class direct updates for the
+	 * purpose of updating Java resources, which do not have the extension used
+	 * by the direct class updates table.
+	 *
+	 * @param inputName The initial input name.
+	 * @param initialExt The initial extension.
+	 * @param finalExtension The final extension.
+	 * @return The modified input name. Null if the input does not start with
+	 *         the specified extension.
+	 */
+	private String switchExtensionTo(String inputName, String initialExt, String finalExtension) {
+		if (!inputName.toLowerCase()
+			.endsWith(initialExt)) {
+			getLogger().error("Input [ {} ] does not have expected extension [ {} ]", inputName, initialExt);
+			return null;
+		}
+
+		String head = inputName.substring(0, inputName.length() - initialExt.length());
+		return head + finalExtension;
+	}
+
+	protected String directGlobalUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().replaceTextDirectGlobal(initialValue, inputName);
+		if (finalValue != null) {
+			cases.add("direct global");
+		}
+		return finalValue;
+	}
+
+	protected String binaryTypeUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().transformBinaryType(initialValue);
+		if (finalValue != null) {
+			cases.add("binary type");
+		}
+		return finalValue;
+	}
+
+	protected String descriptorUpdate(String inputName, String initialValue, List<String> cases) {
+		String finalValue = getSignatureRule().transformDescriptor(initialValue);
+		if (finalValue != null) {
+			cases.add("binary descriptor");
+		}
+		return finalValue;
 	}
 }

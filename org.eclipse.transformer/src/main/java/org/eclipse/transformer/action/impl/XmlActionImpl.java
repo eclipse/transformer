@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,11 +28,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.util.FileUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -43,10 +38,25 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import aQute.lib.io.ByteBufferOutputStream;
 
-public class XmlActionImpl extends ActionImpl<Changes> {
+/**
+ * Prototype action for transforming XML resources.
+ * <p>
+ * Currently unused: XML updates are currently made as text updates.
+ * <p>
+ * XML updates could be made using an XML parser, with updates driven through
+ * values as they appear within the XML text. Both header values (namespaces),
+ * element names, text attribute values, and text element values would be
+ * updated.
+ * <p>
+ * An update which uses a parser suffers from a (current) inability to preserve
+ * whitespace and comments within the parsed XML text. Also, a parser based
+ * action is much more expensive than a string based update. Finally, a better
+ * implementation possibly uses XSL transformations.
+ */
+public class XmlActionImpl extends ElementActionImpl {
 
-	public XmlActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public XmlActionImpl(ActionInitData initData) {
+		super(initData);
 	}
 
 	//
@@ -61,19 +71,26 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 		return ActionType.XML;
 	}
 
-	@Override
-	public String getAcceptExtension() {
-		return ".xml";
-	}
+	// TODO: This check against text substitutions
+	// is no longer sufficient. If the XML action is
+	// put back in use, the test will need to be updated
+	// to include package rename and direct update cases.
+	//
+	// See issue #308.
 
 	@Override
-	public boolean accept(String resourceName, File resourceFile) {
-		if (super.accept(resourceName, resourceFile)) {
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		if (super.acceptResource(resourceName, resourceFile)) {
 			if (getSignatureRule().getTextSubstitutions(resourceName) != null) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public String getAcceptExtension() {
+		return ".xml";
 	}
 
 	//
@@ -86,51 +103,50 @@ public class XmlActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		String inputName = inputData.name();
+
+		startRecording(inputData);
+
 		try {
 			if (XML_AS_PLAIN_TEXT) {
 				return applyAsPlainText(inputData);
 			}
 
-			setResourceNames(inputData.name(), inputData.name());
+			setResourceNames(inputName, inputName);
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			transformUsingSaxParser(inputData.name(), inputData.stream(), outputStream);
+			transformUsingSaxParser(inputName, FileUtils.stream(inputData), outputStream);
 
-			if (!hasChanges()) {
+			if (!isChanged()) {
 				return inputData;
+			} else {
+				return new ByteDataImpl(inputName, outputStream.toByteBuffer());
 			}
 
-			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
-			ByteData outputData = new ByteDataImpl(inputData.name(), outputBuffer);
-			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputData);
 		}
 	}
 
 	public ByteData applyAsPlainText(ByteData inputData) throws TransformException {
+		String inputName = inputData.name();
 
-		String outputName = inputData.name();
-
-		setResourceNames(inputData.name(), outputName);
+		setResourceNames(inputName, inputName);
 
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-		try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
-			transformAsPlainText(inputData.name(), reader, writer);
+		try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
+			transformAsPlainText(inputName, reader, writer);
 		} catch (IOException e) {
-			throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
+			throw new TransformException("Failed to transform [ " + inputName + " ]", e);
 		}
 
-		if (!hasChanges()) {
+		if (!isChanged()) {
 			return inputData;
+		} else {
+			return new ByteDataImpl(inputName, outputStream.toByteBuffer());
 		}
-
-		ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
-		ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
-		return outputData;
 	}
 
 	//

@@ -24,7 +24,6 @@ import org.apache.maven.project.MavenProject;
 import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.action.CompositeAction;
 import org.eclipse.transformer.maven.action.TransformerJarAction;
 import org.eclipse.transformer.maven.action.TransformerJarChanges;
 import org.eclipse.transformer.maven.configuration.TransformerRules;
@@ -114,8 +113,9 @@ public abstract class AbstractTransformerMojo extends AbstractMojo {
 		}
 		transformer.logRules();
 
-		CompositeAction rootAction = transformer.getRootAction();
-		TransformerJarAction action = new TransformerJarAction(rootAction, options.hasOption(AppOption.OVERWRITE));
+		TransformerJarAction action = new TransformerJarAction(transformer.getActionInitData(),
+			transformer.getActionSelector(),
+			options.hasOption(AppOption.OVERWRITE));
 		action.apply(jar, inputName, outputName);
 
 		TransformerJarChanges lastActiveChanges = action.getLastActiveChanges();

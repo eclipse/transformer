@@ -24,8 +24,8 @@ import java.util.Vector;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
-import org.eclipse.transformer.action.impl.JarActionImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
+import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.SignatureUtils;
 
@@ -33,26 +33,30 @@ import aQute.lib.io.ByteBufferInputStream;
 
 public class TransformClassLoader extends ClassLoader {
 
-	public TransformClassLoader(ClassLoader parent, JarActionImpl jarAction, ClassActionImpl classAction,
-		ServiceLoaderConfigActionImpl configAction) {
+	public TransformClassLoader(ClassLoader parent, ZipActionImpl jarAction, ClassActionImpl classAction) {
+		this(parent, jarAction, classAction, null);
+	}
+
+	public TransformClassLoader(ClassLoader parent, ZipActionImpl jarAction, ClassActionImpl classAction,
+		ServiceLoaderConfigActionImpl serviceConfigAction) {
 
 		super(parent);
 
 		this.jarAction = jarAction;
 		this.classAction = classAction;
-		this.serviceConfigAction = configAction;
+		this.serviceConfigAction = serviceConfigAction;
 	}
 
 	//
 
-	private final JarActionImpl jarAction;
+	private final ZipActionImpl jarAction;
 
-	public JarActionImpl getJarAction() {
+	public ZipActionImpl getJarAction() {
 		return jarAction;
 	}
 
 	public boolean selectResource(String resourceName) {
-		return getJarAction().select(resourceName);
+		return getJarAction().selectResource(resourceName);
 	}
 
 	public String getResourceName(String className) {
@@ -68,14 +72,14 @@ public class TransformClassLoader extends ClassLoader {
 	}
 
 	public boolean acceptClass(String resourceName) {
-		return getClassAction().accept(resourceName);
+		return getClassAction().acceptResource(resourceName);
 	}
 
 	public InputStream applyClass(String resourceName, InputStream inputStream) throws TransformException {
-
-		ByteData outputData = getClassAction().apply(getClassAction().collect(resourceName, inputStream));
-
-		return outputData.stream();
+		ClassActionImpl classAction = getClassAction();
+		ByteData inputData = classAction.collect(resourceName, inputStream);
+		ByteData outputData = classAction.apply(inputData);
+		return FileUtils.stream(outputData);
 	}
 
 	//
@@ -87,15 +91,19 @@ public class TransformClassLoader extends ClassLoader {
 	}
 
 	public boolean acceptServiceConfig(String resourceName) {
-		return getServiceConfigAction().accept(resourceName);
+		ServiceLoaderConfigActionImpl configAction = getServiceConfigAction();
+		return ((configAction != null) && configAction.acceptResource(resourceName));
 	}
 
 	public InputStream applyServiceConfig(String resourceName, InputStream inputStream) throws TransformException {
-
-		ByteData outputData = getServiceConfigAction()
-			.apply(getServiceConfigAction().collect(resourceName, inputStream));
-
-		return outputData.stream();
+		ServiceLoaderConfigActionImpl configAction = getServiceConfigAction();
+		if (configAction == null) {
+			return inputStream;
+		} else {
+			ByteData inputData = configAction.collect(resourceName, inputStream);
+			ByteData outputData = configAction.apply(inputData);
+			return FileUtils.stream(outputData);
+		}
 	}
 
 	//

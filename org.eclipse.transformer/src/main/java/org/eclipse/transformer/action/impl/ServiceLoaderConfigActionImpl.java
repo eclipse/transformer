@@ -15,15 +15,11 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.util.FileUtils;
 
 import aQute.lib.io.ByteBufferOutputStream;
 
@@ -39,15 +35,14 @@ import aQute.lib.io.ByteBufferOutputStream;
  * all characters following the first comment character are ignored. The file
  * must be encoded in UTF-8.
  */
-public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfigChangesImpl> {
+public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 	public static final String	META_INF			= "META-INF/";
 	public static final String	META_INF_SERVICES	= "META-INF/services/";
 
 	//
 
-	public ServiceLoaderConfigActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public ServiceLoaderConfigActionImpl(ActionInitData initData) {
+		super(initData);
 	}
 
 	//
@@ -65,8 +60,18 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 	//
 
 	@Override
-	protected ServiceLoaderConfigChangesImpl newChanges() {
+	public ServiceLoaderConfigChangesImpl newChanges() {
 		return new ServiceLoaderConfigChangesImpl();
+	}
+
+	@Override
+	public ServiceLoaderConfigChangesImpl getActiveChanges() {
+		return (ServiceLoaderConfigChangesImpl) super.getActiveChanges();
+	}
+
+	@Override
+	public ServiceLoaderConfigChangesImpl getLastActiveChanges() {
+		return (ServiceLoaderConfigChangesImpl) super.getLastActiveChanges();
 	}
 
 	protected void addUnchangedProvider() {
@@ -80,46 +85,52 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 	//
 
 	@Override
-	public boolean accept(String resourceName, File resourceFile) {
+	public boolean acceptResource(String resourceName, File resourceFile) {
 		return resourceName.contains(META_INF_SERVICES) && !resourceName.endsWith(META_INF_SERVICES);
+	}
+
+	@Override
+	public String getAcceptExtension() {
+		throw new UnsupportedOperationException();
 	}
 
 	//
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		startRecording(inputData);
 		try {
-			String outputName = renameInput(inputData.name());
+			String inputName = inputData.name();
+			String outputName = packageRenameInput(inputName);
 			if (outputName == null) {
-				outputName = inputData.name();
+				outputName = inputName;
 			} else {
-				getLogger().debug("Service name  [ {} ] -> [ {} ]", inputData.name(), outputName);
+				getLogger().debug("Service name  [ {} ] -> [ {} ]", inputName, outputName);
 			}
-			setResourceNames(inputData.name(), outputName);
+			setResourceNames(inputName, outputName);
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
+			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
 				transform(reader, writer);
 			} catch (IOException e) {
-				throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
+				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
 			}
 
-			if (!hasChanges()) {
+			if (!isChanged()) {
 				return inputData;
+			} else if (!isContentChanged()) {
+				return inputData.copy(outputName);
+			} else {
+				return new ByteDataImpl(outputName, outputStream.toByteBuffer());
 			}
 
-			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
-			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
-			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputData);
 		}
 	}
 
 	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
-
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
 			// Goal is to find the input package name. Find it by
@@ -159,8 +170,7 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 				dotLocation = inputPackageName.lastIndexOf('.');
 				if (dotLocation == -1) {
 					// A class which uses the default package: There is no
-					// package
-					// to rename.
+					// package to rename.
 					outputPackageName = null;
 				} else if (dotLocation == 0) {
 					// Strange leading ".": Ignore it.
@@ -203,44 +213,6 @@ public class ServiceLoaderConfigActionImpl extends ActionImpl<ServiceLoaderConfi
 
 			writer.write(outputLine);
 			writer.newLine();
-		}
-	}
-
-	protected String renameInput(String inputName) {
-		String inputPrefix;
-		String serviceQualifiedName;
-
-		int lastSlash = inputName.lastIndexOf('/');
-		if (lastSlash == -1) {
-			inputPrefix = null;
-			serviceQualifiedName = inputName;
-		} else {
-			inputPrefix = inputName.substring(0, lastSlash + 1);
-			serviceQualifiedName = inputName.substring(lastSlash + 1);
-		}
-
-		int classStart = serviceQualifiedName.lastIndexOf('.');
-		if (classStart == -1) {
-			return null;
-		}
-
-		String packageName = serviceQualifiedName.substring(0, classStart);
-		if (packageName.isEmpty()) {
-			return null;
-		}
-
-		// 'className' includes a leading '.'
-		String className = serviceQualifiedName.substring(classStart);
-
-		String outputName = replacePackage(packageName);
-		if (outputName == null) {
-			return null;
-		}
-
-		if (inputPrefix == null) {
-			return outputName + className;
-		} else {
-			return inputPrefix + outputName + className;
 		}
 	}
 }

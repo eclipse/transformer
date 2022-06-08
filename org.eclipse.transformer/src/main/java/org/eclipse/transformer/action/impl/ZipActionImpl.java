@@ -11,15 +11,13 @@
 
 package org.eclipse.transformer.action.impl;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -29,169 +27,376 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
 
 import aQute.lib.io.IO;
 
+/**
+ * Top level ZIP action. A ZIP action is a container action which iterates
+ * across the ZIP file elements, selecting and applying actions on each of these
+ * elements and aggregating the changes.
+ * <p>
+ * ZIP actions come in several flavors -- EAR, Jar, RAR, and WAR. These are all
+ * almost the same, with differences in the kinds of nested archives are
+ * expected. Also, the Jar container action is unique in using the properties
+ * action.
+ */
 public class ZipActionImpl extends ContainerActionImpl {
 
-	public ZipActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public static ZipActionImpl newZipAction(ActionInitData initData) {
+		return new ZipActionImpl(initData, "Zip Action", ActionType.ZIP, ".zip");
 	}
 
-	//
+	public static ZipActionImpl newJarAction(ActionInitData initData) {
+		return new ZipActionImpl(initData, "Jar Action", ActionType.JAR, ".jar");
+	}
+
+	public static ZipActionImpl newWarAction(ActionInitData initData) {
+		return new ZipActionImpl(initData, "WAR Action", ActionType.WAR, ".war");
+	}
+
+	public static ZipActionImpl newRarAction(ActionInitData initData) {
+		return new ZipActionImpl(initData, "RAR Action", ActionType.RAR, ".rar");
+	}
+
+	public static ZipActionImpl newEarAction(ActionInitData initData) {
+		return new ZipActionImpl(initData, "EAR Action", ActionType.EAR, ".ear");
+	}
+
+	public ZipActionImpl(ActionInitData initData, String name, ActionType actionType,
+		String extension) {
+		super(initData);
+
+		this.name = name;
+		this.actionType = actionType;
+		this.extension = extension;
+	}
+
+	private final String		name;
+	private final ActionType	actionType;
+	private final String		extension;
 
 	@Override
 	public String getName() {
-		return "Zip Action";
+		return name;
 	}
 
 	@Override
 	public ActionType getActionType() {
-		return ActionType.ZIP;
+		return actionType;
+	}
+
+	@Override
+	public boolean isArchiveAction() {
+		return true;
+	}
+
+	@Override
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		return acceptExtension(resourceName, resourceFile);
 	}
 
 	@Override
 	public String getAcceptExtension() {
-		return ".zip";
+		return extension;
 	}
 
-	@Override
-	public boolean useStreams() {
-		return true;
-	}
-
-	//
+	// Entry from the transformer, or, from the directory action.
 
 	@Override
-	public void apply(String inputPath, InputStream inputStream, int inputCount, OutputStream outputStream)
-		throws TransformException {
+	public void apply(String inputPath, File inputFile, String outputPath, File outputFile) throws TransformException {
+		// Recording must be done as the first step: Otherwise, an apply failure
+		// can leave the action without change data, which will cause errors
+		// when attempting to record the action.
+
 		startRecording(inputPath);
 		try {
-			setResourceNames(inputPath, inputPath);
-
-			/*
-			 * Use Zip streams instead of Jar streams. Jar streams automatically
-			 * read and consume the manifest, which we don't want.
-			 */
-			try {
-				ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-				ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
-				try {
-					apply(inputPath, zipInputStream, zipOutputStream);
-				} finally {
-					zipOutputStream.finish();
-				}
-			} catch (IOException e) {
-				throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
-			}
+			setResourceNames(inputPath, outputPath);
+			applyFile(inputPath, inputFile, outputPath, outputFile);
 		} finally {
 			stopRecording(inputPath);
 		}
 	}
 
-	protected void apply(String inputPath, ZipInputStream zipInputStream, ZipOutputStream zipOutputStream)
+	// Nested entry from the zip action.
+
+	private void apply(String inputPath, InputStream inputStream, String outputPath, OutputStream outputStream)
 		throws TransformException {
+
+		// Recording must be done as the first step: Otherwise, an apply failure
+		// can leave the action without change data, which will cause errors
+		// when attempting to record the action.
+
+		startRecording(inputPath);
+		try {
+			setResourceNames(inputPath, outputPath);
+			applyStream(inputPath, inputStream, outputPath, outputStream);
+		} finally {
+			stopRecording(inputPath);
+		}
+	}
+
+	// Apply implementations, with recording already handled. These are split
+	// from the entry methods to simplify the recording steps.
+
+	private void applyFile(String inputPath, File inputFile, String outputPath, File outputFile)
+		throws TransformException {
+		File outputParent = outputFile.getParentFile();
+		try {
+			IO.mkdirs(outputParent);
+		} catch (IOException e) {
+			throw new TransformException("Failed to create directory [ " + outputParent.getAbsolutePath() + " ]", e);
+		}
+
+		try (InputStream inputStream = IO.stream(inputFile)) {
+			try (OutputStream outputStream = IO.outputStream(outputFile)) {
+				applyStream(inputPath, inputStream, outputPath, outputStream);
+			} catch (IOException e) {
+				throw new TransformException("Failed to write [ " + outputFile.getAbsolutePath() + " ]", e);
+			}
+		} catch (IOException e) {
+			throw new TransformException("Failed to read [ " + inputFile.getAbsolutePath() + " ]", e);
+		}
+	}
+
+	private void applyStream(String inputPath, InputStream inputStream, String outputPath, OutputStream outputStream)
+		throws TransformException {
+
+		// Use Zip streams instead of Jar streams. Jar streams automatically
+		// read and consume the manifest, which we don't want.
+
+		// Don't use try-with-resources: Zip streams, when closed, close their
+		// base stream. We don't want that here.
+
+		try {
+			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+
+			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+			try {
+				applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream);
+			} finally {
+				zipOutputStream.finish();
+			}
+
+		} catch (IOException e) {
+			throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
+		}
+
+	}
+
+	protected boolean isDuplicate(
+		String inputName, String inputPath, String outputName, String outputPath,
+		Set<String> seen) {
+
+		if (seen.add(outputName)) {
+			return false;
+
+		} else {
+			if (inputName.equals(outputName)) {
+				getLogger().error(
+					"Duplicate entry: Entry [ {} ] of [ {} ] is a duplicate and cannot be written to [ {} ].  Ignoring.",
+					inputName, inputPath, outputPath);
+			} else {
+				getLogger().error(
+					"Duplicate entry: Entry [ {} ], initially [ {} ] of [ {} ], is a duplicate and cannot be written to [ {} ].  Ignoring.",
+					outputName, inputName, inputPath, outputPath);
+			}
+			return true;
+		}
+	}
+
+	/**
+	 * Transform the entries of a zip-type archive. Write transformed entries to
+	 * a zip-type archive.
+	 *
+	 * @param inputPath A name associated with the input stream.
+	 * @param zipInputStream An input stream for the input archive.
+	 * @param outputPath A name associated with the output stream.
+	 * @param zipOutputStream An output stream for the output archive.
+	 * @throws TransformException Thrown if reading or writing the archives
+	 *             fails, or if transformation of an entry fails.
+	 */
+	private void applyZipStream(
+		String inputPath, ZipInputStream zipInputStream,
+		String outputPath, ZipOutputStream zipOutputStream) throws TransformException {
+
+		String className = getClass().getSimpleName();
+		String methodName = "apply";
+
+		Logger useLogger = getLogger();
+
+		useLogger.debug("[ {}.{} ] [ {} ]", className, methodName, inputPath);
+
+		byte[] copyBuffer = new byte[FileUtils.BUFFER_ADJUSTMENT]; // Shared transfer buffer.
+
+		// TODO: The replication of the 'isDuplicate' checks, below,
+		//       indicates that the apply/record pattern is clumsy
+		//       and should be replaced.
+		//
+		// See issue #304.
+
+		Set<String> seen = new HashSet<>();
 
 		String prevName = null;
 		String inputName = null;
-		byte[] copyBuffer = new byte[FileUtils.BUFFER_ADJUSTMENT];
-		Set<String> seen = new HashSet<>();
 
 		try {
-			for (ZipEntry inputEntry; (inputEntry = zipInputStream
-				.getNextEntry()) != null; prevName = inputName, inputName = null) {
-				// Sanitize inputName to avoid ZipSlip
-				inputName = cleanPath(inputEntry.getName());
-				// In case the input archive is flawed and has duplicate entries
-				if (!seen.add(inputName)) {
-					getLogger().error("Duplicate archive entry [ {} ] in [ {} ] ignored.", inputName, inputPath);
-					continue;
-				}
-				int inputLength = Math.toIntExact(inputEntry.getSize());
-
-				getLogger().debug("[ {}.{} ] [ {} ] Size [ {} ]", getClass().getSimpleName(), "apply", inputName,
-					inputLength);
+			for ( ZipEntry inputEntry;
+				  (inputEntry = zipInputStream.getNextEntry()) != null;
+				  prevName = inputName, inputName = null ) {
 
 				try {
-					Action acceptedAction = acceptAction(inputName);
-					if (acceptedAction == null) {
-						recordUnaccepted(inputName);
-						copy(inputEntry, zipInputStream, zipOutputStream, copyBuffer);
-						continue;
-					}
-					if (!select(inputName)) {
-						recordUnselected(acceptedAction, inputName);
-						copy(inputEntry, zipInputStream, zipOutputStream, copyBuffer);
-						continue;
-					}
-					if (acceptedAction.useStreams()) {
-						/*
-						 * Archive type actions are processed using streams,
-						 * while non-archive type actions do a full read of the
-						 * entry data and process the resulting byte array.
-						 * Ideally, a single pattern would be used for both
-						 * cases, but that is not possible: A full read of a
-						 * nested archive is not possible because the nested
-						 * archive can be very large. A read of non-archive data
-						 * must be performed, since non-archive data may change
-						 * the name associated with the data, and that can only
-						 * be determined after reading the data. We do the name
-						 * transform work here since the resource can be in a
-						 * renamed package.
-						 */
-						String outputName = cleanPath(acceptedAction.relocateResource(inputName));
-						ZipEntry outputEntry = new ZipEntry(outputName);
-						outputEntry.setExtra(inputEntry.getExtra());
-						outputEntry.setComment(inputEntry.getComment());
-						zipOutputStream.putNextEntry(outputEntry);
-						acceptedAction.apply(inputName, zipInputStream, inputLength, zipOutputStream);
-						// Record the output name since the apply method does
-						// not know
-						acceptedAction.getLastActiveChanges()
-							.setOutputResourceName(outputName);
-						recordTransform(acceptedAction, inputName);
-						zipOutputStream.closeEntry();
-						continue;
-					}
-					ByteData inputData = acceptedAction.collect(inputName, zipInputStream, inputLength);
-					ByteData outputData;
-					try {
-						outputData = acceptedAction.apply(inputData);
-						recordTransform(acceptedAction, inputName);
-					} catch (TransformException t) {
-						// Fall back and copy
-						outputData = inputData;
-						getLogger().error(t.getMessage(), t);
-					}
+					inputName = FileUtils.sanitize(inputEntry.getName()); // Avoid ZipSlip
+					int inputLength = Math.toIntExact(inputEntry.getSize());
 
-					// Sanitize outputName to avoid ZipSlip
-					String outputName = cleanPath(outputData.name());
-					ZipEntry outputEntry = new ZipEntry(outputName);
-					outputEntry.setMethod(inputEntry.getMethod());
-					outputEntry.setExtra(inputEntry.getExtra());
-					outputEntry.setComment(inputEntry.getComment());
-					ByteBuffer buffer = outputData.buffer();
-					if (outputEntry.getMethod() == ZipOutputStream.STORED) {
-						outputEntry.setSize(buffer.remaining());
-						outputEntry.setCompressedSize(buffer.remaining());
-						CRC32 crc = new CRC32();
-						buffer.mark();
-						crc.update(buffer);
-						buffer.reset();
-						outputEntry.setCrc(crc.getValue());
+					useLogger.debug("[ {}.{} ] Entry [ {} ] Size [ {} ]", className, methodName, inputName, inputLength);
+
+					Action action = selectAction(inputName);
+
+					// Duplicate checks must be done for each case
+					// and must be done on the output name.
+					//
+					// Although unlikely, we could have:
+					//   A renamed to B
+					//   B renamed to A.
+					// Or,
+					//   A renamed to B
+					//   B unselected
+
+					// Putting entries into a zip stream requires that their name and
+					// length details be determined before writing entry contents.
+					//
+					// That complicates the action API, since actions want to handle
+					// naming the entry.
+					//
+					// As a compromise:
+					//
+					// * Un-accepted and un-selected entries are not renamed.
+					//
+					// * Zip entries are renamed as a step external to the zip entry apply
+					//   processing, and which is performed before that processing.
+					//
+					// * Other entries are read entirely, transformed, then the entry is
+					//   put and written.
+
+					if (action == null) {
+						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+							recordDuplicate(action, inputName);
+						} else {
+							copy(inputEntry, zipInputStream, inputName, zipOutputStream, copyBuffer);
+							recordUnaccepted(inputName);
+						}
+					} else if (!selectResource(inputName)) {
+						// Unselected resources are *not* renamed.
+						// The expectation is that files which are deliberately
+						// omitted should not be transformed in any way.
+						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+							recordDuplicate(action, inputName);
+						} else {
+							copy(inputEntry, zipInputStream, inputName, zipOutputStream, copyBuffer);
+							recordUnselected(inputName);
+						}
+
+					} else if (action.isRenameAction()) {
+						RenameActionImpl renameAction = (RenameActionImpl) action;
+						String outputName = renameAction.apply(inputName);
+						outputName = FileUtils.sanitize(outputName);
+
+						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+							recordDuplicate(action, inputName);
+						} else {
+							copy(inputEntry, zipInputStream, outputName, zipOutputStream, copyBuffer);
+							recordAction(action, inputName);
+						}
+
+					} else if (action.isArchiveAction()) {
+						ZipActionImpl zipAction = (ZipActionImpl) action;
+
+						// Zip actions continue to use streaming.
+						// Loading entire archives into memory is to be avoided.
+						// However, that means the new entry name must be known
+						// before invoking 'apply' on the selected action.
+
+						String outputName = zipAction.relocateResource(inputName);
+						outputName = FileUtils.sanitize(outputName);
+
+						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+							recordDuplicate(zipAction, inputName);
+						} else {
+							try {
+								ZipEntry outputEntry = new ZipEntry(outputName);
+								outputEntry.setExtra(inputEntry.getExtra());
+								outputEntry.setComment(inputEntry.getComment());
+
+								String putInputName = inputName; // Need these to be effectively final.
+								String putOutputName = outputName;
+								putEntry(zipOutputStream, outputEntry, () -> {
+									// Note the use of 'apply' and not the internal 'applyStream'.
+									// Recording must be performed.  And, the streams must be put through
+									// conversion to zip streams as a part of handling nested archives.
+									zipAction.apply(putInputName, zipInputStream, putOutputName, zipOutputStream);
+								});
+
+								recordAction(zipAction, inputName);
+								recordNested(zipAction, inputName);
+
+							} catch (Throwable th) {
+								recordError(zipAction, inputName, th);
+							}
+						}
+
+					} else if ( !action.isElementAction() ) {
+						useLogger.warn("Strange: Unknown action type [ {} ] for [ {} ] in {} ]",
+							action.getClass().getName(), inputName, inputPath);
+
+						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+							recordDuplicate(action, inputName);
+						} else {
+							copy(inputEntry, zipInputStream, inputName, zipOutputStream, copyBuffer);
+							recordUnaccepted(inputName);
+						}
+
+					} else {
+						ElementActionImpl elementAction = (ElementActionImpl) action;
+
+						// Collect up front, then allow the action to run, which includes
+						// both renaming and content transformation, then put and write the
+						// entry.
+
+						ByteData inputData = collect(inputName, zipInputStream, inputLength);
+						boolean beganWrite = false;
+						try {
+							ByteData outputData = elementAction.apply(inputData);
+							String outputName = outputData.name();
+							outputName = FileUtils.sanitize(outputName); // Avoid ZipSlip
+
+							if ( isDuplicate(inputName, inputPath, outputName, outputPath, seen) ) {
+								recordDuplicate(elementAction, inputName);
+							} else {
+								beganWrite = true;
+								if ( elementAction.getLastActiveChanges().isContentChanged() ) {
+									writeModified(inputEntry, inputData, outputData, outputName, zipOutputStream);
+								} else {
+									writeUnmodified(inputEntry, inputData, outputName, zipOutputStream);
+								}
+								recordAction(elementAction, inputName);
+							}
+
+						} catch (Throwable t) {
+							if ( !beganWrite ) {
+								writeUnmodified(inputEntry, inputData, inputName, zipOutputStream);
+							} else {
+								useLogger.error("Write failure of [ {} ] of [ {} ]", inputName, inputPath);
+							}
+							recordError(action, inputName, t);
+						}
 					}
-					zipOutputStream.putNextEntry(outputEntry);
-					IO.copy(buffer, zipOutputStream);
-					zipOutputStream.closeEntry();
-				} catch (Exception e) {
-					getLogger().error("Transform failure [ {} ]", inputName, e);
+				} catch (Throwable t) {
+					useLogger.error("Transform failure [ {} ] of [ {} ]", inputName, inputPath, t);
 				}
 			}
+
 		} catch (IOException e) {
 			String message;
 			if (inputName != null) {
@@ -208,38 +413,154 @@ public class ZipActionImpl extends ContainerActionImpl {
 		}
 	}
 
-	private final static Pattern PATH_SPLITTER = Pattern.compile("[/\\\\]");
+	private void copy(
+		ZipEntry inputEntry, ZipInputStream zipInputStream,
+        String outputName, ZipOutputStream zipOutputStream,
+        byte[] buffer) throws IOException {
 
-	private String cleanPath(String path) {
-		if (path.isEmpty()) {
-			return path;
-		}
-		String normalized;
-		try {
-			normalized = Paths.get("", PATH_SPLITTER.split(path))
-				.normalize()
-				.toString()
-				.replace('\\', '/');
-		} catch (InvalidPathException e) {
-			throw new TransformException("invalid zip entry name " + path, e);
-		}
-		if (normalized.startsWith("..") && //
-			((normalized.length() == 2) || (normalized.charAt(2) == '/'))) {
-				throw new TransformException("invalid zip entry name " + path);
-		}
-		char lastChar = path.charAt(path.length() - 1);
-		if ((lastChar == '/') || (lastChar == '\\')) {
-			normalized = normalized.concat("/");
-		}
-		return normalized;
+		getLogger().trace("Copy entry [ {} ] Directory [ {} ] as [ {} ]",
+			inputEntry.getName(), inputEntry.isDirectory(), outputName);
+		ZipEntry outputEntry = copyEntry(inputEntry, outputName);
+		putEntry(zipOutputStream, outputEntry, () -> {
+			if ( !inputEntry.isDirectory() ) {
+				long bytesWritten = FileUtils.transfer(zipInputStream, zipOutputStream, buffer);
+				getLogger().trace("Copied [ {} ] bytes to [ {} ]", bytesWritten, outputName);
+			}
+		});
 	}
 
-	private void copy(ZipEntry inputEntry, ZipInputStream zipInputStream, ZipOutputStream zipOutputStream,
-		byte[] buffer) throws IOException {
-		ZipEntry outputEntry = new ZipEntry(inputEntry);
-		outputEntry.setCompressedSize(-1L);
-		zipOutputStream.putNextEntry(outputEntry);
-		FileUtils.transfer(zipInputStream, zipOutputStream, buffer);
-		zipOutputStream.closeEntry();
+	public void writeUnmodified(
+		ZipEntry inputEntry,
+		ByteData outputData, String outputName, ZipOutputStream zipOutputStream)
+		throws IOException {
+
+		getLogger().trace("Write unmodified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
+
+		ZipEntry outputEntry = copyEntry(inputEntry, outputName);
+		putEntry(zipOutputStream, outputEntry, () -> {
+			outputData.writeTo(zipOutputStream);
+		});
+	}
+
+	public void writeModified(
+		ZipEntry inputEntry, ByteData inputData,
+		ByteData outputData, String outputName, ZipOutputStream zipOutputStream)
+		throws IOException {
+
+		getLogger().trace("Write modified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
+
+		ZipEntry outputEntry = createEntry(inputEntry, outputData, outputName);
+		putEntry(zipOutputStream, outputEntry, () -> {
+			outputData.writeTo(zipOutputStream);
+		});
+	}
+
+	private ZipEntry copyEntry(ZipEntry inputEntry, String outputName) {
+		// Unless already set, putNextEntry sets the last modified time.
+		// of the entry.
+
+		ZipEntry outputEntry = new ZipEntry(outputName);
+
+		int method = inputEntry.getMethod();
+		if (method != -1) {
+			outputEntry.setMethod(method);
+		}
+		if (outputEntry.getMethod() == ZipEntry.STORED) {
+			long size = inputEntry.getSize();
+			if ( size >= 0L ) {
+				// A size of '-1' is possible from the input entry.
+				// Setting -1 causes an exception.
+				outputEntry.setSize(size);
+			}
+			long cSize = inputEntry.getCompressedSize();
+			if ( cSize >= 0L ) {
+				// This is not checked, but lets be safe anyways.
+				outputEntry.setCompressedSize(cSize);
+			}
+			long crc = inputEntry.getCrc();
+			if ( crc >= 0 ) {
+				// A CRC of '-1' is possible from the input entry.
+				// Setting -1 causes an exception.
+				outputEntry.setCrc(crc);
+			}
+		}
+
+		String inputComment = inputEntry.getComment();
+		if ( inputComment != null ) {
+			outputEntry.setComment(inputComment);
+		}
+		byte[] inputExtra = inputEntry.getExtra();
+		if ( inputExtra != null ) {
+			outputEntry.setExtra(inputExtra);
+		}
+
+		// TODO:
+		//
+		// Not sure about whether these time values should be set.
+		// Does changing the entry name invalidate the prior values?
+		// Also, setting these may override any updates made when
+		// setting the extra data.
+		//
+		// See issue #305.
+
+		outputEntry.setTime( inputEntry.getTime() );
+
+		FileTime lastTime = inputEntry.getLastAccessTime();
+		if ( lastTime != null ) {
+			outputEntry.setLastAccessTime(lastTime);
+		}
+		FileTime createTime = inputEntry.getCreationTime();
+		if ( createTime != null ) {
+			outputEntry.setCreationTime(createTime);
+		}
+		FileTime modTime = inputEntry.getLastModifiedTime();
+		if ( modTime != null ) {
+			outputEntry.setLastModifiedTime(modTime);
+		}
+
+		return outputEntry;
+	}
+
+	private ZipEntry createEntry(ZipEntry inputEntry, ByteData outputData, String outputName) {
+		ZipEntry outputEntry = new ZipEntry(outputName);
+
+		int method = inputEntry.getMethod();
+		if (method != -1) {
+			outputEntry.setMethod(method);
+		}
+		if (outputEntry.getMethod() == ZipEntry.STORED) {
+			int length = outputData.length();
+			outputEntry.setSize(length);
+			outputEntry.setCompressedSize(length);
+
+			CRC32 crc = new CRC32();
+			crc.update( outputData.buffer() );
+			outputEntry.setCrc( crc.getValue() );
+		}
+
+		String inputComment = inputEntry.getComment();
+		if ( inputComment != null ) {
+			outputEntry.setComment(inputComment);
+		}
+		byte[] inputExtra = inputEntry.getExtra();
+		if ( inputExtra != null ) {
+			outputEntry.setExtra(inputExtra);
+		}
+
+		return outputEntry;
+	}
+
+	@FunctionalInterface
+	private interface TransformerRunnable {
+		void run() throws IOException, TransformException;
+	}
+
+	private void putEntry(ZipOutputStream zipOutputStream, ZipEntry outputEntry, TransformerRunnable populator) throws IOException, TransformException {
+		zipOutputStream.putNextEntry(outputEntry); // throws IOException
+		try {
+			populator.run(); // throws TransformException
+		} finally {
+			zipOutputStream.closeEntry(); // throws IOException
+		}
 	}
 }
