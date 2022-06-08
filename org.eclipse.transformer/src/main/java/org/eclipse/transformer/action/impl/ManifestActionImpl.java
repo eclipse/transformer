@@ -27,11 +27,7 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.util.FileUtils;
 
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.OSGiHeader;
@@ -40,7 +36,18 @@ import aQute.bnd.unmodifiable.Sets;
 import aQute.lib.io.ByteBufferOutputStream;
 import aQute.lib.manifest.ManifestUtil;
 
-public class ManifestActionImpl extends ActionImpl<Changes> {
+/**
+ * Action for manifest, including feature manifest.
+ * <p>
+ * Performs package, package version, and bundle identity updates on select
+ * manifest attributes.
+ * <p>
+ * Feature manifest updates are the same as simple manifest updates, with two
+ * differences: First, feature manifest generally will have the extension ".mf"
+ * but will not have the name "MANIFEST". Second, feature manifest do not have
+ * the line length restrictions as are had by manifest.
+ */
+public class ManifestActionImpl extends ElementActionImpl {
 	public static final String	META_INF				= "META-INF/";
 	public static final String	MANIFEST_MF				= "MANIFEST.MF";
 	public static final String	META_INF_MANIFEST_MF	= "META-INF/MANIFEST.MF";
@@ -50,19 +57,16 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 	private static final boolean	IS_MANIFEST				= true;
 	private static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
-	public static ManifestActionImpl newManifestAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_MANIFEST);
+	public static ManifestActionImpl newManifestAction(ActionInitData initData) {
+		return new ManifestActionImpl(initData, IS_MANIFEST);
 	}
 
-	public static ManifestActionImpl newFeatureAction(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		return new ManifestActionImpl(logger, buffer, selectionRule, signatureRule, IS_FEATURE);
+	public static ManifestActionImpl newFeatureAction(ActionInitData initData) {
+		return new ManifestActionImpl(initData, IS_FEATURE);
 	}
 
-	public ManifestActionImpl(Logger logger, InputBuffer buffer,
-		SelectionRule selectionRule, SignatureRule signatureRule, boolean isManifest) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public ManifestActionImpl(ActionInitData initData, boolean isManifest) {
+		super(initData);
 		this.isManifest = isManifest;
 	}
 
@@ -99,19 +103,18 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		startRecording(inputData);
 		try {
 			String className = getClass().getSimpleName();
 			String methodName = "apply";
 
-			getLogger().debug("[ {}.{} ]: [ {} ] Initial bytes [ {} ]", className, methodName, inputData.name(),
-				inputData.length());
+			getLogger().debug("[ {}.{} ]: Initial [ {} ]", className, methodName, inputData);
 
 			setResourceNames(inputData.name(), inputData.name());
 
 			Manifest initialManifest;
 			try {
-				initialManifest = new Manifest(inputData.stream());
+				initialManifest = new Manifest(FileUtils.stream(inputData));
 			} catch (IOException e) {
 				throw new TransformException("Failed to parse manifest [ " + inputData.name() + " ]", e);
 			}
@@ -120,7 +123,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 			transform(inputData.name(), initialManifest, finalManifest);
 
-			if (!hasChanges()) {
+			if (!isChanged()) {
 				getLogger().debug("[ {}.{} ]: [ {} ] Null transform", className, methodName, inputData.name());
 				return inputData;
 			}
@@ -133,11 +136,10 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 			}
 
 			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
-			getLogger().debug("[ {}.{} ]: [ {} ] Active transform; final bytes [ {} ]", className, methodName,
-				outputData.name(), outputData.length());
+			getLogger().debug("[ {}.{} ]: Final [ {} ]", className, methodName, outputData);
 			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputData);
 		}
 	}
 
@@ -233,10 +235,8 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 		StringBuilder builder = new StringBuilder();
 
-		for (Map.Entry<Object, Object> mainEntry : manifest.getMainAttributes()
-			.entrySet()) {
-			writer.append(mainEntry.getKey()
-				.toString());
+		for (Map.Entry<Object, Object> mainEntry : manifest.getMainAttributes().entrySet()) {
+			writer.append(mainEntry.getKey().toString());
 			writer.append(": ");
 
 			String value = (String) mainEntry.getValue();
@@ -339,7 +339,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 				String head = text.substring(0, matchStart);
 				String tail = text.substring(packageEnd);
 
-				String newVersion = getReplacementVersion(attributeName, value, tail);
+				String newVersion = replacePackageVersion(attributeName, value, tail);
 				if (newVersion != null) {
 					tail = replacePackageVersion(tail, newVersion);
 				}
@@ -445,7 +445,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 				if (Character.isWhitespace(ch)) {
 					continue;
 				}
-				getLogger().error("Syntax error found non-white-space character before equals sign in version [{}]",
+				getLogger().error("Found a non-white-space character before the equals sign, in package text [ {} ]",
 					packageText);
 				return text; // Syntax error - returning original text
 			}
@@ -464,7 +464,8 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 
 					versionEndIndex = packageText.indexOf('\"', i + 1);
 					if (versionEndIndex == -1) {
-						getLogger().error("Syntax error, package version does not have closing quotation mark");
+						getLogger().error("Version does not have a closing quotation mark, in package text [ {} ]",
+							packageText);
 						return text; // Syntax error - returning original text
 					}
 					versionEndIndex--; // just before the 2nd quotation mark
@@ -481,7 +482,7 @@ public class ManifestActionImpl extends ActionImpl<Changes> {
 					continue;
 				}
 
-				getLogger().error("Syntax error found non-white-space character after equals sign in version [{}]",
+				getLogger().error("Found a non-white-space character after the equals sign, in package text [ {} ]",
 					packageText);
 				return text; // Syntax error - returning original text
 			}

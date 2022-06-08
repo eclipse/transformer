@@ -20,7 +20,8 @@ import java.util.function.Function;
 import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.action.CompositeAction;
+import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.bnd.analyzer.action.AnalyzerAction;
 import org.slf4j.Logger;
@@ -86,8 +87,15 @@ public class BaseTransformerPlugin implements Plugin {
 		}
 		transformer.logRules();
 
-		CompositeAction rootAction = transformer.getRootAction();
-		AnalyzerAction analyzerAction = new AnalyzerAction(rootAction, options.hasOption(AppOption.OVERWRITE));
+		// TODO: Still figuring out the best pattern for action and transformer
+		// construction.
+		//
+		// See issue #296
+
+		ActionSelector actionSelector = transformer.getActionSelector();
+		Action.ActionInitData initData = transformer.getActionInitData();
+		boolean overwrite = options.hasOption(AppOption.OVERWRITE);
+		AnalyzerAction analyzerAction = new AnalyzerAction(initData, actionSelector, overwrite);
 
 		analyzerAction.apply(analyzer);
 
@@ -95,8 +103,7 @@ public class BaseTransformerPlugin implements Plugin {
 		lastActiveChanges.log(getLogger(), lastActiveChanges.getInputResourceName(),
 			lastActiveChanges.getOutputResourceName());
 
-		boolean hasChanges = lastActiveChanges.hasChanges();
-		return hasChanges;
+		return lastActiveChanges.isChanged();
 	}
 
 	@Override

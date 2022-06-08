@@ -14,20 +14,35 @@ package org.eclipse.transformer.action.impl;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+
+// TODO:
+//
+// Is this action necessary?
+//
+// The rename action seems to handle the case which is processed by this properties action.
+//
+// See issue #290
 
 /**
- * @author jdenise
+ * Action for properties resources.
+ * <p>
+ * This action does no content transformation. This action is used <em>only</em>
+ * to rename properties files which are in a package dependent location.
  */
-public class PropertiesActionImpl extends ActionImpl<Changes> {
+public class PropertiesActionImpl extends ElementActionImpl {
 
-	public PropertiesActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public PropertiesActionImpl(ActionInitData initData) {
+		super(initData);
+	}
+
+	@Override
+	public String getName() {
+		return "Properties Action";
+	}
+
+	@Override
+	public ActionType getActionType() {
+		return ActionType.PROPERTIES;
 	}
 
 	@Override
@@ -37,29 +52,24 @@ public class PropertiesActionImpl extends ActionImpl<Changes> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		startRecording(inputData);
+
 		try {
-			String outputName = transformBinaryType(inputData.name());
+			String inputName = inputData.name();
+			String outputName = transformBinaryType(inputName);
+
 			if (outputName != null) {
-				getLogger().debug("Properties file {}, relocated to {}", inputData.name(), outputName);
-				setResourceNames(inputData.name(), outputName);
-				return new ByteDataImpl(outputName, inputData.buffer());
+				getLogger().debug("Properties file {}, relocated to {}", inputName, outputName);
+				setResourceNames(inputName, outputName);
+				return inputData.copy(outputName);
+
+			} else {
+				setResourceNames(inputName, inputName);
+				return inputData;
 			}
-			setResourceNames(inputData.name(), inputData.name());
-			return inputData;
+
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputData);
 		}
 	}
-
-	@Override
-	public String getName() {
-		return "Properties File Action";
-	}
-
-	@Override
-	public ActionType getActionType() {
-		return ActionType.PROPERTIES;
-	}
-
 }

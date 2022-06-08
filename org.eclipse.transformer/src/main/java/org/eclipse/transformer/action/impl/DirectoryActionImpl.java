@@ -12,26 +12,25 @@
 package org.eclipse.transformer.action.impl;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.util.FileUtils;
 
-import aQute.lib.io.IO;
-
+/**
+ * Top level directory action. A directory action is a container action which
+ * iterates recursively, across directory entries, selecting and applying
+ * actions on each of these entries and aggregating the changes.
+ * <p>
+ * Note that the directory action embeds steps to recursively walk the target
+ * directory. The directory action does not recursively invoke itself.
+ */
 public class DirectoryActionImpl extends ContainerActionImpl {
 
-	public DirectoryActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public DirectoryActionImpl(ActionInitData initData) {
+		super(initData);
 	}
 
 	//
@@ -49,117 +48,170 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 	//
 
 	@Override
-	public boolean accept(String resourceName, File resourceFile) {
+	public boolean acceptResource(String resourceName, File resourceFile) {
 		return (resourceFile != null) && resourceFile.isDirectory();
 	}
 
+	//
+
+	// Only the transformer initiates directory transformation.
+
+	/**
+	 * Transform a directory.
+	 *
+	 * @param rootInputPath The path to the input root file.
+	 * @param rootInputFile The root input file.
+	 * @param rootOutputFile The root output file.
+	 * @throws TransformException Thrown in case of a transformation error.
+	 *             Currently, never thrown: A failure to transform a single file
+	 *             does not cause the the transformation to fail as a whole. The
+	 *             single file is copied, an error is emitted, and the
+	 *             transformation continues.
+	 */
 	@Override
-	public void apply(String inputPath, File inputFile, File outputFile) throws TransformException {
-		startRecording(inputPath);
+	public void apply(String rootInputPath, File rootInputFile, String rootOutputPath, File rootOutputFile)
+		throws TransformException {
+		startRecording(rootInputPath);
+
 		try {
-			setResourceNames(inputPath, inputPath);
-			/*
-			 * Note the asymmetry between the handling of the root directory,
-			 * which is selected by a composite action, and the handling of
-			 * sub-directories, which are handled automatically by the directory
-			 * action. This means that the directory action processes the entire
-			 * tree of child directories. The alternative would be to put the
-			 * directory action as a child of itself, and have sub-directories
-			 * be accepted using composite action selection.
-			 */
-			if (inputFile.isDirectory()) {
-				transformDirectory("", inputFile, outputFile);
+			setResourceNames(rootInputPath, rootOutputPath);
+
+			if (rootInputFile.isDirectory()) {
+				transformDirectory("", rootInputFile, rootOutputFile);
 			} else {
-				transform("", inputFile, outputFile);
+				transformFile("", rootInputFile, rootOutputFile);
 			}
+
 		} finally {
-			stopRecording(inputPath);
+			stopRecording(rootInputPath);
 		}
 	}
 
-	protected void transformDirectory(String inputName, final File inputFile, final File outputFolder)
-		throws TransformException {
-		for (File childInputFile : inputFile.listFiles()) {
-			try {
-				transform(inputName, childInputFile, outputFolder);
-			} catch (Exception e) {
-				getLogger().error("Transform failure [ {} ]", inputName, e);
+	/**
+	 * Transform a directory. This is done by recursively walking the files of
+	 * the directory. Failures do not cause processing as a whole to fail.
+	 * <p>
+	 * Output directories are not created except as needed for individual
+	 * transformed files.
+	 * <p>
+	 * Because output files may be renamed, output files may not be created in
+	 * the same relative order as the input files.
+	 *
+	 * @param pathFromRoot The path to the directory from the input root.
+	 * @param inputDirectory The directory which is to be transformed.
+	 * @param rootOutputFile The root output file.
+	 */
+	protected void transformDirectory(String pathFromRoot, File inputDirectory, File rootOutputFile) {
+		for (File child : inputDirectory.listFiles()) {
+
+			String childPathFromRoot;
+			if (pathFromRoot.isEmpty()) {
+				childPathFromRoot = child.getName();
+			} else {
+				childPathFromRoot = pathFromRoot + '/' + child.getName();
+			}
+
+			// Directories are specifically not transformed.
+			//
+			// The problem is what to do with empty directories.
+			//
+			// Both answers (do transform, do not transform) have problems.
+			//
+			// For simplicity, we have chosen to not transform them.
+
+			if (child.isDirectory()) {
+				transformDirectory(childPathFromRoot, child, rootOutputFile);
+			} else {
+				transformFile(childPathFromRoot, child, rootOutputFile);
 			}
 		}
 	}
 
-	protected void transform(String inputName, final File inputFile, final File outputFolder)
-		throws TransformException {
-		inputName = inputName.isEmpty() ? inputFile.getName() : inputName + "/" + inputFile.getName();
+	// TODO: Add duplicate checking when --overwrite is not enabled.
+	//
+	// See issue #306.
 
-		if (inputFile.isDirectory()) {
-			transformDirectory(inputName, inputFile, outputFolder);
-			return;
-		}
-
+	/**
+	 * Transform a single file which is known to not be a directory.
+	 * <p>
+	 * Failure to transform a single file does not cause processing as a whole
+	 * to fail: When a single file fails to transform, an error is logged, and
+	 * the file is instead copied. If the copy fails, or if the write of a
+	 * transformed file fails, an error is logged, and processing continues.
+	 *
+	 * @param pathFromRoot The path from the root of the target file. This
+	 *            includes the name of the file.
+	 * @param inputFile The file which is to be transformed.
+	 * @param rootOutputFile The root output file.
+	 */
+	protected void transformFile(String pathFromRoot, File inputFile, File rootOutputFile) {
+		Action action = selectAction(pathFromRoot, inputFile);
 		try {
-			Action selectedAction = acceptAction(inputName, inputFile);
-			if (selectedAction == null) {
-				recordUnaccepted(inputName);
-				copy(inputName, inputFile, outputFolder);
-				return;
+			if (action == null) {
+				copyInto(pathFromRoot, inputFile, rootOutputFile);
+				recordUnaccepted(pathFromRoot);
+			} else if (!selectResource(pathFromRoot)) {
+				// Unselected resources are *not* renamed.
+				// The expectation is that files which are deliberately
+				// omitted should not be transformed in any way.
+				copyInto(pathFromRoot, inputFile, rootOutputFile);
+				recordUnselected(pathFromRoot);
+
+			} else if (action.isRenameAction()) {
+				RenameActionImpl renameAction = (RenameActionImpl) action;
+				String outputPathFromRoot = renameAction.apply(pathFromRoot);
+				outputPathFromRoot = FileUtils.sanitize(outputPathFromRoot);
+				copyInto(pathFromRoot, inputFile, rootOutputFile, outputPathFromRoot);
+				recordAction(action, pathFromRoot);
+
+			} else if (action.isArchiveAction()) {
+				ZipActionImpl zipAction = (ZipActionImpl) action;
+
+				String outputPathFromRoot = zipAction.relocateResource(pathFromRoot);
+				outputPathFromRoot = FileUtils.sanitize(outputPathFromRoot);
+				File outputFile = new File(rootOutputFile, outputPathFromRoot);
+
+				zipAction.apply(pathFromRoot, inputFile, outputPathFromRoot, outputFile);
+				recordAction(zipAction, pathFromRoot);
+				recordNested(zipAction, pathFromRoot);
+
+			} else if (!action.isElementAction()) {
+				getLogger().warn("Strange: Unknown action type [ {} ] for [ {} ]", action.getClass()
+					.getName(), inputFile.getAbsolutePath());
+
+				copyInto(pathFromRoot, inputFile, rootOutputFile);
+				recordUnaccepted(pathFromRoot);
+
+			} else {
+				ElementActionImpl elementAction = (ElementActionImpl) action;
+				transformFile(elementAction, pathFromRoot, inputFile, rootOutputFile);
+				recordAction(elementAction, pathFromRoot);
 			}
-			if (!select(inputName)) {
-				recordUnselected(selectedAction, inputName);
-				copy(inputName, inputFile, outputFolder);
-				return;
-			}
-			if (selectedAction.getActionType() == ActionType.RENAME) {
-				/*
-				 * For the RENAME action type, we are not transforming the
-				 * inputFile, so we use the optimized file-to-file apply method.
-				 * This requires us to do the name transform work here since the
-				 * resource can be in a renamed package.
-				 */
-				String outputName = selectedAction.relocateResource(inputName);
-				File outputFile = IO.getBasedFile(outputFolder, outputName);
-				selectedAction.apply(inputName, inputFile, outputFile);
-				// Record the output name since the apply method does not know
-				selectedAction.getLastActiveChanges()
-					.setOutputResourceName(outputName);
-				recordTransform(selectedAction, inputName);
-				return;
-			}
-			ByteData inputData;
-			try (InputStream inputStream = IO.stream(inputFile)) {
-				inputData = selectedAction.collect(inputName, inputStream, Math.toIntExact(inputFile.length()));
-			} catch (IOException e) {
-				throw new TransformException("Failed to read input [ " + inputFile + " ]", e);
-			}
-			ByteData outputData;
-			try {
-				outputData = selectedAction.apply(inputData);
-				recordTransform(selectedAction, inputName);
-				if (selectedAction.getLastActiveChanges()
-					.hasChanges()) {
-					getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", selectedAction.getClass()
-						.getSimpleName(), inputName, outputData.name());
-				}
-			} catch (TransformException t) {
-				// Fall back and copy
-				outputData = inputData;
-				getLogger().error(t.getMessage(), t);
-			}
-			File outputFile = IO.getBasedFile(outputFolder, outputData.name());
-			IO.mkdirs(outputFile.getParentFile());
-			try (OutputStream outputStream = IO.outputStream(outputFile)) {
-				write(outputData, outputStream);
-			} catch (IOException e) {
-				throw new TransformException("Failed to write output [ " + outputFile + " ]", e);
-			}
-		} catch (Exception e) {
-			getLogger().error("Transform failure [ {} ]", inputName, e);
+
+		} catch (Throwable th) {
+			recordError(action, pathFromRoot, th);
 		}
 	}
 
-	private void copy(String inputName, File inputFile, File outputFolder) throws IOException {
-		File outputFile = IO.getBasedFile(outputFolder, inputName);
-		IO.mkdirs(outputFile.getParentFile());
-		IO.copy(inputFile, outputFile);
+	private void transformFile(ElementActionImpl elementAction, String inputName, File inputFile, File outputRoot)
+		throws TransformException {
+		ByteData inputData = collect(inputName, inputFile);
+
+		ByteData outputData;
+		TransformException transformError;
+		try {
+			outputData = elementAction.apply(inputData);
+			transformError = null;
+		} catch (TransformException t) {
+			outputData = inputData; // Fallback: copy.
+			transformError = t;
+		}
+
+		File outputFile = new File(outputRoot, outputData.name());
+		write(outputData, outputFile);
+
+		if (transformError != null) {
+			throw transformError;
+		}
 	}
 }

@@ -22,8 +22,11 @@ import java.util.Properties;
 
 import org.assertj.core.api.SoftAssertions;
 import org.eclipse.transformer.Transformer;
+import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
+import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.cli.JakartaTransformerCLI;
 import org.eclipse.transformer.cli.TransformerCLI;
 import org.junit.jupiter.api.AfterEach;
@@ -80,6 +83,22 @@ class TestCommandLine {
 		String inputFileName = STATIC_CONTENT_DIR + '/' + "A.java";
 		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "A.java";
 		verifyAction(JavaActionImpl.class.getName(), inputFileName, outputFileName);
+	}
+
+	// Test compressed zip with copying to make sure ZipEntries are properly created.
+	@Test
+	void zip_entry_creation() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + '/' + "sac-1.3.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "sac-1.3.jar";
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName);
+	}
+
+	// Test war with duplicate entries.
+	@Test
+	void duplicate_entries() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + '/' + "servlet_plu_singlethreadmodel_web.war";
+		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "servlet_plu_singlethreadmodel_web.war";
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, 3);
 	}
 
 	@Test
@@ -194,6 +213,11 @@ class TestCommandLine {
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName) throws Exception {
+		verifyAction(actionClassName, inputFileName, outputFileName, 0);
+	}
+
+	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, int duplicates) throws Exception {
+		System.out.printf("verifyAction: Input is: [%s] Output is: [%s]\n", inputFileName, outputFileName);
 		TransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, new String[] {
 			inputFileName, outputFileName, "-o"
 		});
@@ -213,6 +237,17 @@ class TestCommandLine {
 		assertEquals(actionClassName, transformer.acceptedAction.getClass().getName());
 
 		transformer.transform();
+
+		Changes lastActiveChanges = transformer.getLastActiveChanges();
+		if (lastActiveChanges instanceof ContainerChanges) {
+			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+			int numDuplicated = containerChanges.getAllDuplicated();
+			int numFailed = containerChanges.getAllFailed();
+
+			assertThat(numDuplicated).as("Duplicates were processed").isEqualTo(duplicates);
+			assertThat(numFailed).as("Failures were processed").isZero();
+		}
+
 		assertTrue((new File(outputFileName)).exists(), "output file not created");
 	}
 }

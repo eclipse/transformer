@@ -16,19 +16,22 @@ public enum ActionType {
 
 	CLASS,
 	MANIFEST,
-	FEATURE,
+	FEATURE, // Sub of MANIFEST
 	SERVICE_LOADER_CONFIG,
+	PROPERTIES,
+
 	TEXT,
-	XML,
+	JAVA, // Sub of TEXT
+	JSP, // Sub of TEXT
+	XML, // Currently unused
 
 	ZIP,
 	JAR,
 	WAR,
 	RAR,
 	EAR,
-	JAVA,
-	DIRECTORY,
-	PROPERTIES;
+
+	DIRECTORY;
 
 	public boolean matches(String tag) {
 		return name().regionMatches(true, 0, tag, 0, tag.length());

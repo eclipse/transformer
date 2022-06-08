@@ -143,13 +143,10 @@ public class TransformerCLI implements TransformOptions {
 
 	private static final String		SHORT_VERSION_PROPERTY_NAME		= "version";
 
-
-
-
-
 	// TODO: Usual command line usage puts SysOut and SysErr together, which
-	// results
-	// in the properties writing out twice.
+	// results in the properties writing out twice.
+	//
+	// See issue #297.
 
 	private void preInitDisplay(String message) {
 		PrintStream useSysOut = getSystemOut();
@@ -360,36 +357,44 @@ public class TransformerCLI implements TransformOptions {
 
 	//
 
+	private ResultCode logResult(ResultCode rc) {
+		getLogger().info(consoleMarker, "TransformerCLI Return Code [ {} ] [ {} ]", rc.ordinal(), rc);
+		return rc;
+	}
+
 	public ResultCode run() {
 		displayHeader();
 
 		if (getParsedArgs() == null) {
 			help(getSystemOut());
-			return ResultCode.ARGS_ERROR_RC;
+			return logResult(ResultCode.ARGS_ERROR_RC);
 		}
+
+		// TODO: Are the USAGE and HELP return codes correct?
+		//
+		// See issue #298
 
 		if ((getArgs().length == 0) || hasOption(AppOption.USAGE)) {
 			usage(getSystemOut());
-			return ResultCode.SUCCESS_RC; // TODO: Is this the correct return
-											// value?
+			return logResult(ResultCode.SUCCESS_RC);
 		} else if (hasOption(AppOption.HELP)) {
 			help(getSystemOut());
-			return ResultCode.SUCCESS_RC; // TODO: Is this the correct return
-											// value?
+			return logResult(ResultCode.SUCCESS_RC);
 		}
 
-		Transformer transformer = new Transformer(getLogger(), this);
-
 		try {
+			Transformer transformer = new Transformer(getLogger(), this);
 			ResultCode rc = transformer.run();
 			lastActiveChanges = transformer.getLastActiveChanges();
+			// Do *NOT* log this result: If 'run' completes successfully
+			// it will log the result itself.
 			return rc;
-		} catch (TransformException e) {
-			getLogger().error(consoleMarker, "Transform failure:", e);
-			return ResultCode.TRANSFORM_ERROR_RC;
+
+			// 'run' *should* catch and handle all exceptions and
+			// convert them into an error return code.
 		} catch (Throwable th) {
 			getLogger().error(consoleMarker, "Unexpected failure:", th);
-			return ResultCode.TRANSFORM_ERROR_RC;
+			return logResult(ResultCode.TRANSFORM_ERROR_RC);
 		}
 	}
 }

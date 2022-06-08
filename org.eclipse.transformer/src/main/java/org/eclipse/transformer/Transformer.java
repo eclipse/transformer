@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,30 +33,29 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.CompositeAction;
+import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
+import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
-import org.eclipse.transformer.action.impl.CompositeActionImpl;
 import org.eclipse.transformer.action.impl.ContainerActionImpl;
 import org.eclipse.transformer.action.impl.DirectoryActionImpl;
-import org.eclipse.transformer.action.impl.EarActionImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
-import org.eclipse.transformer.action.impl.JarActionImpl;
+import org.eclipse.transformer.action.impl.JSPActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
-import org.eclipse.transformer.action.impl.RarActionImpl;
 import org.eclipse.transformer.action.impl.RenameActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
-import org.eclipse.transformer.action.impl.WarActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.PropertiesUtils;
 import org.slf4j.Logger;
@@ -88,24 +88,16 @@ public class Transformer {
 		}
 	}
 
-	/**
-	 *
-	 */
+	//
+
 	public static final Marker		consoleMarker	= MarkerFactory.getMarker("console");
 	private final Logger			logger;
 	private final TransformOptions options;
 
-	/**
-	 * @param options
-	 */
 	public Transformer(TransformOptions options) {
 		this(LoggerFactory.getLogger(Transformer.class), options);
 	}
 
-	/**
-	 * @param logger
-	 * @param options
-	 */
 	public Transformer(Logger logger, TransformOptions options) {
 		this.logger = requireNonNull(logger);
 		this.options = requireNonNull(options);
@@ -131,7 +123,7 @@ public class Transformer {
 	public Map<String, String>				directStrings;
 
 	public boolean							widenArchiveNesting;
-	private CompositeAction					rootAction;
+	private ActionSelector					actionSelector;
 	public Action							acceptedAction;
 
 	public String							inputName;
@@ -160,10 +152,15 @@ public class Transformer {
 	}
 
 	public ResultCode run() {
+		ResultCode rc = basicRun();
+		getLogger().info(consoleMarker, "Transformer Return Code [ {} ] [ {} ]", rc.ordinal(), rc);
+		return rc;
+	}
+
+	protected ResultCode basicRun() {
 		if (!setInput()) {
 			return ResultCode.TRANSFORM_ERROR_RC;
 		}
-
 		if (!setOutput()) {
 			return ResultCode.TRANSFORM_ERROR_RC;
 		}
@@ -186,8 +183,42 @@ public class Transformer {
 			return ResultCode.FILE_TYPE_ERROR_RC;
 		}
 
-		transform();
+		// TODO: Need a better way to handle errors.
+		//
+		// (1) Having element actions throw an exception while
+		// having container actions count failures makes for
+		// two different error detection steps.
+		//
+		// (2) Handling 'Throwable' cases is problematic. These
+		// should perhaps be thrown to the transformer and cause
+		// transformation to fail.
+		//
+		// See issue #301.
 
+		try {
+			transform();
+		} catch (TransformException e) {
+			getLogger().error(consoleMarker, "Transform failure", e);
+			return ResultCode.TRANSFORM_ERROR_RC;
+		} catch (Throwable th) {
+			getLogger().error(consoleMarker, "Unexpected failure", th);
+			return ResultCode.TRANSFORM_ERROR_RC;
+		}
+
+		Changes lastActiveChanges = getLastActiveChanges();
+		if (lastActiveChanges instanceof ContainerChanges) {
+			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+			int numDuplicated = containerChanges.getAllDuplicated();
+			int numFailed = containerChanges.getAllFailed();
+
+			if (numDuplicated != 0) {
+				getLogger().warn("Duplicates were processed [ {} ]", numDuplicated);
+			}
+			if (numFailed != 0) {
+				getLogger().warn("Failures were processed [ {} ]", numFailed);
+				return ResultCode.TRANSFORM_ERROR_RC;
+			}
+		}
 		return ResultCode.SUCCESS_RC;
 	}
 
@@ -201,6 +232,10 @@ public class Transformer {
 		return outputName;
 	}
 
+	/**
+	 * Thread-local buffer for use by this transformer. The thread-local
+	 * property is not currently necessary, and is provided for future use.
+	 */
 	private final InputBuffer buffer = new InputBufferImpl();
 
 	public InputBuffer getBuffer() {
@@ -1057,93 +1092,83 @@ public class Transformer {
 		return false;
 	}
 
-	public CompositeAction getRootAction() {
-		if (rootAction == null) {
-			CompositeActionImpl useRootAction = new CompositeActionImpl(getLogger(), getBuffer(), getSelectionRule(),
-				getSignatureRule());
+	// As a separate method to allow re-use.
 
-			ContainerActionImpl directoryAction = useRootAction.addUsing(DirectoryActionImpl::new);
+	public Action.ActionInitData getActionInitData() {
+		return new ActionImpl.ActionInitDataImpl(getLogger(), getBuffer(), getSelectionRule(), getSignatureRule());
+	}
 
-			Action classAction = useRootAction.addUsing(ClassActionImpl::new);
-			Action javaAction = useRootAction.addUsing(JavaActionImpl::new);
-			Action serviceConfigAction = useRootAction
-				.addUsing(ServiceLoaderConfigActionImpl::new);
-			Action manifestAction = useRootAction.addUsing(ManifestActionImpl::newManifestAction);
-			Action featureAction = useRootAction.addUsing(ManifestActionImpl::newFeatureAction);
-			Action propertiesAction = useRootAction.addUsing(PropertiesActionImpl::new);
+	public ActionSelector getActionSelector() {
+		if (actionSelector == null) {
+			ActionSelectorImpl useSelector = new ActionSelectorImpl();
+			Action.ActionInitData initData = getActionInitData();
 
-			ContainerActionImpl jarAction = useRootAction.addUsing(JarActionImpl::new);
-			ContainerActionImpl warAction = useRootAction.addUsing(WarActionImpl::new);
-			ContainerActionImpl rarAction = useRootAction.addUsing(RarActionImpl::new);
-			ContainerActionImpl earAction = useRootAction.addUsing(EarActionImpl::new);
+			ContainerActionImpl directoryAction = useSelector.addUsing(DirectoryActionImpl::new, initData);
 
-			Action textAction = useRootAction.addUsing(TextActionImpl::new);
-			// Action xmlAction =
-			// useRootAction.addUsing( XmlActionImpl::new );
+			Action classAction = useSelector.addUsing(ClassActionImpl::new, initData);
+			// The java and JSP actions must be before the text action.
+			Action javaAction = useSelector.addUsing(JavaActionImpl::new, initData);
+			Action jspAction = useSelector.addUsing(JSPActionImpl::new, initData);
+			Action serviceConfigAction = useSelector.addUsing(ServiceLoaderConfigActionImpl::new, initData);
+			Action manifestAction = useSelector.addUsing(ManifestActionImpl::newManifestAction, initData);
+			Action featureAction = useSelector.addUsing(ManifestActionImpl::newFeatureAction, initData);
+			Action textAction = useSelector.addUsing(TextActionImpl::new, initData);
+			// Action xmlAction = useRootAction.addUsing( XmlActionImpl::new, initData );
+			Action propertiesAction = useSelector.addUsing(PropertiesActionImpl::new, initData);
 
-			ContainerActionImpl zipAction = useRootAction.addUsing(ZipActionImpl::new);
+			List<Action> standardActions = new ArrayList<>();
+			standardActions.add(classAction);
+			standardActions.add(javaAction); // before text
+			standardActions.add(jspAction); // before text
+			standardActions.add(serviceConfigAction);
+			standardActions.add(manifestAction);
+			standardActions.add(featureAction);
+			standardActions.add(textAction);
 
-			Action renameAction = useRootAction.addUsing(RenameActionImpl::new);
+			ContainerActionImpl jarAction = useSelector.addUsing(ZipActionImpl::newJarAction, initData);
+			ContainerActionImpl warAction = useSelector.addUsing(ZipActionImpl::newWarAction, initData);
+			ContainerActionImpl rarAction = useSelector.addUsing(ZipActionImpl::newRarAction, initData);
+			ContainerActionImpl earAction = useSelector.addUsing(ZipActionImpl::newEarAction, initData);
+			ContainerActionImpl zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, initData);
+
+			Action renameAction = useSelector.addUsing(RenameActionImpl::new, initData);
 
 			// Directory actions know about all actions except for directory
-			// actions.
+			// actions, and except for the properties action.
 
-			directoryAction.addAction(classAction);
-			directoryAction.addAction(javaAction);
-			directoryAction.addAction(serviceConfigAction);
-			directoryAction.addAction(manifestAction);
-			directoryAction.addAction(featureAction);
+			directoryAction.addActions(standardActions);
+
 			directoryAction.addAction(zipAction);
 			directoryAction.addAction(jarAction);
 			directoryAction.addAction(warAction);
 			directoryAction.addAction(rarAction);
 			directoryAction.addAction(earAction);
-			directoryAction.addAction(textAction);
 
 			// Container actions nest per usual JavaEE nesting rules.
 			// That is, EAR can contain JAR, WAR, and RAR,
 			// WAR can container JAR, and RAR can contain JAR.
 
-			jarAction.addAction(classAction);
-			jarAction.addAction(javaAction);
-			jarAction.addAction(serviceConfigAction);
-			jarAction.addAction(manifestAction);
-			jarAction.addAction(featureAction);
-			jarAction.addAction(textAction);
+			jarAction.addActions(standardActions);
 			jarAction.addAction(propertiesAction);
 
-			warAction.addAction(classAction);
-			warAction.addAction(javaAction);
-			warAction.addAction(serviceConfigAction);
-			warAction.addAction(manifestAction);
-			warAction.addAction(featureAction);
+			warAction.addActions(standardActions);
 			warAction.addAction(jarAction);
-			warAction.addAction(textAction);
 
-			rarAction.addAction(classAction);
-			rarAction.addAction(javaAction);
-			rarAction.addAction(serviceConfigAction);
-			rarAction.addAction(manifestAction);
-			rarAction.addAction(featureAction);
+			rarAction.addActions(standardActions);
 			rarAction.addAction(jarAction);
-			rarAction.addAction(textAction);
 
+			// TODO: Should EAR add the other standard actions?  See issue #302
 			earAction.addAction(manifestAction);
+			earAction.addAction(textAction);
 			earAction.addAction(jarAction);
 			earAction.addAction(warAction);
 			earAction.addAction(rarAction);
-			earAction.addAction(textAction);
 
-			zipAction.addAction(classAction);
-			zipAction.addAction(javaAction);
-			zipAction.addAction(serviceConfigAction);
-			zipAction.addAction(manifestAction);
-			zipAction.addAction(featureAction);
+			zipAction.addActions(standardActions);
 			zipAction.addAction(jarAction);
 			zipAction.addAction(warAction);
 			zipAction.addAction(rarAction);
 			zipAction.addAction(earAction);
-			zipAction.addAction(textAction);
 
 			// On occasion, the JavaEE nesting rules are too
 			// restrictive. Allow a slight widening of the
@@ -1172,28 +1197,26 @@ public class Transformer {
 			earAction.addAction(renameAction);
 			zipAction.addAction(renameAction);
 
-			rootAction = useRootAction;
+			actionSelector = useSelector;
 		}
 
-		return rootAction;
+		return actionSelector;
 	}
 
 	public boolean acceptAction() {
 		String actionName = options.getOptionValue(AppOption.FILE_TYPE);
 		if (actionName != null) {
-			for (Action action : getRootAction().getActions()) {
-				if (action.getActionType()
-					.matches(actionName)) {
-					getLogger().info(consoleMarker, "Forced action [ {} ] [ {} ]", actionName, action.getName());
-					acceptedAction = action;
-					return true;
-				}
+			acceptedAction = getActionSelector().acceptType(actionName);
+			if (acceptedAction != null) {
+				getLogger().info(consoleMarker, "Forced action [ {} ]", actionName);
+				return true;
+			} else {
+				getLogger().error(consoleMarker, "No match for forced action [ {} ]", actionName);
+				return false;
 			}
-			getLogger().error(consoleMarker, "No match for forced action [ {} ]", actionName);
-			return false;
 
 		} else {
-			acceptedAction = getRootAction().acceptAction(inputName, inputFile);
+			acceptedAction = getActionSelector().selectAction(inputName, inputFile);
 			if (acceptedAction == null) {
 				getLogger().error(consoleMarker, "No action selected for input [ {} ]", inputName);
 				return false;
@@ -1206,8 +1229,7 @@ public class Transformer {
 	}
 
 	public void transform() throws TransformException {
-
-		acceptedAction.apply(inputName, inputFile, outputFile);
+		acceptedAction.apply(inputName, inputFile, outputName, outputFile);
 
 		acceptedAction.getLastActiveChanges()
 			.log(getLogger(), inputPath, outputPath);

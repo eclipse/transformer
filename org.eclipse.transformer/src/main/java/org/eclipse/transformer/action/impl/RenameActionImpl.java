@@ -12,26 +12,22 @@
 package org.eclipse.transformer.action.impl;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
-import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
+import org.eclipse.transformer.action.RenameAction;
+import org.eclipse.transformer.util.FileUtils;
 
-import aQute.lib.io.IO;
-import aQute.lib.io.NonClosingInputStream;
+/**
+ * Terminal action. Used currently by container actions to ensure that all
+ * resources are renamed. <em>All</em> resources which are package specific
+ * locations should be renamed using the package rename rules.
+ */
+public class RenameActionImpl extends ElementActionImpl implements RenameAction {
 
-public class RenameActionImpl extends ActionImpl<Changes> {
-
-	public RenameActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public RenameActionImpl(ActionInitData initData) {
+		super(initData);
 	}
 
 	//
@@ -49,69 +45,45 @@ public class RenameActionImpl extends ActionImpl<Changes> {
 	//
 
 	@Override
-	public boolean accept(String resourcePath, File resourceFile) {
+	public boolean acceptResource(String resourcePath, File resourceFile) {
 		return true;
 	}
 
 	@Override
-	public ByteData apply(ByteData inputData) throws TransformException {
-		String inputName = inputData.name();
+	public String getAcceptExtension() {
+		throw new UnsupportedOperationException();
+	}
+
+	//
+
+	@Override
+	public void apply(String inputName, File inputFile, String outputName, File outputFile) throws TransformException {
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Special to {@link RenameActionImpl}: Rename the action. Let the caller
+	 * handle transferring the content.
+	 *
+	 * @param inputName The name of the input resource.
+	 * @return The output name.
+	 */
+	@Override
+	public String apply(String inputName) {
 		startRecording(inputName);
 		try {
 			String outputName = relocateResource(inputName);
-			ByteData outputData = (outputName != null) ? new ByteDataImpl(outputName, inputData.buffer()) : inputData;
-			setResourceNames(inputName, outputData.name());
-			return outputData;
-		} finally {
-			stopRecording(inputName);
-		}
-	}
-
-	/**
-	 * Optimized method for file copy.
-	 * <p>
-	 * The caller must handle any renames for the outputFile.
-	 */
-	@Override
-	public void apply(String inputName, File inputFile, File outputFile) throws TransformException {
-		startRecording(inputName);
-		try {
-			setResourceNames(inputName, inputName);
-			IO.mkdirs(outputFile.getParentFile());
-			IO.copy(inputFile, outputFile);
-		} catch (IOException e) {
-			throw new TransformException("Failed to copy [" + inputFile + "] to [ " + outputFile + " ]", e);
-		} finally {
-			stopRecording(inputName);
-		}
-	}
-
-	/**
-	 * Optimized method for stream copy.
-	 * <p>
-	 * The caller must handle any renames for the outputStream.
-	 */
-	@Override
-	public void apply(String inputName, InputStream inputStream, int inputCount, OutputStream outputStream)
-		throws TransformException {
-		startRecording(inputName);
-		try {
-			setResourceNames(inputName, inputName);
-			InputStream nonClosingInputStream = new NonClosingInputStream(inputStream);
-			if (inputCount < 0) {
-				IO.copy(nonClosingInputStream, outputStream);
-			} else {
-				IO.copy(nonClosingInputStream, outputStream, inputCount);
-			}
-		} catch (IOException e) {
-			throw new TransformException("Failed to write [ " + inputName + " ]" + " count [ " + inputCount + " ]", e);
+			outputName = FileUtils.sanitize(outputName); // Avoid ZipSlip
+			setResourceNames(inputName, outputName);
+			return outputName;
 		} finally {
 			stopRecording(inputName);
 		}
 	}
 
 	@Override
-	public boolean useStreams() {
-		return true;
+	public ByteData apply(ByteData inputData) {
+		throw new UnsupportedOperationException();
 	}
+
 }

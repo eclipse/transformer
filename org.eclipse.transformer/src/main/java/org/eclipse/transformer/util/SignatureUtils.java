@@ -24,6 +24,14 @@ import java.util.stream.StreamSupport;
 public final class SignatureUtils {
 	private SignatureUtils() {}
 
+	public static String putSlashes(String className) {
+		return className.replace('.', '/');
+	}
+
+	public static String putDots(String className) {
+		return className.replace('/', '.');
+	}
+
 	/**
 	 * This comparator sorts non-wildcard keys before wildcard keys and sorts
 	 * longer segment counts before shorter segment counts. So the most precise
@@ -141,20 +149,31 @@ public final class SignatureUtils {
 	}
 
 	/**
-	 * Determines if the key contains a wildcard suffix which indicates that
-	 * sub-package names are to be matched. Packages names and their
-	 * replacements are specified in properties files in key=value pairs or more
-	 * specifically oldPackageName=newPackageName The key can contain a ".*"
-	 * suffix which indicates that sub-packages are a match.
+	 * Tell if a key contains a wildcard suffix, which indicates that
+	 * sub-package names are to be matched.
+	 * <p>
+	 * Packages names and their replacements are specified in properties files
+	 * in <code>key=value</code> pairs with the key specifying a a package name
+	 * and the value specifying the replacement for that package name.
+	 * <p>
+	 * The package name which is to be replaced can contain a wildcard suffix,
+	 * either ".*" or "/*". If a wildcard suffix is absent, no sub-packages are
+	 * matched. A wildcard must be specified to enable sub-packages to be
+	 * matched.
 	 *
-	 * @param key package name
-	 * @return true if sub-packages are to be matched
+	 * @param key A package name which is to be tested.
+	 * @return True or false telling if the package name contains a wildcard
+	 *         suffix.
 	 */
 	public static boolean containsWildcard(String key) {
 		int last = key.length() - 1;
 		if (last > 1) {
 			if (key.charAt(last) == '*') {
 				char separator = key.charAt(last - 1);
+				// Testing against either wildcard is slightly improper.
+				// However, accidental matches should never happen, since
+				// a '.' is not valid in slash cases and a '/' is not valid
+				// dot cases.
 				return (separator == '.') || (separator == '/');
 			}
 		}
@@ -162,11 +181,11 @@ public final class SignatureUtils {
 	}
 
 	/**
-	 * Removes the last 2 characters. Must only be called when the string is
-	 * known to be a wildcard.
+	 * Removes the last two characters. Must only be called when the string is
+	 * known to contain a wildcard suffix, either ".*" or "/*".
 	 *
-	 * @param key
-	 * @return The key with the last 2 characters removed.
+	 * @param key A package name which contains a wildcard suffix.
+	 * @return The key with the last two characters removed.
 	 */
 	public static String stripWildcard(String key) {
 		return key.substring(0, key.length() - 2);
@@ -180,8 +199,19 @@ public final class SignatureUtils {
 	 * @return A stream of keys to lookup in the rename map.
 	 */
 	public static Stream<String> keyStream(String key, String wildcard) {
-		Spliterator<String> spliterator = new KeySpliterator(key, wildcard);
+		Spliterator<String> spliterator = keySpliterator(key, wildcard);
 		return StreamSupport.stream(spliterator, false);
+	}
+
+	/**
+	 * Return a spliterator of keys including wildcard variations.
+	 *
+	 * @param key The initial key. It is always the first key in the stream.
+	 * @param wildcard The wildcard suffix. Either {@code .*} or {@code /*}.
+	 * @return A spliterator of keys to lookup in the rename map.
+	 */
+	public static Spliterator<String> keySpliterator(String key, String wildcard) {
+		return new KeySpliterator(key, wildcard);
 	}
 
 	static class KeySpliterator extends AbstractSpliterator<String> {
@@ -235,16 +265,12 @@ public final class SignatureUtils {
 		String className = resourceName.endsWith(CLASS_EXTENSION)
 			? resourceName.substring(resourceName.length() - CLASS_EXTENSION_LENGTH)
 			: resourceName;
-		className = className.replace('/', '.');
+		className = putDots(className);
 		return className;
 	}
 
 	public static String classNameToResourceName(String className) {
-		String resourceName = classNameToBinaryTypeName(className).concat(CLASS_EXTENSION);
+		String resourceName = putSlashes(className).concat(CLASS_EXTENSION);
 		return resourceName;
-	}
-
-	public static String classNameToBinaryTypeName(String className) {
-		return className.replace('.', '/');
 	}
 }

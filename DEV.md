@@ -79,29 +79,23 @@ The archive hierarchy is constructed by the transformer, with the structure fixe
 
 Current available actions are as follows:
 
-* The root action:
-  * CompositeAction
-
 * Directory container action:
   * Directory
 
 * Archive container actions:
-  * Jar
-  * War
-  * Rar
-  * Ear
-  * Zip
+  * Zip with static factory methods for Jar, War, Rar, and Ear
 
 * Leaf actions:
   * Class
   * Java
-  * ServiceConfig
+  * JSP
   * Manifest
+  * ServiceLoaderConfig
   * Feature
   * Text
 
-* Null action:
-  * Null
+* Rename action:
+  * Rename
 
 ## Action Implementation Hierarchy
 
@@ -113,19 +107,16 @@ As new requirements are discovered, new types of actions are expected to be adde
 
 The current action hierarchy is as follows:
 
-Core action interfaces: Actions may be leaf type actions, composite actions, or container actions:
+Core action interfaces: Actions may be leaf type actions or container actions:
 
 * Action
-  * CompositeAction
+  * ElementAction
   * ContainerAction
 
 Common action implementation: Common implementations of the core interfaces:
 
 * Action
   * ActionImpl
-
-* CompositeAction, ActionImpl
-  * CompositeActionImpl
 
 * ContainerAction, ActionImpl
   * ContainerActionImpl
@@ -135,10 +126,6 @@ Container action implementations:
 * ContainerActionImpl
   * DirectoryActionImpl
   * ZipActionImpl
-    * JarActionImpl
-    * EarActionImpl
-    * RarActionImpl
-    * WarActionImpl
 
 Leaf type action implementations:
 
@@ -151,11 +138,10 @@ Leaf type action implementations:
   * TextActionIMpl
   * XmlActionImpl
 
-The null action implementation:
+The rename action implementation:
 
 * ActionImpl
-  * NullActionImpl
+  * RenameActionImpl
 
 
 
-      

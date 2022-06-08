@@ -11,26 +11,46 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.io.File;
+import java.util.List;
 
-import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.slf4j.Logger;
 
-import aQute.lib.io.ByteBufferOutputStream;
+/**
+ * Extended text action for Java resources.
+ * <p>
+ * Uses the standard text update.
+ * <p>
+ * Adds updates based on class updates: package replacements, direct per-class
+ * (mapped to .java) updates, and direct global updates.
+ */
+public class JavaActionImpl extends TextActionImpl {
 
-public class JavaActionImpl extends ActionImpl<Changes> {
+	public JavaActionImpl(ActionInitData initData) {
+		super(initData);
+	}
 
-	public JavaActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule, SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	// Not exactly the same as 'JSPActionImpl.createActiveReplacements'.
+	// Here, the replacement for per-class updates is ".java" -> ".class".
+
+	@Override
+	protected List<StringReplacement> createActiveReplacements(SignatureRule signatureRule) {
+		List<StringReplacement> replacements = super.createActiveReplacements(signatureRule);
+
+		if ( !signatureRule.getPackageRenames().isEmpty() ) {
+			replacements.add(this::packagesUpdate);
+			replacements.add(this::binaryPackagesUpdate);
+		}
+
+		if ( !signatureRule.getDirectPerClassUpdates().isEmpty() ) {
+			replacements.add(this::directPerClassUpdate_java);
+		}
+		if ( !signatureRule.getDirectGlobalUpdates().isEmpty() ) {
+			replacements.add(this::directGlobalUpdate);
+		}
+
+		return replacements;
 	}
 
 	//
@@ -48,91 +68,12 @@ public class JavaActionImpl extends ActionImpl<Changes> {
 	//
 
 	@Override
-	public String getAcceptExtension() {
-		return ".java";
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		return acceptExtension(resourceName, resourceFile);
 	}
-
-	//
 
 	@Override
-	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
-		try {
-			String outputName = inputData.name();
-			setResourceNames(inputData.name(), outputName);
-
-			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
-
-			try (BufferedReader reader = reader(inputData.buffer()); BufferedWriter writer = writer(outputStream)) {
-				transform(reader, writer);
-			} catch (IOException e) {
-				throw new TransformException("Failed to transform [ " + inputData.name() + " ]", e);
-			}
-
-			if (!hasChanges()) {
-				return inputData;
-			}
-
-			ByteBuffer outputBuffer = hasNonResourceNameChanges() ? outputStream.toByteBuffer() : inputData.buffer();
-			ByteData outputData = new ByteDataImpl(outputName, outputBuffer);
-			return outputData;
-		} finally {
-			stopRecording(inputData.name());
-		}
-	}
-
-	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
-		String inputLine;
-		while ((inputLine = reader.readLine()) != null) {
-			String outputLine = getSignatureRule().replacePackages(inputLine);
-			if (outputLine == null) {
-				outputLine = inputLine;
-			} else {
-				addReplacement();
-			}
-			writer.write(outputLine);
-			writer.write('\n');
-		}
-	}
-
-	// TODO: Copied from ServiceConfigActionImpl; need to update
-	// to work for paths.
-
-	protected String renameInput(String inputName) {
-		String inputPrefix;
-		String classQualifiedName;
-
-		int lastSlash = inputName.lastIndexOf('/');
-		if (lastSlash == -1) {
-			inputPrefix = null;
-			classQualifiedName = inputName;
-		} else {
-			inputPrefix = inputName.substring(0, lastSlash + 1);
-			classQualifiedName = inputName.substring(lastSlash + 1);
-		}
-
-		int classStart = classQualifiedName.lastIndexOf('.');
-		if (classStart == -1) {
-			return null;
-		}
-
-		String packageName = classQualifiedName.substring(0, classStart);
-		if (packageName.isEmpty()) {
-			return null;
-		}
-
-		// 'className' includes a leading '.'
-		String className = classQualifiedName.substring(classStart);
-
-		String outputName = replacePackage(packageName);
-		if (outputName == null) {
-			return null;
-		}
-
-		if (inputPrefix == null) {
-			return outputName + className;
-		} else {
-			return inputPrefix + outputName + className;
-		}
+	public String getAcceptExtension() {
+		return ".java";
 	}
 }

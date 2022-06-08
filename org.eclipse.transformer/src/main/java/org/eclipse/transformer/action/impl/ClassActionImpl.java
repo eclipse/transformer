@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (c) 2021 Contributors to the Eclipse Foundation
+ * Copyright (c) Contributors to the Eclipse Foundation
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
@@ -16,14 +16,13 @@ import static org.eclipse.transformer.util.SignatureUtils.classNameToResourceNam
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.InputBuffer;
-import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.FileUtils;
@@ -90,8 +89,50 @@ import aQute.lib.io.ByteBufferDataOutput;
 
 /**
  * Transform class bytes.
+ * <p>
+ * The main updates are to replace package references, for example, to replace
+ * "javax.servlet" with "jakarta.servlet". Package updates are made using whole,
+ * fully qualified package names. Where the package name is embedded in a
+ * complex binary data structure (for example, within a signature or within a
+ * descriptor), the data structure is unpacked before attempting to replace the
+ * package.
+ * <p>
+ * Package references can have two formats, first, a "dotted" format, for
+ * example, "javax.servlet", and second, a "slashed" format, for example,
+ * "javax/servlet". Package references in either format are replaced.
+ * <p>
+ * Unless specified with a wildcard, a package replacement matches only entire
+ * qualified package names. Then, a rule which specifies that "javax.servlet" is
+ * to be replaced with "jakarta.servlet" will update the class reference
+ * "java.servlet.Servlet" to "jakarta.servlet.Servlet". The rule <em>will
+ * not</em> update the package reference "javax.servlet.util".
+ * <p>
+ * However, if the rule is specified with a wildcard: "javax.servlet.*" is to be
+ * replaced with "jakarta.servlet.*", then the package reference
+ * "javax.servlet.util" will be updated.
+ * <p>
+ * Package matching is careful to avoid accidental partial matches. For example,
+ * "javax.servlet" will not match "head.javax.servlet", "prefix_javax.servlet",
+ * "javax.servlet_suffix", or "javax.servlet.tail".
+ * <p>
+ * Package renaming is performed not just on explicit package references, which
+ * appear in binary signatures and binary type references at specific locations.
+ * Package renaming is also performed on string constant values.
+ * </p>
+ * Note that package renaming is also performed on Java and JSP resources, and
+ * that package renaming will cause changes to the names of resources: For
+ * example, using the rule that "javax.servlet" is to be replaced with
+ * "jakarta.servlet", a resource in the folder "javax/servlet" <em>will</em> be
+ * moved to the folder "jakarta/servlet".
+ * <p>
+ * In addition to package renaming, the class action performed direct string
+ * constant updates. These are performed either as global replacements, or as
+ * class specific updates.
+ * <p>
+ * Global and per-class updates are also performed on java resources. Global
+ * updates are performed on JSP resources.
  */
-public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
+public class ClassActionImpl extends ElementActionImpl {
 	/**
 	 * Adjust an input path according to the changes made to the name of the
 	 * class stored at that path. The input path is expected to match the input
@@ -112,47 +153,55 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	public String relocateClass(String inputPath, String inputClassName, String outputClassName) {
 		String resourceInputPath = classNameToResourceName(inputClassName);
 		String resourceOutputPath = classNameToResourceName(outputClassName);
-		/*
-		 * Expected cases: The class was located at the usual relative location,
-		 * or the class was located under a sub-path.
-		 */
+
+		// Expected case: The class was located at the usual relative location,
+
 		if (resourceInputPath.equals(inputPath)) {
 			return resourceOutputPath;
 		}
-		if (inputPath.endsWith("/".concat(resourceInputPath))) {
-			return inputPath.substring(0, inputPath.length() - resourceInputPath.length())
-				.concat(resourceOutputPath);
+
+		// Expected case: Class was located under a sub-path.
+		// This covers "WEB-INF/classes/" and "META-INF/versions/" --
+		// when input class name matches the input path.
+
+		int length = inputPath.length();
+		int tail = resourceInputPath.length();
+		int head = length - tail;
+		if ( (length > tail) &&
+			 (inputPath.charAt(head - 1) == '/') &&
+		     inputPath.regionMatches(head, resourceInputPath, 0, tail) ) {
+			return inputPath.substring(0, head).concat(resourceOutputPath);
 		}
 
-		/*
-		 * Unexpected cases: The class was not properly named. Do our best to
-		 * place the class in the same relative location.
-		 */
-		String relocationCase;
-		String outputPath;
+		// Unexpected cases: The class was not properly named. Do our best to
+		// place the class in the same relative location.
 
+		String outputPath;
+		String prefix;
 		if (inputPath.startsWith("WEB-INF/classes/")) {
-			relocationCase = "WEB-INF/classes";
-			outputPath = "WEB-INF/classes/".concat(resourceOutputPath);
+			prefix = "WEB-INF/classes/";
 		} else if (inputPath.startsWith("META-INF/versions/")) {
 			int nextSlash = inputPath.indexOf('/', "META-INF/versions/".length());
 			if (nextSlash == -1) {
-				relocationCase = "META-INF/versions with no version number";
-				outputPath = "META-INF/versions/".concat(resourceOutputPath);
+				prefix = "META-INF/versions/";
 			} else {
-				relocationCase = "META-INF/versions";
-				outputPath = inputPath.substring(0, nextSlash + 1)
-					.concat(resourceOutputPath);
+				prefix = inputPath.substring(0, nextSlash + 1);
 			}
 		} else {
-			relocationCase = "Unknown location";
-			outputPath = resourceOutputPath;
+			prefix = null;
 		}
 
-		getLogger().error(
-			"Approximate relocation; case {}:" + " initial name [ {} ]; final name [ {} ];"
-				+ " initial resource location [ {} ]; final resource location [ {} ].",
-			relocationCase, inputClassName, outputClassName, inputPath, outputPath);
+		if ( prefix == null ) {
+			outputPath = resourceOutputPath;
+		} else {
+			outputPath = prefix.concat(resourceOutputPath);
+		}
+
+		getLogger().warn( "Class location mismatch:" +
+		      " Class location [ {} ] does not match class name [ {} ]." +
+			  " Corrected transformed location to [ {} ] using transformed name [ {} ].",
+			  inputPath, inputClassName,
+			  outputPath, outputClassName);
 
 		return outputPath;
 	}
@@ -162,7 +211,8 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	private static final int DUMP_WIDTH = 16;
 
 	private void traceDump(ByteData inputData) {
-		if (!getLogger().isTraceEnabled()) {
+		Logger useLogger = getLogger();
+		if (!useLogger.isTraceEnabled()) {
 			return;
 		}
 
@@ -172,7 +222,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		while (buffer.hasRemaining()) {
 			int nextWidth = (buffer.remaining() > DUMP_WIDTH) ? DUMP_WIDTH : buffer.remaining();
 			String nextLine = traceDumpLine(outputBuilder, buffer, nextWidth);
-			getLogger().trace(nextLine);
+			useLogger.trace(nextLine);
 		}
 	}
 
@@ -186,9 +236,58 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		return line;
 	}
 
-	public ClassActionImpl(Logger logger, InputBuffer buffer, SelectionRule selectionRule,
-		SignatureRule signatureRule) {
-		super(logger, buffer, selectionRule, signatureRule);
+	public ClassActionImpl(ActionInitData initData) {
+		super(initData);
+
+		List<StringReplacement> useReplacements = createActiveReplacements(initData.getSignatureRule());
+
+		this.activeReplacements = useReplacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : useReplacements;
+	}
+
+	protected List<StringReplacement> createActiveReplacements(SignatureRule signatureRule) {
+		List<StringReplacement> replacements = new ArrayList<StringReplacement>();
+
+		if ( !signatureRule.getDirectPerClassUpdates().isEmpty() ) {
+			replacements.add(this::directPerClassUpdate);
+		}
+		if ( !signatureRule.getDirectGlobalUpdates().isEmpty() ) {
+			replacements.add(this::directGlobalUpdate);
+		}
+
+		if ( !signatureRule.getPackageRenames().isEmpty() )
+			replacements.add(this::descriptorUpdate);{
+			replacements.add(this::packagesUpdate);
+			replacements.add(this::binaryTypeUpdate);
+			replacements.add(this::binaryPackagesUpdate);
+		}
+
+		return replacements;
+	}
+
+	private List<StringReplacement> activeReplacements;
+
+	@Override
+	protected List<StringReplacement> getActiveReplacements() {
+		return activeReplacements;
+	}
+
+	/**
+	 * Control API: Subclasses should override to control whether they want to
+	 * continue applying updates, or stop after the first update which had a
+	 * non-trivial or null effect.
+	 * <p>
+	 * Override: Class actions currently perform at most one update. This
+	 * override is used to make the implementation consistent with the
+	 * implementation before the use of active replacements.
+	 * <p>
+	 * See: {@link ActionImpl#updateString(String, String, String, List)}.
+	 *
+	 * @return True or false telling if multiple updates are allowed. This
+	 *         implementation answers false.
+	 */
+	@Override
+	protected boolean allowMultipleReplacements() {
+		return false;
 	}
 
 	//
@@ -206,8 +305,18 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	//
 
 	@Override
-	protected ClassChangesImpl newChanges() {
+	public ClassChangesImpl newChanges() {
 		return new ClassChangesImpl();
+	}
+
+	@Override
+	public ClassChangesImpl getActiveChanges() {
+		return (ClassChangesImpl) super.getActiveChanges();
+	}
+
+	@Override
+	public ClassChangesImpl getLastActiveChanges() {
+		return (ClassChangesImpl) super.getLastActiveChanges();
 	}
 
 	protected void setClassNames(String inputClassName, String outputClassName) {
@@ -239,10 +348,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	}
 
 	protected void setModifiedConstants(int modifiedConstants) {
-		ClassChangesImpl activeChanges = getActiveChanges();
-		for (int i = 0; i < modifiedConstants; i++) {
-			activeChanges.addModifiedConstant();
-		}
+		getActiveChanges().addModifiedConstants(modifiedConstants);
 	}
 
 	//
@@ -256,9 +362,11 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData.name());
+		Logger useLogger = getLogger();
+
+		startRecording(inputData);
 		try {
-			getLogger().debug("Read [ {} ] Bytes [ {} ]", inputData.name(), inputData.length());
+			useLogger.debug("Class input: [ {} ]", inputData);
 			traceDump(inputData);
 
 			ClassFile inputClass;
@@ -282,7 +390,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			if (outputClassName != null) {
 				classBuilder.this_class(outputClassName);
 				outputName = relocateClass(inputData.name(), inputClassName, outputClassName);
-				getLogger().debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
+				useLogger.debug("Class name [ {} ] -> [ {} ]", inputData.name(), outputName);
 			} else {
 				outputClassName = inputClassName;
 				outputName = inputData.name();
@@ -291,7 +399,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			setClassNames(inputClassName, outputClassName);
 			setResourceNames(inputData.name(), outputName);
 
-			getLogger().trace("{}", classBuilder);
+			useLogger.trace("{}", classBuilder);
 
 			String inputSuperName = classBuilder.super_class();
 			if (inputSuperName != null) {
@@ -305,7 +413,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				setSuperClassNames(inputSuperName, outputSuperName);
 
 				if (!outputSuperName.equals("java/lang/Object")) {
-					getLogger().trace("  extends {}", outputSuperName);
+					useLogger.trace("  extends {}", outputSuperName);
 				}
 			}
 
@@ -318,10 +426,10 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputInterfaceName != null) {
 						interfaceNames.set(outputInterfaceName);
 						addModifiedInterface();
-						getLogger().debug("Interface {} -> {}", inputInterfaceName, outputInterfaceName);
+						useLogger.debug("Interface {} -> {}", inputInterfaceName, outputInterfaceName);
 					}
 				}
-				getLogger().trace("  implements {}", interfaces);
+				useLogger.trace("  implements {}", interfaces);
 			}
 
 			// Transform members ...
@@ -334,7 +442,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				if (outputField != null) {
 					fields.set(outputField);
 					addModifiedField();
-					getLogger().debug("Field  {} -> {}", inputField, outputField);
+					useLogger.debug("Field  {} -> {}", inputField, outputField);
 				}
 			}
 
@@ -347,7 +455,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				if (outputMethod != null) {
 					methods.set(outputMethod);
 					addModifiedMethod();
-					getLogger().debug("Method {} -> {}", inputMethod, outputMethod);
+					useLogger.debug("Method {} -> {}", inputMethod, outputMethod);
 				}
 			}
 
@@ -361,25 +469,25 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				if (outputAttribute != null) {
 					attributes.set(outputAttribute);
 					addModifiedAttribute();
-					getLogger().debug("Attribute {} -> {}", inputAttribute, outputAttribute);
+					useLogger.debug("Attribute {} -> {}", inputAttribute, outputAttribute);
 				}
 			}
 
 			MutableConstantPool constants = classBuilder.constant_pool();
-			getLogger().debug("  Constant pool: {}", constants.size());
+			useLogger.debug("  Constant pool: {}", constants.size());
 
 			int modifiedConstants = transform(constants, inputData.name());
 			if (modifiedConstants > 0) {
 				setModifiedConstants(modifiedConstants);
 			}
 
-			if (!hasChanges()) {
+			if (!isChanged()) {
 				return inputData;
 			}
 
-			if (!hasNonResourceNameChanges()) {
-				getLogger().debug("  Class bytes: {} {}", inputData.name(), inputData.length());
-				ByteData outputData = new ByteDataImpl(outputName, inputData.buffer());
+			if (!isContentChanged()) {
+				ByteData outputData = inputData.copy(outputName);
+				useLogger.debug("  Class bytes: [ {} ]", outputData);
 				return outputData;
 			}
 
@@ -393,36 +501,37 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			}
 
 			ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer());
-			getLogger().debug("  Class size: {}: {} -> {}", inputData.name(), inputData.length(), outputData.length());
-
+			useLogger.debug("  Class output: [ {} ]", outputData);
 			return outputData;
 		} finally {
-			stopRecording(inputData.name());
+			stopRecording(inputData);
 		}
 	}
 
 	private void displayClass(String inputName, ClassFile inputClass) {
-		getLogger().debug("Class [ {} ] as [ {} ] ", inputName, inputClass.this_class);
-		if (!getLogger().isTraceEnabled()) {
+		Logger useLogger = getLogger();
+
+		useLogger.debug("Class [ {} ] as [ {} ] ", inputName, inputClass.this_class);
+		if (!useLogger.isTraceEnabled()) {
 			return;
 		}
-		getLogger().trace("  Super [ {} ]", inputClass.super_class);
+		useLogger.trace("  Super [ {} ]", inputClass.super_class);
 		if (inputClass.interfaces != null) {
-			getLogger().trace("  Interfaces [ {} ]", inputClass.interfaces.length);
+			useLogger.trace("  Interfaces [ {} ]", inputClass.interfaces.length);
 			for (String interfaceName : inputClass.interfaces) {
-				getLogger().trace("    [ {} ]", interfaceName);
+				useLogger.trace("    [ {} ]", interfaceName);
 			}
 		}
 		if (inputClass.fields != null) {
-			getLogger().trace("  Fields [ {} ]", inputClass.fields.length);
+			useLogger.trace("  Fields [ {} ]", inputClass.fields.length);
 			for (FieldInfo field : inputClass.fields) {
-				getLogger().trace("    [ {} ] [ {} ]", field.name, field.descriptor);
+				useLogger.trace("    [ {} ] [ {} ]", field.name, field.descriptor);
 			}
 		}
 		if (inputClass.methods != null) {
-			getLogger().trace("  Methods [ {} ]", inputClass.methods.length);
+			useLogger.trace("  Methods [ {} ]", inputClass.methods.length);
 			for (MethodInfo method : inputClass.methods) {
-				getLogger().trace("    [ {} ] [ {} ]", method.name, method.descriptor);
+				useLogger.trace("    [ {} ] [ {} ]", method.name, method.descriptor);
 			}
 		}
 	}
@@ -451,6 +560,8 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	}
 
 	private Attribute[] transform(Attribute[] inputAttributes, SignatureType signatureType, String inputName) {
+		Logger useLogger = getLogger();
+
 		Attribute[] outputAttributes = null;
 
 		for (int attributeNo = 0; attributeNo < inputAttributes.length; attributeNo++) {
@@ -462,7 +573,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				}
 				outputAttributes[attributeNo] = outputAttribute;
 
-				getLogger().debug("Attribute [ {} ] [ {} ] -> [ {} ]", attributeNo, inputAttribute, outputAttribute);
+				useLogger.debug("Attribute [ {} ] [ {} ] -> [ {} ]", attributeNo, inputAttribute, outputAttribute);
 			}
 		}
 
@@ -470,10 +581,12 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 	}
 
 	private Attribute transform(Attribute attr, SignatureType signatureType, String inputName) {
+		Logger useLogger = getLogger();
+
 		switch (attr.name()) {
 			case SignatureAttribute.NAME : {
 				SignatureAttribute inputAttribute = (SignatureAttribute) attr;
-				String outputSignature = transform(inputAttribute.signature, signatureType);
+				String outputSignature = transformSignature(inputAttribute.signature, signatureType);
 				return ((outputSignature == null) ? null : new SignatureAttribute(outputSignature));
 			}
 
@@ -517,6 +630,8 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 				// TODO Maybe intercept Class.forName/etc calls at
 				// runtime to rename types
+				//
+				// See issue: #99
 
 				Attribute[] inputAttributes = attribute.attributes;
 				Attribute[] outputAttributes = transform(inputAttributes, SignatureType.METHOD, inputName);
@@ -542,20 +657,20 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				String outputDescriptor = ((inputDescriptor == null) ? null : transformDescriptor(inputDescriptor));
 
 				if ((outputClassName == null) && (outputDescriptor == null)) {
-					getLogger().trace("Enclosing method [ {} ] Class [ {} ] Descriptor [ {} ]", methodName,
+					useLogger.trace("Enclosing method [ {} ] Class [ {} ] Descriptor [ {} ]", methodName,
 						inputClassName, inputDescriptor);
 					return null;
 				}
 
 				if (outputClassName != null) {
-					getLogger().debug("Enclosing method [ {} ] Class [ {} ] -> [ {} ]", methodName, inputClassName,
+					useLogger.debug("Enclosing method [ {} ] Class [ {} ] -> [ {} ]", methodName, inputClassName,
 						outputClassName);
 				} else {
 					outputClassName = inputClassName;
 				}
 
 				if (outputDescriptor != null) {
-					getLogger().debug("Enclosing method [ {} ] Descriptor [ {} ] -> [ {} ]", methodName,
+					useLogger.debug("Enclosing method [ {} ] Descriptor [ {} ] -> [ {} ]", methodName,
 						inputDescriptor, outputDescriptor);
 				} else {
 					outputDescriptor = inputDescriptor;
@@ -649,13 +764,13 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 					if ((outputInnerClass != null) || (outputOuterClass != null)) {
 						if (outputInnerClass != null) {
-							getLogger().debug("Inner class attribute [ {} ] Inner [ {} ] -> [ {} ]", classNo,
+							useLogger.debug("Inner class attribute [ {} ] Inner [ {} ] -> [ {} ]", classNo,
 								inputInnerClass, outputInnerClass);
 						} else {
 							outputInnerClass = inputInnerClass;
 						}
 						if (outputOuterClass != null) {
-							getLogger().debug("Inner class attribute [ {} ] Outer [ {} ] -> [ {} ]", classNo,
+							useLogger.debug("Inner class attribute [ {} ] Outer [ {} ] -> [ {} ]", classNo,
 								inputOuterClass, outputOuterClass);
 						} else {
 							outputOuterClass = inputOuterClass;
@@ -708,7 +823,7 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 				for (int varNo = 0; varNo < inputTypes.length; varNo++) {
 					LocalVariableType inputType = inputTypes[varNo];
-					String outputSignature = transform(inputType.signature, SignatureType.FIELD);
+					String outputSignature = transformSignature(inputType.signature, SignatureType.FIELD);
 
 					if (outputSignature != null) {
 						if (outputTypes == null) {
@@ -931,63 +1046,17 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		return null;
 	}
 
-	private String transformString(String caseText, String inputString, String inputName) {
-		String outputString;
-
-		String transformCase;
-
-		if ((inputString == null) || inputString.isEmpty()) {
-			outputString = null;
-			transformCase = null; // Unused
-
-		} else {
-			outputString = transformDirectString(inputString, inputName);
-
-			if (outputString != null) {
-				transformCase = "direct per class";
-			} else {
-				outputString = transformDirectString(inputString);
-				if (outputString != null) {
-					transformCase = "direct";
-				} else {
-					// Descriptor format;
-					// includes function, method, and class descriptors;
-					// includes simple dotted class names
-					outputString = transformConstantAsDescriptor(inputString, SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-					if (outputString != null) {
-						transformCase = "dotted";
-					} else {
-						// Signature format;
-						// includes function, method, and class signatures
-						// includes simple slash class resources
-						outputString = transformConstantAsBinaryType(inputString,
-							SignatureRule.ALLOW_SIMPLE_SUBSTITUTION);
-						if (outputString != null) {
-							transformCase = "slash";
-						} else {
-							transformCase = null;
-						}
-					}
-				}
-			}
-		}
-
-		if (outputString == null) {
-			getLogger().trace("    String {}: {} (unchanged)", caseText, inputString);
-		} else {
-			getLogger().debug("    String {}: {} -> {} ({})", caseText, inputString, outputString, transformCase);
-		}
-
-		return outputString;
-	}
-
 	private Object transformConstantValue(Object inputValue, String inputName) {
 		if (inputValue instanceof String) {
-			return transformString("ConstantValue", (String) inputValue, inputName);
+			return transformString(inputName, "ConstantValue", (String) inputValue);
 		} else {
 			getLogger().trace("    Non-String ConstantValue: {} (unchanged)", inputValue);
 			return null;
 		}
+	}
+
+	private String transformString(String inputName, String inputCase, String initialValue) {
+		return updateString(inputName, inputCase, initialValue);
 	}
 
 	private <ANNOTATIONSATTRIBUTE extends AnnotationsAttribute> ANNOTATIONSATTRIBUTE transform(
@@ -1020,7 +1089,6 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		ParameterAnnotationsAttribute.Constructor<PARAMETERANNOTATIONSATTRIBUTE> constructor, String inputName) {
 
 		ParameterAnnotationInfo[] outputParmAnnotations = transform(attribute.parameter_annotations, inputName);
-
 		if (outputParmAnnotations == null) {
 			return null;
 		} else {
@@ -1051,7 +1119,6 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 		TypeAnnotationsAttribute.Constructor<TYPEANNOTATIONSATTRIBUTE> constructor, String inputName) {
 
 		TypeAnnotationInfo[] outputAnnotations = transform(inputAttribute.type_annotations, inputName);
-
 		if (outputAnnotations == null) {
 			return null;
 		} else {
@@ -1067,7 +1134,6 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 			TypeAnnotationInfo outputAnnotation = transform(inputAnnotation,
 				(type, values) -> new TypeAnnotationInfo(inputAnnotation.target_type, inputAnnotation.target_info,
 					inputAnnotation.target_index, inputAnnotation.type_path, type, values), inputName);
-
 			if (outputAnnotation != null) {
 				if (outputAnnotations == null) {
 					outputAnnotations = inputAnnotations.clone();
@@ -1144,14 +1210,14 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 		} else if (inputValue instanceof String) {
 			String stringValue = (String) inputValue;
-			String result = transformString("AnnotationValue", stringValue, inputName);
+			String result = transformString(inputName, "AnnotationValue", stringValue);
 			// Replace package version in OSGi Version annotation.
 			if (inputName.endsWith("/package-info.class")
 				&& annotationType.equals("Lorg/osgi/annotation/versioning/Version;") && elementName.equals("value")) {
 				String binaryPackageName = inputName.substring(0, inputName.lastIndexOf('/'));
 				String dottedPackageName = binaryPackageName.replace('/', '.');
 				String oldVersion = (result == null) ? stringValue : result;
-				String replacementVersion = getReplacementVersion("Export-Package", dottedPackageName, oldVersion);
+				String replacementVersion = replacePackageVersion("Export-Package", dottedPackageName, oldVersion);
 				if (replacementVersion != null) {
 					result = replacementVersion;
 				}
@@ -1219,13 +1285,19 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 
 	//
 
+	private void logConstant(String typeName, String initialValue, String finalValue, String inputName) {
+		getLogger().trace("Class [ {} ] [ {} ] [ {} ] [ {} ]", inputName, typeName, initialValue, finalValue);
+	}
+
 	private int transform(MutableConstantPool constants, String inputName) throws TransformException {
+		Logger useLogger = getLogger();
+
 		int modifiedConstants = 0;
 
 		int numConstants = constants.size();
 		for (int constantNo = 1; constantNo < numConstants; constantNo++) {
-			if (getLogger().isTraceEnabled()) {
-				getLogger()
+			if (useLogger.isTraceEnabled()) {
+				useLogger
 					.trace(String.format("Constant [ %3s ] [ %16s ] [ %s ]", constantNo, constants.tag(constantNo),
 					constants.entry(constantNo)));
 			}
@@ -1238,9 +1310,10 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputClassName != null) {
 						constants.entry(constantNo, new ClassInfo(constants.utf8Info(outputClassName)));
 						modifiedConstants++;
-						getLogger().debug("Class Reference: {} -> {}", inputClassName, outputClassName);
+						useLogger.debug("Class Reference: {} -> {}", inputClassName, outputClassName);
+						logConstant("Class Reference", inputClassName, outputClassName, inputName);
 					} else {
-						getLogger().debug("Skip class {} (unchanged)", inputClassName);
+						useLogger.debug("Skip class {} (unchanged)", inputClassName);
 					}
 					break;
 				}
@@ -1253,9 +1326,10 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 						constants.entry(constantNo,
 							new NameAndTypeInfo(info.name_index, constants.utf8Info(outputDescriptor)));
 						modifiedConstants++;
-						getLogger().debug("NameAndType: {} -> {}", inputDescriptor, outputDescriptor);
+						useLogger.debug("NameAndType: {} -> {}", inputDescriptor, outputDescriptor);
+						logConstant("NameAndType", inputDescriptor, outputDescriptor, inputName);
 					} else {
-						getLogger().trace("Skip name-and-type {} (unchanged)", inputDescriptor);
+						useLogger.trace("Skip name-and-type {} (unchanged)", inputDescriptor);
 					}
 					break;
 				}
@@ -1267,22 +1341,24 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 					if (outputDescriptor != null) {
 						constants.entry(constantNo, new MethodTypeInfo(constants.utf8Info(outputDescriptor)));
 						modifiedConstants++;
-						getLogger().debug("MethodType: {} -> {}", inputDescriptor, outputDescriptor);
+						useLogger.debug("MethodType: {} -> {}", inputDescriptor, outputDescriptor);
+						logConstant("MethodType", inputDescriptor, outputDescriptor, inputName);
 					} else {
-						getLogger().trace("Skip method-type {} (unchanged)", inputDescriptor);
+						useLogger.trace("Skip method-type {} (unchanged)", inputDescriptor);
 					}
 					break;
 				}
 
 				case ConstantPool.CONSTANT_Utf8 :
 					String inputUtf8 = constants.entry(constantNo);
-					String outputUtf8 = transformString("UTF8Constant", inputUtf8, inputName);
+					String outputUtf8 = transformString(inputName, "UTF8Constant", inputUtf8);
 					if (outputUtf8 != null) {
 						constants.entry(constantNo, outputUtf8);
 						modifiedConstants++;
-						getLogger().debug("UTF8: {} -> {}", inputUtf8, outputUtf8);
+						useLogger.debug("UTF8: {} -> {}", inputUtf8, outputUtf8);
+						logConstant("UTF8", inputUtf8, outputUtf8, inputName);
 					} else {
-						getLogger().trace("Skip UTF8 {} (unchanged)", inputUtf8);
+						useLogger.trace("Skip UTF8 {} (unchanged)", inputUtf8);
 					}
 
 					break;
@@ -1290,14 +1366,15 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				case ConstantPool.CONSTANT_String : {
 					StringInfo stringInfo = constants.entry(constantNo);
 					String inputString = constants.utf8(stringInfo.string_index);
-					String outputString = transformString("StringConstant", inputString, inputName);
+					String outputString = transformString(inputName, "StringConstant", inputString);
 
 					if (outputString != null) {
 						constants.entry(constantNo, new StringInfo(constants.utf8Info(outputString)));
 						modifiedConstants++;
-						getLogger().debug("String: {} -> {}", inputString, outputString);
+						useLogger.debug("String: {} -> {}", inputString, outputString);
+						logConstant("String", inputString, outputString, inputName);
 					} else {
-						getLogger().trace("Skip string {} (unchanged)", inputString);
+						useLogger.trace("Skip string {} (unchanged)", inputString);
 					}
 					break;
 				}
@@ -1312,12 +1389,12 @@ public class ClassActionImpl extends ActionImpl<ClassChangesImpl> {
 				case ConstantPool.CONSTANT_Package :
 				case ConstantPool.CONSTANT_Integer :
 				case ConstantPool.CONSTANT_Float :
-					getLogger().trace("Skip other (ignored)");
+					useLogger.trace("Skip other (ignored)");
 					break;
 
 				case ConstantPool.CONSTANT_Long :
 				case ConstantPool.CONSTANT_Double :
-					getLogger().trace("Skip floating point value +1 (ignored)");
+					useLogger.trace("Skip floating point value +1 (ignored)");
 					// For some insane optimization reason, the Long(5) and
 					// Double(6) entries take two slots in the constant pool.
 					// See 4.4.5

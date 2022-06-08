@@ -12,142 +12,120 @@
 package org.eclipse.transformer.action;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 
-import aQute.bnd.signatures.ArrayTypeSignature;
-import aQute.bnd.signatures.ClassSignature;
-import aQute.bnd.signatures.ClassTypeSignature;
-import aQute.bnd.signatures.FieldSignature;
-import aQute.bnd.signatures.JavaTypeSignature;
-import aQute.bnd.signatures.MethodSignature;
-import aQute.bnd.signatures.ReferenceTypeSignature;
-import aQute.bnd.signatures.Result;
-import aQute.bnd.signatures.SimpleClassTypeSignature;
-import aQute.bnd.signatures.ThrowsSignature;
-import aQute.bnd.signatures.TypeArgument;
-import aQute.bnd.signatures.TypeParameter;
+import org.eclipse.transformer.util.SignatureUtils;
 
+/**
+ * Java text substitution API.
+ * <p>
+ * <em>Category 1: Package Renaming:</em>
+ * <p>
+ * The package renaming API includes single name replacement versus multiple
+ * name replacement, and includes "dot" format name replacement versus "slash"
+ * format name replacement. This results in four main API entry points.
+ * <p>
+ * Package matching must locate the beginnings of embedded packages. That
+ * ensures that accidental matches do not occur. For example, "xjava.servlet"
+ * should not be a match for "java.servlet". See
+ * {@link SignatureUtils#packageMatch(String, int, int, boolean)}.
+ * <p>
+ * Package renames may be specified with trailing wildcards. Usually, package
+ * matching is of entire package values. That is, "javax.servlet" does not match
+ * "javax.servlet.util". (There are cases of transformations which are performed
+ * on super-packages but not on sub-packages.) An initial package name which is
+ * specified with a trailing wildcard enables matching of subpackages. See
+ * {@link SignatureUtils#containsWildcard(String)}.
+ * <p>
+ * Package updates in both the dot format (.) and the slash format (/) are
+ * applied to Java and JSP resources.
+ * <p>
+ * <em>Category 2: Package Version Updates</em>
+ * <p>
+ * Package version updates are defined in two varieties: "Global" updates and
+ * "specific" updates. "Global" updates are made in the absence of a "specific"
+ * override. "Specific" updates are specific to particular manifest attributes,
+ * and override any global update made while updating a particular manifest
+ * attribute value.
+ * <p>
+ * <em>Category 4: Text Updates</em>
+ * <p>
+ * Text updates consist of property-value replacements. The main variations have
+ * to do matching replacements to resources. A replacement may be specified to
+ * be performed on a specific file, or may be specified to be performed on files
+ * which match a specific pattern.
+ * <p>
+ * The process of performing text updates looks for the first matching updates,
+ * then applies those updates. Only one set of updates is applied.
+ * <p>
+ * <em>Category 5: Direct Updates</em>
+ * <p>
+ * Direct updates are primarily updates to binary string constants in class
+ * resources. Direct updates are applied to Java and JSP resources.
+ * <p>
+ * Direct updates may be specified to apply to all class resources ("global"
+ * direct updates). Direct updates may be specified to apply to specific class
+ * resources ("per-class" direct updates).
+ * <p>
+ * Per-class direct updates are matched to Java and JSP resources by doing a
+ * lookup of an adjusted resource name. The resource is adjusted by removing the
+ * initial file extension, either ".java" or ".jsp" is removed from the resource
+ * name, then adding the extension ".class".
+ */
 public interface SignatureRule {
+	// Category 1: Package renames.
+
+	Map<String, String> getPackageRenames();
+	String replacePackage(String initialName);
+	String replacePackages(String text);
+
+	Map<String, String> getBinaryPackageRenames();
+	String replaceBinaryPackage(String initialName);
+	String replaceBinaryPackages(String text);
+
+	// Category 2: Package version updates
+
+	Map<String, String> getPackageVersions();
+	Map<String, Map<String, String>> getSpecificPackageVersions();
+	String replacePackageVersion(String attributeName, String packageName, String initialVersion);
+
+	// Category 3: Bundle updates
 
 	BundleData getBundleUpdate(String symbolicName);
 
-	//
+	// Category 4: Text updates
 
-	Map<String, String> getPackageRenames();
+	boolean hasTextUpdates();
 
-	Map<String, String> getPackageVersions();
+	Map<String, Map<String, String>> getSpecificTextUpdates();
+	Map<Pattern, Map<String, String>> getWildCardTextUpdates();
 
-	Map<String, Map<String, String>> getSpecificPackageVersions();
+	Map<String, String> getTextSubstitutions(String inputName);
 
-	//
+	String replaceText(String inputName, String initialText);
 
-	public enum SignatureType {
+	// Category 5: Direct string updates
+
+	Map<String, String> getDirectGlobalUpdates();
+	String replaceTextDirectGlobal(String initialValue, String inputName);
+
+	Map<String, Map<String, String>> getDirectPerClassUpdates();
+	String replaceTextDirectPerClass(String initialValue, String inputName);
+
+	// Complex (java specific) transformations.
+
+	String relocateResource(String inputPath);
+
+	String packageRenameInput(String inputName);
+
+	String transformBinaryType(String inputConstant);
+	String transformDescriptor(String inputConstant);
+
+	String transformSignature(String initialSignature, SignatureType signatureType);
+
+	enum SignatureType {
 		CLASS,
 		FIELD,
 		METHOD
 	}
-
-	boolean	ALLOW_SIMPLE_SUBSTITUTION	= true;
-	boolean	NO_SIMPLE_SUBSTITUTION		= false;
-
-	/**
-	 * Replace a single package according to the package rename rules. Package
-	 * names must match exactly.
-	 *
-	 * @param initialName The package name which is to be replaced.
-	 * @return The replacement for the initial package name. Null if no
-	 *         replacement is available.
-	 */
-	String replacePackage(String initialName);
-
-	/**
-	 * Replace a single package according to the package rename rules. The
-	 * package name has '/' separators, not '.' separators. Package names must
-	 * match exactly.
-	 *
-	 * @param initialName The package name which is to be replaced.
-	 * @return The replacement for the initial package name. Null if no
-	 *         replacement is available.
-	 */
-	String replaceBinaryPackage(String initialName);
-
-	/**
-	 * Replace all embedded packages of specified text with replacement
-	 * packages.
-	 *
-	 * @param text String embedding zero, one, or more package names.
-	 * @param packageRenames map of names and replacement values
-	 * @return The text with all embedded package names replaced. Null if no
-	 *         replacements were performed.
-	 */
-	String replacePackages(String text, Map<String, String> packageRenames);
-
-	String replacePackages(String text);
-
-	String replaceText(String inputFileName, String text);
-
-	String transformConstantAsBinaryType(String inputConstant);
-
-	String transformConstantAsBinaryType(String inputConstant, boolean allowSimpleSubstitution);
-
-	/**
-	 * Modify a fully qualified type name according to the package rename table.
-	 * Answer either the transformed type name, or, if the type name was not
-	 * changed, a wrapped null.
-	 *
-	 * @param inputName A fully qualified type name which is to be transformed.
-	 * @return The transformed type name, or a wrapped null if no changed was
-	 *         made.
-	 */
-	String transformBinaryType(String inputName);
-
-	String transformConstantAsDescriptor(String inputConstant);
-
-	String transformConstantAsDescriptor(String inputConstant, boolean allowSimpleSubstitution);
-
-	String transformDescriptor(String inputDescriptor);
-
-	String transformDescriptor(String inputDescriptor, boolean allowSimpleSubstitution);
-
-	/**
-	 * Transform a class, field, or method signature. Answer a wrapped null if
-	 * the signature is not changed by the transformation rules.
-	 *
-	 * @param input The signature value which is to be transformed.
-	 * @param signatureType The type of the signature value.
-	 * @return The transformed signature value. A wrapped null if no change was
-	 *         made to the value.
-	 */
-	String transform(String input, SignatureType signatureType);
-
-	ClassSignature transform(ClassSignature classSignature);
-
-	FieldSignature transform(FieldSignature fieldSignature);
-
-	MethodSignature transform(MethodSignature methodSignature);
-
-	Result transform(Result type);
-
-	ThrowsSignature transform(ThrowsSignature type);
-
-	ArrayTypeSignature transform(ArrayTypeSignature inputType);
-
-	TypeParameter transform(TypeParameter inputTypeParameter);
-
-	ClassTypeSignature transform(ClassTypeSignature inputType);
-
-	SimpleClassTypeSignature transform(SimpleClassTypeSignature inputSignature);
-
-	TypeArgument transform(TypeArgument inputArgument);
-
-	JavaTypeSignature transform(JavaTypeSignature type);
-
-	ReferenceTypeSignature transform(ReferenceTypeSignature type);
-
-	//
-
-	String getDirectString(String initialValue);
-
-	String getDirectString(String initialValue, String clazz);
-
-	Map<String, String> getTextSubstitutions(String inputFileName);
 }

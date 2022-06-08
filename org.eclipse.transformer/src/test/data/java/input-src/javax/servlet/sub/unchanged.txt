@@ -1,0 +1,6 @@
+Unchanged text file.
+Testing application of package renames to Java and JSP.
+The rename is "javax.servlet" to "jakarta.servlet".
+For example, "javax.servlet.Servlet" transforms to "jakarta.servlet.Servlet".
+This file is an unselected text file and should be unchanged.
+However, the rename rule should still apply.

@@ -27,20 +27,22 @@ import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
+import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.impl.ActionImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.PropertiesUtils;
 import org.eclipse.transformer.util.SignatureUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 import transformer.test.util.CaptureLoggerImpl;
 
@@ -54,14 +56,21 @@ public class TestTransformManifest extends CaptureTest {
 	public void setUp() throws IOException {
 		prior = new Properties();
 		prior.putAll(System.getProperties());
-		Properties renameProperties = PropertiesUtils
-			.loadProperties(getClass().getResourceAsStream("manifest-renames.properties"));
+
+		Properties renameProperties;
+		try (InputStream renameStream = getClass().getClassLoader()
+			.getResourceAsStream("manifest/renames.properties")) {
+			renameProperties = PropertiesUtils.loadProperties(renameStream);
+		}
 		packageRenames = TransformProperties.convertPropertiesToMap(renameProperties);
 
+		Properties versionProperties;
+		try (InputStream versionsStream = getClass().getClassLoader()
+			.getResourceAsStream("manifest/versions.properties")) {
+			versionProperties = PropertiesUtils.loadProperties(versionsStream);
+		}
 		packageVersions = new HashMap<>();
 		specificPackageVersions = new HashMap<>();
-		Properties versionProperties = PropertiesUtils
-			.loadProperties(getClass().getResourceAsStream("manifest-versions.properties"));
 		TransformProperties.setPackageVersions(versionProperties, packageVersions, specificPackageVersions);
 	}
 
@@ -191,10 +200,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestAction = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
-				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
-					getPackageRenames(), getPackageVersions(), null, getBundleUpdates(), null, getDirectStrings(),
-					Collections.emptyMap()));
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
+				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, getBundleUpdates(),
+					null, getDirectStrings(), Collections.emptyMap()));
+
+			jakartaManifestAction = ManifestActionImpl.newManifestAction(initData);
 		}
 		return jakartaManifestAction;
 	}
@@ -205,10 +216,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(useLogger, new InputBufferImpl(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()));
+
+			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(initData);
 		}
 
 		return jakartaFeatureAction;
@@ -222,10 +235,13 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()));
+
+			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(initData);
+
 		}
 		return jakartaManifestActionTx;
 	}
@@ -236,11 +252,14 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(useLogger, new InputBufferImpl(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()));
+
+			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(initData);
 		}
+
 		return specificJakartaManifestAction;
 	}
 
@@ -342,7 +361,7 @@ public class TestTransformManifest extends CaptureTest {
 			manifestOutput = manifestAction.apply(manifestAction.collect(inputPath, input));
 		}
 
-		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
+		List<String> outputLines = displayManifest(inputPath + " transformed", FileUtils.stream(manifestOutput));
 
 		System.out.println("Verify output [ " + inputPath + " ]");
 
@@ -464,7 +483,7 @@ public class TestTransformManifest extends CaptureTest {
 	//
 
 	public static final String			TEST_MANIFEST_PATH_WEBCONTAINER	=
-		"transformer/test/data/servlet/META-INF/MANIFEST.MF";
+		"servlet/META-INF/MANIFEST.MF";
 
 	public static final Occurrences[]	MANIFEST_TO_JAKARTA_DATA		= {
 		new Occurrences(JAVAX_SERVLET,      6, 0, JAKARTA_SERVLET,      0, 6),
@@ -475,7 +494,7 @@ public class TestTransformManifest extends CaptureTest {
 	//
 
 	public static final String			TEST_FEATURE_PATH				=
-		"transformer/test/data/servlet/META-INF/servlet-4.0.mf";
+		"servlet/META-INF/servlet-4.0.mf";
 
 	public static final Occurrences[]	FEATURE_TO_JAKARTA_DATA			= {
 		// EMPTY
@@ -505,7 +524,7 @@ public class TestTransformManifest extends CaptureTest {
 
 	//
 
-	public static final String			TEST_MANIFEST_PATH_TX		= "transformer/test/data/transaction/META-INF/MANIFEST.MF";
+	public static final String			TEST_MANIFEST_PATH_TX		= "transaction/META-INF/MANIFEST.MF";
 
 	public static final Occurrences[]	MANIFEST_TO_JAKARTA_DATA_TX	= {
 		new Occurrences(JAVAX_ANNOTATION,           1, 0,  JAKARTA_ANNOTATION,           0, 1),
@@ -599,10 +618,8 @@ public class TestTransformManifest extends CaptureTest {
 	 * Subclass which allows us to call protected methods of ManifestActionImpl
 	 */
 	class ManifestActionImpl_Test extends ManifestActionImpl {
-		public ManifestActionImpl_Test(Logger logger, InputBufferImpl buffer,
-			SelectionRuleImpl selectionRule, SignatureRuleImpl signatureRule) {
-
-			super(logger, buffer, selectionRule, signatureRule, true);
+		public ManifestActionImpl_Test(ActionInitData initData) {
+			super(initData, true);
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {
@@ -628,10 +645,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (manifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			manifestAction_test = new ManifestActionImpl_Test(useLogger, new InputBufferImpl(),
-				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
-				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
-					Collections.emptyMap()));
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
+					getPackageRenames(), getPackageVersions(), null, null, null, null, Collections.emptyMap()));
+			manifestAction_test = new ManifestActionImpl_Test(initData);
 		}
 
 		return manifestAction_test;
@@ -643,11 +660,13 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificManifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			specificManifestAction_test = new ManifestActionImpl_Test(useLogger, new InputBufferImpl(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),
 					null, null, null, Collections.emptyMap()));
+
+			specificManifestAction_test = new ManifestActionImpl_Test(initData);
 		}
 
 		return specificManifestAction_test;
@@ -927,10 +946,10 @@ public class TestTransformManifest extends CaptureTest {
 	}
 
 	public static final String MANIFEST_PATH_SPECIFIC =
-		"transformer/test/data/specific/META-INF/MANIFEST.MF";
+		"specific/META-INF/MANIFEST.MF";
 
 	public static final String MANIFEST_PATH_SPECIFIC_EXPECTED =
-		"transformer/test/data/specific/META-INF/MANIFEST.MF.EXPECTED";
+		"specific/META-INF/MANIFEST.MF.EXPECTED";
 
 	@Test
 	public void testTransformManifest_Specific() throws TransformException, IOException {

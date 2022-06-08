@@ -27,14 +27,17 @@ import java.util.zip.ZipInputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
+import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.CompositeActionImpl;
-import org.eclipse.transformer.action.impl.JarActionImpl;
+import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.action.impl.ZipActionImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.ClassLoaderAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
@@ -47,7 +50,7 @@ import org.junit.jupiter.api.Test;
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformServiceConfig extends CaptureTest {
-	public static final String	COMPLEX_RESOURCE_PATH	= "transformer/test/data/complex.properties";
+	public static final String	COMPLEX_RESOURCE_PATH	= "complex.properties";
 	private Properties prior;
 
 	@BeforeEach
@@ -76,7 +79,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 	//
 
-	public static final String		TEST_DATA_PATH						= "transformer/test/data/serviceconfig";
+	public static final String		TEST_DATA_PATH						= "serviceconfig";
 
 	public static final String		JAVAX_OTHER_READER_SERVICE_PATH		= TEST_DATA_PATH + "/"
 		+ "META-INF/services/javax.other.Reader";
@@ -153,15 +156,17 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 	public ServiceLoaderConfigActionImpl	jakartaServiceAction;
 	public ServiceLoaderConfigActionImpl	javaxServiceAction;
-	public JarActionImpl					jarJavaxServiceAction;
+	public ZipActionImpl					jarJavaxServiceAction;
 
 	public ServiceLoaderConfigActionImpl getJakartaServiceAction() {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			jakartaServiceAction = new ServiceLoaderConfigActionImpl(useLogger, createBuffer(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
+
+			jakartaServiceAction = new ServiceLoaderConfigActionImpl(initData);
 		}
 		return jakartaServiceAction;
 	}
@@ -172,29 +177,30 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			javaxServiceAction = new ServiceLoaderConfigActionImpl(useLogger, createBuffer(),
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
+
+			javaxServiceAction = new ServiceLoaderConfigActionImpl(initData);
 		}
 		return javaxServiceAction;
 	}
 
-	public JarActionImpl getJarJavaxServiceAction() {
+	public ZipActionImpl getJarJavaxServiceAction() {
 		if (jarJavaxServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			CompositeActionImpl useRootAction = new CompositeActionImpl(useLogger, createBuffer(),
+			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
+
+			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = new JarActionImpl(useLogger, createBuffer(),
-				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
-				createSignatureRule(useLogger, invertedRenames, null, null, null));
-
-			jarJavaxServiceAction.addAction(useRootAction.addUsing(PropertiesActionImpl::new));
-			jarJavaxServiceAction.addAction(useRootAction.addUsing(ServiceLoaderConfigActionImpl::new));
+			jarJavaxServiceAction = ZipActionImpl.newJarAction(initData);
+			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
+			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}
 
 		return jarJavaxServiceAction;
@@ -220,44 +226,48 @@ public class TestTransformServiceConfig extends CaptureTest {
 		verifyTransform(javaxAction, JAKARTA_SAMPLE_READER_SERVICE_PATH, JAVAX_SAMPLE_READER_LINES); // Transformed
 	}
 
+	/**
+	 * Ensure that the inputlength parameter in ServiceLoaderConfigActionImpl is
+	 * used. When processing using a ContainerAction, the data passed in may
+	 * "leak" other data from other files. The resulting transformed service
+	 * file is corrupt.
+	 *
+	 * @throws Exception Thrown in case of a IO failure or a transformation
+	 *             failure.
+	 */
 	@Test
-	public void testInputLength() throws IOException, TransformException {
-
-		/*
-		   This test is to ensure that the inputlength parameter in ServiceLoaderConfigActionImpl is used.
-		   When processing using a ContainerAction, the data passed in may "leak" other data from other files.
-		   The resulting transformed service file is corrupt.
-		 */
-
+	public void testInputLength() throws Exception {
+		final String inputName = "sample.jar";
 		final File inputJarFile = File.createTempFile("sample", ".jar");
+		inputJarFile.deleteOnExit();
+
+		final String outputName = "sample_output.jar";
 		final File outputJarFile = File.createTempFile("sample_output", ".jar");
 		outputJarFile.delete();
-		inputJarFile.deleteOnExit();
+		outputJarFile.deleteOnExit();
 
 		final JavaArchive javaArchive = ShrinkWrap.create(JavaArchive.class);
 		javaArchive.add(new ClassLoaderAsset(COMPLEX_RESOURCE_PATH), "complex.properties");
 		javaArchive.add(new ClassLoaderAsset(JAKARTA_SAMPLE_READER_SERVICE_PATH), "META-INF/services/jakarta.sample.Reader");
 		javaArchive.as(ZipExporter.class).exportTo(inputJarFile, true);
 
-		final JarActionImpl useJarJavaxServiceAction = getJarJavaxServiceAction();
-		useJarJavaxServiceAction.apply("test.jar", inputJarFile, outputJarFile);
+		final ZipActionImpl useJarJavaxServiceAction = getJarJavaxServiceAction();
+		useJarJavaxServiceAction.apply(inputName, inputJarFile, outputName, outputJarFile);
 
 		final String[] expectedLines = new String[] { "# Sample reader", "", "javax.sample.ReaderImpl" };
 
 		Assertions.assertTrue(outputJarFile.exists());
-		outputJarFile.deleteOnExit();
 
 		boolean found = false;
 		final ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(outputJarFile));
 		ZipEntry inputEntry;
 		while ((inputEntry = zipInputStream.getNextEntry()) != null) {
-			final String inputName = inputEntry.getName();
+			final String inputEntryName = inputEntry.getName();
 			@SuppressWarnings("unused")
-			final long inputLength = inputEntry.getSize();
+			final long inputEntryLength = inputEntry.getSize();
 
-			if ("META-INF/services/javax.sample.Reader".equals(inputName)) {
+			if ("META-INF/services/javax.sample.Reader".equals(inputEntryName)) {
 				found = true;
-
 				final List<String> lines = TestUtils.loadLines(zipInputStream);
 				TestUtils.verify(inputName, expectedLines, lines);
 			}
@@ -269,16 +279,16 @@ public class TestTransformServiceConfig extends CaptureTest {
 	protected void verifyTransform(ServiceLoaderConfigActionImpl action, String inputName, String[] expectedLines)
 		throws IOException, TransformException {
 
-		InputStream inputStream = TestUtils.getResourceStream(inputName);
-
-		ByteData transformedData;
-		try {
-			transformedData = action.apply(action.collect(inputName, inputStream));
-		} finally {
-			inputStream.close();
+		ByteData inputData;
+		try (InputStream inputStream = TestUtils.getResourceStream(inputName)) {
+			inputData = action.collect(inputName, inputStream);
 		}
 
-		List<String> transformedLines = TestUtils.loadLines(transformedData.stream());
+		List<String> inputLines = TestUtils.loadLines(FileUtils.stream(inputData));
+
+		ByteData transformedData = action.apply(inputData);
+
+		List<String> transformedLines = TestUtils.loadLines(FileUtils.stream(transformedData));
 		TestUtils.filter(transformedLines);
 		TestUtils.verify(inputName, expectedLines, transformedLines);
 	}

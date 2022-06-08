@@ -58,7 +58,7 @@ Simple resources:
 Container resources:
 
 * Directories
-* JavaEE archives (JAR, WAR, RAR, and EAR files)
+* Java archives (JAR, WAR, RAR, and EAR files)
 * ZIP archives
 
 ## APIs

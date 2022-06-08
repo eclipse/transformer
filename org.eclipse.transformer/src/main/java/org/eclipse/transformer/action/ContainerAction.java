@@ -16,16 +16,21 @@ import java.util.List;
 
 public interface ContainerAction extends Action {
 	@Override
+	default boolean isContainerAction() {
+		return true;
+	}
+
+	@Override
 	ContainerChanges getActiveChanges();
 
 	@Override
 	ContainerChanges getLastActiveChanges();
 
-	CompositeAction getAction();
+	ActionSelector getActionSelector();
 
 	List<Action> getActions();
 
-	Action acceptAction(String resourceName);
+	Action selectAction(String resourceName);
 
-	Action acceptAction(String resourceName, File resourceFile);
+	Action selectAction(String resourceName, File resourceFile);
 }

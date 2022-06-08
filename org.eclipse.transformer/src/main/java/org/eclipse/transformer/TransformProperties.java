@@ -201,6 +201,9 @@ public class TransformProperties {
 					// TODO: We might want to skip an update in a specific
 					//       case.  A blank/empty update might be used to
 					//       encode this.
+					//
+					// See issue #300.
+					
 					if ( nameBuilder.length() != 0 ) {
 						throw new IllegalArgumentException("Package version syntax error: Version missing for package [ " + newPackageName + " ] and attribute [ " + nameBuilder.toString() + " ]");
 					}

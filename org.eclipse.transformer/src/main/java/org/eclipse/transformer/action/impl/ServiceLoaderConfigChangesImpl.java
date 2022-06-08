@@ -15,10 +15,18 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 
 import org.slf4j.Logger;
 
-public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
+public class ServiceLoaderConfigChangesImpl extends ElementChangesImpl {
 
 	public ServiceLoaderConfigChangesImpl() {
 		super();
+	}
+
+	//
+
+	@Override
+	public String toString() {
+		return String.format("%s [%s]: [%d] [%d]", getInputResourceName(), getChangeText(), getReplacements(),
+			getChangedProviders());
 	}
 
 	//
@@ -46,13 +54,7 @@ public class ServiceLoaderConfigChangesImpl extends ChangesImpl {
 	//
 
 	@Override
-	public void log(Logger logger, String inputPath, String outputPath) {
-		if (logger.isDebugEnabled(consoleMarker)) {
-			logger.debug(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
-			logger.debug(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
-			logger.debug(consoleMarker, "Replacements [ {} ]", getReplacements());
-		} else {
-			super.log(logger, inputPath, outputPath);
-		}
+	public void logChanges(Logger logger) {
+		logger.info(consoleMarker, "[ {} ]: [ {} ] [ {} ]", getChangeText(), getReplacements(), getChangedProviders());
 	}
 }

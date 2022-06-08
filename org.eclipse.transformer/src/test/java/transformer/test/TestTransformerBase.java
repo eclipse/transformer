@@ -31,10 +31,6 @@ import org.slf4j.helpers.SubstituteLoggerFactory;
 
 public abstract class TestTransformerBase {
 
-	// TODO: This is currently used for input data and for output data.
-	//       Output data should be written to a build location, which is
-	//       much safer.
-
 	private static final String	STATIC_CONTENT_DIR = "src/test/data";
 	private static final String	DYNAMIC_CONTENT_DIR = "target/test/data";
 
@@ -99,8 +95,23 @@ public abstract class TestTransformerBase {
 		return name;
 	}
 
-	/** Control parameter: Enable debug logging. */
-	public static final boolean DO_DEBUG_LOGGING = true;
+	public void runTransformer(String inputFileName, String outputFileName, Map<AppOption, List<String>> options)
+		throws Exception, AssertionFailedError {
+		runTransformer(inputFileName, outputFileName, options, null);
+	}
+
+	public void runTransformer(String inputFileName, String outputFileName, Map<AppOption, List<String>> options,
+		boolean doLog) throws Exception, AssertionFailedError {
+		runTransformer(inputFileName, outputFileName, options, null, doLog);
+	}
+
+	public static final boolean DO_LOG = true;
+
+	public void runTransformer(String inputFileName, String outputFileName, Map<AppOption, List<String>> options,
+		List<String> expectedLogFragments) throws Exception, AssertionFailedError {
+
+		runTransformer(inputFileName, outputFileName, options, expectedLogFragments, !DO_LOG);
+	}
 
 	/**
 	 * Run the transformer using java interfaces. Compose transformer options
@@ -113,43 +124,55 @@ public abstract class TestTransformerBase {
 	 * @param options Additional transformation parameters.
 	 * @param expectedLogFragments Text which is expected to be present in the
 	 *            transformer log.
+	 * @param doLog Control parameter: Tell if normal logging output is to be
+	 *            used. Has no effect if the expected log fragments is not
+	 *            empty.
 	 * @throws Exception Thrown in case of a transformation error.
 	 * @throws AssertionFailedError Thrown by an assertion failure. This is a
 	 *             test failure, as opposed to a processing error.
 	 */
-	public void runTransformer(String inputFileName, String outputFileName, Map<AppOption, List<String>> options,
-		List<String> expectedLogFragments)
+	@SuppressWarnings("null")
+	public void runTransformer(
+		String inputFileName, String outputFileName, Map<AppOption, List<String>> options,
+		List<String> expectedLogFragments, boolean doLog)
 		throws Exception, AssertionFailedError {
 
-		SubstituteLoggerFactory loggerFactory = new SubstituteLoggerFactory();
-		Logger logger = loggerFactory.getLogger(getName());
-
-		Transformer transformer = new Transformer(logger, new TransformOptions() {
+		TransformOptions transformOptions = new TransformOptions() {
 			@Override
 			public String getOutputFileName() {
 				return outputFileName;
 			}
-
 			@Override
 			public String getInputFileName() {
 				return inputFileName;
 			}
-
 			@Override
 			public List<String> getOptionValues(AppOption option) {
-				List<String> result = options.get(option);
-				return result;
+				return options.get(option);
 			}
-		});
+		};
+
+		boolean haveFragments = ((expectedLogFragments != null) && !expectedLogFragments.isEmpty());
+
+		SubstituteLoggerFactory loggerFactory;
+		Transformer transformer;
+
+		if (!haveFragments && doLog) {
+			loggerFactory = null;
+			transformer = new Transformer(transformOptions);
+		} else {
+			loggerFactory = new SubstituteLoggerFactory();
+			Logger logger = loggerFactory.getLogger(getName());
+			transformer = new Transformer(logger, transformOptions);
+		}
 
 		ResultCode rc = transformer.run();
-
 		assertThat(rc).isEqualTo(ResultCode.SUCCESS_RC);
-
 		assertThat(new File(outputFileName)).exists();
 
-		TestUtils.verifyLog("property option logging", expectedLogFragments, loggerFactory.getEventQueue());
-
+		if (haveFragments) {
+			TestUtils.verifyLog("property option logging", expectedLogFragments, loggerFactory.getEventQueue());
+		}
 	}
 
 	//
