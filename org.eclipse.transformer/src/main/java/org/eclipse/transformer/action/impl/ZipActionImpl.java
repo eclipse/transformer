@@ -23,6 +23,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import aQute.lib.io.ByteBufferOutputStream;
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
@@ -31,8 +33,6 @@ import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
-
-import aQute.lib.io.IO;
 
 /**
  * Top level ZIP action. A ZIP action is a container action which iterates
@@ -327,9 +327,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 							recordDuplicate(zipAction, inputName);
 						} else {
 							try {
-								ZipEntry outputEntry = new ZipEntry(outputName);
-								outputEntry.setExtra(inputEntry.getExtra());
-								outputEntry.setComment(inputEntry.getComment());
+								ZipEntry outputEntry = createEntry(inputEntry, outputName);
 
 								String putInputName = inputName; // Need these to be effectively final.
 								String putOutputName = outputName;
@@ -450,13 +448,13 @@ public class ZipActionImpl extends ContainerActionImpl {
 
 		getLogger().trace("Write modified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
 
-		ZipEntry outputEntry = createEntry(inputEntry, outputData, outputName);
+		ZipEntry outputEntry = createEntry(inputEntry, outputName, outputData);
 		putEntry(zipOutputStream, outputEntry, () -> {
 			outputData.writeTo(zipOutputStream);
 		});
 	}
 
-	private ZipEntry copyEntry(ZipEntry inputEntry, String outputName) {
+	private ZipEntry createEntry(ZipEntry inputEntry, String outputName) {
 		// Unless already set, putNextEntry sets the last modified time.
 		// of the entry.
 
@@ -466,6 +464,22 @@ public class ZipActionImpl extends ContainerActionImpl {
 		if (method != -1) {
 			outputEntry.setMethod(method);
 		}
+
+		String inputComment = inputEntry.getComment();
+		if ( inputComment != null ) {
+			outputEntry.setComment(inputComment);
+		}
+		byte[] inputExtra = inputEntry.getExtra();
+		if ( inputExtra != null ) {
+			outputEntry.setExtra(inputExtra);
+		}
+
+		return outputEntry;
+	}
+
+	private ZipEntry copyEntry(ZipEntry inputEntry, String outputName) {
+		ZipEntry outputEntry = createEntry(inputEntry, outputName);
+
 		if (outputEntry.getMethod() == ZipEntry.STORED) {
 			long size = inputEntry.getSize();
 			if ( size >= 0L ) {
@@ -475,24 +489,15 @@ public class ZipActionImpl extends ContainerActionImpl {
 			}
 			long cSize = inputEntry.getCompressedSize();
 			if ( cSize >= 0L ) {
-				// This is not checked, but lets be safe anyways.
+				// This is not checked, but let's be safe anyway.
 				outputEntry.setCompressedSize(cSize);
 			}
 			long crc = inputEntry.getCrc();
-			if ( crc >= 0 ) {
+			if ( crc >= 0L ) {
 				// A CRC of '-1' is possible from the input entry.
 				// Setting -1 causes an exception.
 				outputEntry.setCrc(crc);
 			}
-		}
-
-		String inputComment = inputEntry.getComment();
-		if ( inputComment != null ) {
-			outputEntry.setComment(inputComment);
-		}
-		byte[] inputExtra = inputEntry.getExtra();
-		if ( inputExtra != null ) {
-			outputEntry.setExtra(inputExtra);
 		}
 
 		// TODO:
@@ -522,13 +527,9 @@ public class ZipActionImpl extends ContainerActionImpl {
 		return outputEntry;
 	}
 
-	private ZipEntry createEntry(ZipEntry inputEntry, ByteData outputData, String outputName) {
-		ZipEntry outputEntry = new ZipEntry(outputName);
+	private ZipEntry createEntry(ZipEntry inputEntry, String outputName, ByteData outputData) {
+		ZipEntry outputEntry = createEntry(inputEntry, outputName);
 
-		int method = inputEntry.getMethod();
-		if (method != -1) {
-			outputEntry.setMethod(method);
-		}
 		if (outputEntry.getMethod() == ZipEntry.STORED) {
 			int length = outputData.length();
 			outputEntry.setSize(length);
@@ -537,15 +538,6 @@ public class ZipActionImpl extends ContainerActionImpl {
 			CRC32 crc = new CRC32();
 			crc.update( outputData.buffer() );
 			outputEntry.setCrc( crc.getValue() );
-		}
-
-		String inputComment = inputEntry.getComment();
-		if ( inputComment != null ) {
-			outputEntry.setComment(inputComment);
-		}
-		byte[] inputExtra = inputEntry.getExtra();
-		if ( inputExtra != null ) {
-			outputEntry.setExtra(inputExtra);
 		}
 
 		return outputEntry;
