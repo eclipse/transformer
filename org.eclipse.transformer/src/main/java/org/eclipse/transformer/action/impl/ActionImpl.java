@@ -17,12 +17,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
@@ -35,8 +35,6 @@ import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
-
-import aQute.lib.io.IO;
 
 /**
  * <em>Root action implementation.</em>
@@ -135,10 +133,6 @@ public abstract class ActionImpl implements Action {
 		public SignatureRule getSignatureRule() {
 			return signatureRule;
 		}
-	}
-
-	public <A extends Action> A createUsing(ActionInit<A> init, ActionInitData initData) {
-		return init.apply(initData);
 	}
 
 	//

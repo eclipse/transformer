@@ -62,7 +62,7 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 	}
 
 	/**
-	 * Special to {@link RenameActionImpl}: Rename the action. Let the caller
+	 * Special to {@code RenameAction}: Rename the action. Let the caller
 	 * handle transferring the content.
 	 *
 	 * @param inputName The name of the input resource.

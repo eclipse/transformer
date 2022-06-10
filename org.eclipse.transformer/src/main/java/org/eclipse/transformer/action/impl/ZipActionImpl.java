@@ -27,6 +27,8 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.ElementAction;
+import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
 
@@ -299,7 +301,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 						}
 
 					} else if (action.isRenameAction()) {
-						RenameActionImpl renameAction = (RenameActionImpl) action;
+						RenameAction renameAction = (RenameAction) action;
 						String outputName = renameAction.apply(inputName);
 						outputName = FileUtils.sanitize(outputName);
 
@@ -358,7 +360,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 						}
 
 					} else {
-						ElementActionImpl elementAction = (ElementActionImpl) action;
+						ElementAction elementAction = (ElementAction) action;
 
 						// Collect up front, then allow the action to run, which includes
 						// both renaming and content transformation, then put and write the

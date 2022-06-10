@@ -14,6 +14,7 @@ package org.eclipse.transformer.action.impl;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionSelector;
@@ -63,10 +64,8 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 			getSignatureRule());
 	}
 
-	public <A extends Action> A addUsing(ActionInit<A> init) {
-		A action = createUsing(init, getInitData());
-		addAction(action);
-		return action;
+	public <ACTION extends Action> ACTION addUsing(Function<? super Action.ActionInitData, ACTION> init) {
+		return getActionSelector().addUsing(init, getInitData());
 	}
 
 	//
@@ -76,29 +75,6 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	@Override
 	public ActionSelector getActionSelector() {
 		return actionSelector;
-	}
-
-	public void addAction(Action action) {
-		getActionSelector().addAction(action);
-	}
-
-	public void addActions(Collection<Action> actions) {
-		getActionSelector().addActions(actions);
-	}
-
-	@Override
-	public List<Action> getActions() {
-		return getActionSelector().getActions();
-	}
-
-	@Override
-	public Action selectAction(String resourceName) {
-		return selectAction(resourceName, null);
-	}
-
-	@Override
-	public Action selectAction(String resourceName, File resourceFile) {
-		return getActionSelector().selectAction(resourceName, resourceFile);
 	}
 
 	//

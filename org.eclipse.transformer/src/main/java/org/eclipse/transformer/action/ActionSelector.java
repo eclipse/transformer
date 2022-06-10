@@ -14,6 +14,7 @@ package org.eclipse.transformer.action;
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Action selector.
@@ -27,8 +28,14 @@ public interface ActionSelector {
 		getActions().add(action);
 	}
 
-	default void addActions(Collection<Action> actions) {
+	default void addActions(Collection<? extends Action> actions) {
 		getActions().addAll(actions);
+	}
+
+	default <ACTION extends Action> ACTION addUsing(Function<? super Action.ActionInitData, ACTION> init, Action.ActionInitData initData){
+		ACTION action = init.apply(initData);
+		addAction(action);
+		return action;
 	}
 
 	default Action selectAction(String resourceName, File resourceFile) {

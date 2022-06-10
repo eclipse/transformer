@@ -225,10 +225,6 @@ public interface Action {
 
 	//
 
-	public interface ActionInit<A extends Action> {
-		A apply(ActionInitData initData);
-	}
-
 	public interface ActionInitData {
 		Logger getLogger();
 
