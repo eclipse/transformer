@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.transformer.action.Action;
-import org.eclipse.transformer.action.Action.ActionInit;
-import org.eclipse.transformer.action.Action.ActionInitData;
 import org.eclipse.transformer.action.ActionSelector;
 
 /**
@@ -31,18 +29,6 @@ public class ActionSelectorImpl implements ActionSelector {
 
 	public ActionSelectorImpl() {
 		this.actions = new ArrayList<>();
-	}
-
-	//
-
-	public <A extends Action> A createUsing(ActionInit<A> init, ActionInitData initData) {
-		return init.apply(initData);
-	}
-
-	public <A extends Action> A addUsing(ActionInit<A> init, ActionInitData initData) {
-		A action = createUsing(init, initData);
-		addAction(action);
-		return action;
 	}
 
 	//

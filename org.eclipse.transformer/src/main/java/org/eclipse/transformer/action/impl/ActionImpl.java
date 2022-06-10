@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
@@ -135,10 +134,6 @@ public abstract class ActionImpl implements Action {
 		public SignatureRule getSignatureRule() {
 			return signatureRule;
 		}
-	}
-
-	public <A extends Action> A createUsing(ActionInit<A> init, ActionInitData initData) {
-		return init.apply(initData);
 	}
 
 	//

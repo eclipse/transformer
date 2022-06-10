@@ -9,9 +9,11 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-import static org.assertj.core.api.Assertions.assertThat
 
-import java.util.jar.*
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+
+import static org.assertj.core.api.Assertions.assertThat
 
 //println " basedir: ${basedir}"
 //println " localRepositoryPath: ${localRepositoryPath}"
@@ -25,6 +27,16 @@ new JarFile(artifact_main).withCloseable { jarFile ->
 	assertThat(shaded_class).isNotNull();
 	JarEntry old_class = jarFile.getJarEntry("conditioner/Conditioner.class");
 	assertThat(old_class).isNull();
+
+	JarEntry shaded_resource = jarFile.getJarEntry("shaded/conditioner/resource.foo");
+	assertThat(shaded_resource).isNotNull();
+	JarEntry old_resource = jarFile.getJarEntry("conditioner/resource.foo");
+	assertThat(old_resource).isNull();
+
+	JarEntry shaded_archive = jarFile.getJarEntry("shaded/conditioner/sac-1.3.jar");
+	assertThat(shaded_archive).isNotNull();
+	JarEntry old_archive = jarFile.getJarEntry("conditioner/sac-1.3.jar");
+	assertThat(old_archive).isNull();
 }
 
 return true

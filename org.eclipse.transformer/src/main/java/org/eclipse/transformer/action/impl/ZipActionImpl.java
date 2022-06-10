@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.attribute.FileTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,9 +28,12 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.ElementAction;
+import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
 
+import aQute.lib.io.ByteBufferOutputStream;
 import aQute.lib.io.IO;
 
 /**
@@ -41,8 +45,11 @@ import aQute.lib.io.IO;
  * almost the same, with differences in the kinds of nested archives are
  * expected. Also, the Jar container action is unique in using the properties
  * action.
+ * <p>
+ * ZIP action is also an element action since a zip can be encountered in a container.
+ * This is important for Bnd and Maven plugins.
  */
-public class ZipActionImpl extends ContainerActionImpl {
+public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
 	public static ZipActionImpl newZipAction(ActionInitData initData) {
 		return new ZipActionImpl(initData, "Zip Action", ActionType.ZIP, ".zip");
@@ -114,6 +121,32 @@ public class ZipActionImpl extends ContainerActionImpl {
 		try {
 			setResourceNames(inputPath, outputPath);
 			applyFile(inputPath, inputFile, outputPath, outputFile);
+		} finally {
+			stopRecording(inputPath);
+		}
+	}
+
+	/**
+	 * The method is for when ZipActionImpl is used as an ElementAction.
+	 */
+	@Override
+	public ByteData apply(ByteData inputData) throws TransformException {
+		String inputPath = inputData.name();
+		startRecording(inputPath);
+		try {
+			String outputPath = relocateResource(inputPath);
+			setResourceNames(inputPath, outputPath);
+			InputStream inputStream = FileUtils.stream(inputData);
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+			applyStream(inputPath, inputStream, outputPath, outputStream);
+			if (!isChanged()) {
+				return inputData;
+			}
+			ByteBuffer outputBuffer = isContentChanged()
+				? outputStream.toByteBuffer()
+				: inputData.buffer();
+			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer);
+			return outputData;
 		} finally {
 			stopRecording(inputPath);
 		}
@@ -299,7 +332,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 						}
 
 					} else if (action.isRenameAction()) {
-						RenameActionImpl renameAction = (RenameActionImpl) action;
+						RenameAction renameAction = (RenameAction) action;
 						String outputName = renameAction.apply(inputName);
 						outputName = FileUtils.sanitize(outputName);
 
@@ -325,9 +358,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 							recordDuplicate(zipAction, inputName);
 						} else {
 							try {
-								ZipEntry outputEntry = new ZipEntry(outputName);
-								outputEntry.setExtra(inputEntry.getExtra());
-								outputEntry.setComment(inputEntry.getComment());
+								ZipEntry outputEntry = createEntry(inputEntry, outputName);
 
 								String putInputName = inputName; // Need these to be effectively final.
 								String putOutputName = outputName;
@@ -339,7 +370,6 @@ public class ZipActionImpl extends ContainerActionImpl {
 								});
 
 								recordAction(zipAction, inputName);
-								recordNested(zipAction, inputName);
 
 							} catch (Throwable th) {
 								recordError(zipAction, inputName, th);
@@ -358,7 +388,7 @@ public class ZipActionImpl extends ContainerActionImpl {
 						}
 
 					} else {
-						ElementActionImpl elementAction = (ElementActionImpl) action;
+						ElementAction elementAction = (ElementAction) action;
 
 						// Collect up front, then allow the action to run, which includes
 						// both renaming and content transformation, then put and write the
@@ -449,13 +479,13 @@ public class ZipActionImpl extends ContainerActionImpl {
 
 		getLogger().trace("Write modified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
 
-		ZipEntry outputEntry = createEntry(inputEntry, outputData, outputName);
+		ZipEntry outputEntry = createEntry(inputEntry, outputName, outputData);
 		putEntry(zipOutputStream, outputEntry, () -> {
 			outputData.writeTo(zipOutputStream);
 		});
 	}
 
-	private ZipEntry copyEntry(ZipEntry inputEntry, String outputName) {
+	private ZipEntry createEntry(ZipEntry inputEntry, String outputName) {
 		// Unless already set, putNextEntry sets the last modified time.
 		// of the entry.
 
@@ -465,6 +495,22 @@ public class ZipActionImpl extends ContainerActionImpl {
 		if (method != -1) {
 			outputEntry.setMethod(method);
 		}
+
+		String inputComment = inputEntry.getComment();
+		if ( inputComment != null ) {
+			outputEntry.setComment(inputComment);
+		}
+		byte[] inputExtra = inputEntry.getExtra();
+		if ( inputExtra != null ) {
+			outputEntry.setExtra(inputExtra);
+		}
+
+		return outputEntry;
+	}
+
+	private ZipEntry copyEntry(ZipEntry inputEntry, String outputName) {
+		ZipEntry outputEntry = createEntry(inputEntry, outputName);
+
 		if (outputEntry.getMethod() == ZipEntry.STORED) {
 			long size = inputEntry.getSize();
 			if ( size >= 0L ) {
@@ -474,24 +520,15 @@ public class ZipActionImpl extends ContainerActionImpl {
 			}
 			long cSize = inputEntry.getCompressedSize();
 			if ( cSize >= 0L ) {
-				// This is not checked, but lets be safe anyways.
+				// This is not checked, but let's be safe anyway.
 				outputEntry.setCompressedSize(cSize);
 			}
 			long crc = inputEntry.getCrc();
-			if ( crc >= 0 ) {
+			if ( crc >= 0L ) {
 				// A CRC of '-1' is possible from the input entry.
 				// Setting -1 causes an exception.
 				outputEntry.setCrc(crc);
 			}
-		}
-
-		String inputComment = inputEntry.getComment();
-		if ( inputComment != null ) {
-			outputEntry.setComment(inputComment);
-		}
-		byte[] inputExtra = inputEntry.getExtra();
-		if ( inputExtra != null ) {
-			outputEntry.setExtra(inputExtra);
 		}
 
 		// TODO:
@@ -521,13 +558,9 @@ public class ZipActionImpl extends ContainerActionImpl {
 		return outputEntry;
 	}
 
-	private ZipEntry createEntry(ZipEntry inputEntry, ByteData outputData, String outputName) {
-		ZipEntry outputEntry = new ZipEntry(outputName);
+	private ZipEntry createEntry(ZipEntry inputEntry, String outputName, ByteData outputData) {
+		ZipEntry outputEntry = createEntry(inputEntry, outputName);
 
-		int method = inputEntry.getMethod();
-		if (method != -1) {
-			outputEntry.setMethod(method);
-		}
 		if (outputEntry.getMethod() == ZipEntry.STORED) {
 			int length = outputData.length();
 			outputEntry.setSize(length);
@@ -536,15 +569,6 @@ public class ZipActionImpl extends ContainerActionImpl {
 			CRC32 crc = new CRC32();
 			crc.update( outputData.buffer() );
 			outputEntry.setCrc( crc.getValue() );
-		}
-
-		String inputComment = inputEntry.getComment();
-		if ( inputComment != null ) {
-			outputEntry.setComment(inputComment);
-		}
-		byte[] inputExtra = inputEntry.getExtra();
-		if ( inputExtra != null ) {
-			outputEntry.setExtra(inputExtra);
 		}
 
 		return outputEntry;

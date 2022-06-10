@@ -24,9 +24,9 @@ import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ContainerActionImpl;
-import org.eclipse.transformer.action.impl.ElementActionImpl;
 
 import aQute.bnd.osgi.EmbeddedResource;
 import aQute.bnd.osgi.Jar;
@@ -97,7 +97,6 @@ public class TransformerJarAction extends ContainerActionImpl {
 					recordUnaccepted(inputPath);
 					continue;
 				}
-				ElementActionImpl elementAction = (ElementActionImpl) action;
 
 				try {
 					Resource resource = jar.getResource(inputPath);
@@ -117,15 +116,16 @@ public class TransformerJarAction extends ContainerActionImpl {
 					} else {
 						inputData = collect(inputPath, resource.openInputStream(), Math.toIntExact(resource.size()));
 					}
-					ByteData outputData = elementAction.apply(inputData);
-					recordAction(elementAction, inputPath);
-					Changes changes = elementAction.getLastActiveChanges();
+					ByteData outputData = ((ElementAction)action).apply(inputData);
+					recordAction(action, inputPath);
+					Changes changes = action.getLastActiveChanges();
 					if (changes.isChanged()) {
 						String outputPath = outputData.name();
-						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", elementAction.getClass()
+						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", action.getClass()
 							.getSimpleName(), inputPath, outputPath);
 						if (changes.isRenamed()) {
 							if (!isOverwrite() && (jar.getResource(outputPath) != null)) {
+								recordDuplicate(action, inputPath);
 								getLogger().error(
 									"Transform for {} overwrites existing resource {}. Use 'overwrite' option to allow overwriting.",
 									inputPath, outputPath);
@@ -142,6 +142,7 @@ public class TransformerJarAction extends ContainerActionImpl {
 					}
 				} catch (Exception e) {
 					getLogger().error("Failure while transforming {}", inputPath, e);
+					recordError(action, inputPath, e);
 				}
 			}
 		} finally {

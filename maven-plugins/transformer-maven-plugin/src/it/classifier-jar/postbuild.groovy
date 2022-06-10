@@ -9,9 +9,11 @@
  * SPDX-License-Identifier: (EPL-2.0 OR Apache-2.0)
  ********************************************************************************/
 
-import static org.assertj.core.api.Assertions.assertThat
 
-import java.util.jar.*
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+
+import static org.assertj.core.api.Assertions.assertThat
 
 //println " basedir: ${basedir}"
 //println " localRepositoryPath: ${localRepositoryPath}"

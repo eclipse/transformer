@@ -17,7 +17,6 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.RenameAction;
-import org.eclipse.transformer.util.FileUtils;
 
 /**
  * Terminal action. Used currently by container actions to ensure that all
@@ -62,7 +61,7 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 	}
 
 	/**
-	 * Special to {@link RenameActionImpl}: Rename the action. Let the caller
+	 * Special to {@code RenameAction}: Rename the action. Let the caller
 	 * handle transferring the content.
 	 *
 	 * @param inputName The name of the input resource.
@@ -73,7 +72,6 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 		startRecording(inputName);
 		try {
 			String outputName = relocateResource(inputName);
-			outputName = FileUtils.sanitize(outputName); // Avoid ZipSlip
 			setResourceNames(inputName, outputName);
 			return outputName;
 		} finally {
@@ -83,7 +81,8 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 
 	@Override
 	public ByteData apply(ByteData inputData) {
-		throw new UnsupportedOperationException();
+		String outputName = apply(inputData.name());
+		return inputData.copy(outputName);
 	}
 
 }

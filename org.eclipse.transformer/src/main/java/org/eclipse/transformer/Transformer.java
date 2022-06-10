@@ -36,6 +36,7 @@ import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
@@ -44,7 +45,6 @@ import org.eclipse.transformer.action.impl.ActionImpl;
 import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
-import org.eclipse.transformer.action.impl.ContainerActionImpl;
 import org.eclipse.transformer.action.impl.DirectoryActionImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.JSPActionImpl;
@@ -1100,10 +1100,10 @@ public class Transformer {
 
 	public ActionSelector getActionSelector() {
 		if (actionSelector == null) {
-			ActionSelectorImpl useSelector = new ActionSelectorImpl();
+			ActionSelector useSelector = new ActionSelectorImpl();
 			Action.ActionInitData initData = getActionInitData();
 
-			ContainerActionImpl directoryAction = useSelector.addUsing(DirectoryActionImpl::new, initData);
+			ContainerAction directoryAction = useSelector.addUsing(DirectoryActionImpl::new, initData);
 
 			Action classAction = useSelector.addUsing(ClassActionImpl::new, initData);
 			// The java and JSP actions must be before the text action.
@@ -1125,11 +1125,11 @@ public class Transformer {
 			standardActions.add(featureAction);
 			standardActions.add(textAction);
 
-			ContainerActionImpl jarAction = useSelector.addUsing(ZipActionImpl::newJarAction, initData);
-			ContainerActionImpl warAction = useSelector.addUsing(ZipActionImpl::newWarAction, initData);
-			ContainerActionImpl rarAction = useSelector.addUsing(ZipActionImpl::newRarAction, initData);
-			ContainerActionImpl earAction = useSelector.addUsing(ZipActionImpl::newEarAction, initData);
-			ContainerActionImpl zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, initData);
+			ContainerAction jarAction = useSelector.addUsing(ZipActionImpl::newJarAction, initData);
+			ContainerAction warAction = useSelector.addUsing(ZipActionImpl::newWarAction, initData);
+			ContainerAction rarAction = useSelector.addUsing(ZipActionImpl::newRarAction, initData);
+			ContainerAction earAction = useSelector.addUsing(ZipActionImpl::newEarAction, initData);
+			ContainerAction zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, initData);
 
 			Action renameAction = useSelector.addUsing(RenameActionImpl::new, initData);
 

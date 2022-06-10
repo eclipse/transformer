@@ -12,6 +12,7 @@
 package org.eclipse.transformer.action;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 public interface ContainerAction extends Action {
@@ -28,9 +29,23 @@ public interface ContainerAction extends Action {
 
 	ActionSelector getActionSelector();
 
-	List<Action> getActions();
+	default List<Action> getActions() {
+		return getActionSelector().getActions();
+	}
 
-	Action selectAction(String resourceName);
+	default void addAction(Action action) {
+		getActionSelector().addAction(action);
+	}
 
-	Action selectAction(String resourceName, File resourceFile);
+	default void addActions(Collection<? extends Action> actions) {
+		getActionSelector().addActions(actions);
+	}
+
+	default Action selectAction(String resourceName) {
+		return selectAction(resourceName, null);
+	}
+
+	default Action selectAction(String resourceName, File resourceFile) {
+		return getActionSelector().selectAction(resourceName, resourceFile);
+	}
 }

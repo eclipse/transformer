@@ -17,6 +17,8 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.ElementAction;
+import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 
 /**
@@ -158,7 +160,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 				recordUnselected(pathFromRoot);
 
 			} else if (action.isRenameAction()) {
-				RenameActionImpl renameAction = (RenameActionImpl) action;
+				RenameAction renameAction = (RenameAction) action;
 				String outputPathFromRoot = renameAction.apply(pathFromRoot);
 				outputPathFromRoot = FileUtils.sanitize(outputPathFromRoot);
 				copyInto(pathFromRoot, inputFile, rootOutputFile, outputPathFromRoot);
@@ -173,7 +175,6 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 
 				zipAction.apply(pathFromRoot, inputFile, outputPathFromRoot, outputFile);
 				recordAction(zipAction, pathFromRoot);
-				recordNested(zipAction, pathFromRoot);
 
 			} else if (!action.isElementAction()) {
 				getLogger().warn("Strange: Unknown action type [ {} ] for [ {} ]", action.getClass()
@@ -183,7 +184,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 				recordUnaccepted(pathFromRoot);
 
 			} else {
-				ElementActionImpl elementAction = (ElementActionImpl) action;
+				ElementAction elementAction = (ElementAction) action;
 				transformFile(elementAction, pathFromRoot, inputFile, rootOutputFile);
 				recordAction(elementAction, pathFromRoot);
 			}
@@ -193,7 +194,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 		}
 	}
 
-	private void transformFile(ElementActionImpl elementAction, String inputName, File inputFile, File outputRoot)
+	private void transformFile(ElementAction elementAction, String inputName, File inputFile, File outputRoot)
 		throws TransformException {
 		ByteData inputData = collect(inputName, inputFile);
 
