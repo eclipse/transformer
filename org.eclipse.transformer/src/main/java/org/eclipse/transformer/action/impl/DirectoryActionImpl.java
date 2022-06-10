@@ -175,7 +175,6 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 
 				zipAction.apply(pathFromRoot, inputFile, outputPathFromRoot, outputFile);
 				recordAction(zipAction, pathFromRoot);
-				recordNested(zipAction, pathFromRoot);
 
 			} else if (!action.isElementAction()) {
 				getLogger().warn("Strange: Unknown action type [ {} ] for [ {} ]", action.getClass()

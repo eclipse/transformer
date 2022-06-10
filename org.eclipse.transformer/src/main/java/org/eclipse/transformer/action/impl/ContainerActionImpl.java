@@ -112,6 +112,9 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	protected void recordAction(Action action, String resourceName) {
 		getLogger().debug("Resource [ {} ]: Action [ {} ]", action.getName(), resourceName);
 		getActiveChanges().recordAction(action);
+		if (action.isContainerAction()) {
+			getActiveChanges().add(((ContainerAction) action).getLastActiveChanges());
+		}
 	}
 
 	protected void recordError(Action action, String resourceName, Throwable error) {
@@ -124,10 +127,6 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 		String actionName = ( (action == null) ? "null" : action.getName() );
 		getLogger().error("Resource [ {} ] Action [ {} ]: Duplicate", resourceName, actionName);
 		getActiveChanges().recordDuplicated(action);
-	}
-
-	protected void recordNested(ContainerAction action, String resourceName) {
-		getActiveChanges().add(action.getLastActiveChanges());
 	}
 
 	@Override

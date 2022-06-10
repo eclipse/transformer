@@ -341,7 +341,6 @@ public class ZipActionImpl extends ContainerActionImpl {
 								});
 
 								recordAction(zipAction, inputName);
-								recordNested(zipAction, inputName);
 
 							} catch (Throwable th) {
 								recordError(zipAction, inputName, th);
