@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.file.attribute.FileTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,8 +44,11 @@ import org.slf4j.Logger;
  * almost the same, with differences in the kinds of nested archives are
  * expected. Also, the Jar container action is unique in using the properties
  * action.
+ * <p>
+ * ZIP action is also an element action since a zip can be encountered in a container.
+ * This is important for Bnd and Maven plugins.
  */
-public class ZipActionImpl extends ContainerActionImpl {
+public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
 	public static ZipActionImpl newZipAction(ActionInitData initData) {
 		return new ZipActionImpl(initData, "Zip Action", ActionType.ZIP, ".zip");
@@ -116,6 +120,32 @@ public class ZipActionImpl extends ContainerActionImpl {
 		try {
 			setResourceNames(inputPath, outputPath);
 			applyFile(inputPath, inputFile, outputPath, outputFile);
+		} finally {
+			stopRecording(inputPath);
+		}
+	}
+
+	/**
+	 * The method is for when ZipActionImpl is used as an ElementAction.
+	 */
+	@Override
+	public ByteData apply(ByteData inputData) throws TransformException {
+		String inputPath = inputData.name();
+		startRecording(inputPath);
+		try {
+			String outputPath = relocateResource(inputPath);
+			setResourceNames(inputPath, outputPath);
+			InputStream inputStream = FileUtils.stream(inputData);
+			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
+			applyStream(inputPath, inputStream, outputPath, outputStream);
+			if (!isChanged()) {
+				return inputData;
+			}
+			ByteBuffer outputBuffer = isContentChanged()
+				? outputStream.toByteBuffer()
+				: inputData.buffer();
+			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer);
+			return outputData;
 		} finally {
 			stopRecording(inputPath);
 		}
