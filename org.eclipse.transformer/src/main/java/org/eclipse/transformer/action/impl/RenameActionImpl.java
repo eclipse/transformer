@@ -81,7 +81,8 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 
 	@Override
 	public ByteData apply(ByteData inputData) {
-		throw new UnsupportedOperationException();
+		String outputName = apply(inputData.name());
+		return inputData.copy(outputName);
 	}
 
 }
