@@ -24,6 +24,8 @@ import java.util.zip.ZipEntry;
 
 import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.xmlunit.assertj.XmlAssert;
@@ -40,6 +42,16 @@ import aQute.lib.io.IO;
 class BndAnalyzerPluginTest {
 	static final Map<String, String> ds13 = Maps.of("scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
 
+	@BeforeEach
+	void before_each() {
+		System.setProperty("org.slf4j.simpleLogger.log.org.eclipse.transformer.bnd.analyzer", "info");
+	}
+
+	@AfterEach
+	void after_each() {
+		System.clearProperty("org.slf4j.simpleLogger.log.org.eclipse.transformer.bnd.analyzer");
+	}
+
 	@Test
 	void analyzer_jakarta_transform(@TempDir
 	File tmp) throws Exception {
@@ -49,7 +61,7 @@ class BndAnalyzerPluginTest {
 			builder.setProperty("-plugin.transformer",
 				"org.eclipse.transformer.bnd.analyzer.JakartaTransformerAnalyzerPlugin;command:=-transformer");
 			builder.setProperty("-includepackage", "org.eclipse.transformer.test.*");
-			builder.setProperty("-includeresource", "META-INF/services=META-INF/services");
+			builder.setProperty("-includeresource", "META-INF/services=META-INF/services,META-INF/maven=META-INF/maven");
 			builder.setProperty("-transformer",
 				"immediate;option=versions;package=org.eclipse.transformer.test.api;version=\"[2.0\\,3.0);Export-Package=2.0.0\"");
 			Jar jar = builder.build();
@@ -116,6 +128,11 @@ class BndAnalyzerPluginTest {
 				assertThat(metainfServices).isNotNull();
 				assertThat(IO.collect(jarFile.getInputStream(metainfServices))
 					.trim()).isEqualTo("org.glassfish.jersey.client.JerseyClientBuilder");
+
+				assertThat(jarFile.getEntry("org/eclipse/transformer/test/impl/resource.foo")).isNotNull();
+				assertThat(jarFile.getEntry("org/eclipse/transformer/test/impl/sac-1.3.jar")).isNotNull();
+				assertThat(jarFile.getEntry("META-INF/maven/groupId/artifactId/pom.xml")).isNotNull();
+				assertThat(jarFile.getEntry("META-INF/maven/groupId/artifactId/pom.properties")).isNotNull();
 			}
 		}
 	}
@@ -129,7 +146,7 @@ class BndAnalyzerPluginTest {
 			builder.setProperty("-plugin.transformer",
 				"org.eclipse.transformer.bnd.analyzer.JakartaTransformerVerifierPlugin;command:=-transformer");
 			builder.setProperty("-includepackage", "org.eclipse.transformer.test.*");
-			builder.setProperty("-includeresource", "META-INF/services=META-INF/services");
+			builder.setProperty("-includeresource", "META-INF/services=META-INF/services,META-INF/maven=META-INF/maven");
 			builder.setProperty("-transformer",
 				"immediate;option=renames;package=org.eclipse.transformer.test.api;rename=org.eclipse.transformer.test.api,"
 					+ "immediate;option=versions;package=org.eclipse.transformer.test.api;version=\"[2.0\\,3.0);Export-Package=2.0.0\"," //
@@ -198,6 +215,11 @@ class BndAnalyzerPluginTest {
 				assertThat(metainfServices).isNotNull();
 				assertThat(IO.collect(jarFile.getInputStream(metainfServices))
 					.trim()).isEqualTo("org.glassfish.jersey.client.JerseyClientBuilder");
+
+				assertThat(jarFile.getEntry("org/eclipse/transformer/test/impl/resource.foo")).isNotNull();
+				assertThat(jarFile.getEntry("org/eclipse/transformer/test/impl/sac-1.3.jar")).isNotNull();
+				assertThat(jarFile.getEntry("META-INF/maven/groupId/artifactId/pom.xml")).isNotNull();
+				assertThat(jarFile.getEntry("META-INF/maven/groupId/artifactId/pom.properties")).isNotNull();
 			}
 		}
 	}

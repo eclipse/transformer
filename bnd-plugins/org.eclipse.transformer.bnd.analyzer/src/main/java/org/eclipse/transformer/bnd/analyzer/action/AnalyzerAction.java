@@ -18,21 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
 
+import aQute.bnd.osgi.Analyzer;
+import aQute.bnd.osgi.EmbeddedResource;
+import aQute.bnd.osgi.Jar;
+import aQute.bnd.osgi.ManifestResource;
+import aQute.bnd.osgi.Resource;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
+import org.eclipse.transformer.action.ContainerAction;
+import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ContainerActionImpl;
-import org.eclipse.transformer.action.impl.ElementActionImpl;
-
-import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.osgi.EmbeddedResource;
-import aQute.bnd.osgi.Jar;
-import aQute.bnd.osgi.ManifestResource;
-import aQute.bnd.osgi.Resource;
 
 public class AnalyzerAction extends ContainerActionImpl {
 	private final boolean		overwrite;
@@ -50,6 +50,10 @@ public class AnalyzerAction extends ContainerActionImpl {
 	@Override
 	public ActionType getActionType() {
 		return ActionType.JAR;
+	}
+
+	public boolean isOverwrite() {
+		return overwrite;
 	}
 
 	public void apply(Analyzer analyzer) {
@@ -75,13 +79,13 @@ public class AnalyzerAction extends ContainerActionImpl {
 					recordUnselected(inputPath);
 					continue;
 				} else if (!action.isElementAction()) {
-					getLogger().warn("Strange non-element action [ {} ] for [ {} ]: Ignoring", action.getClass()
+					analyzer.warning(
+						"Strange non-element action %s for %s: Ignoring", action.getClass()
 						.getName(), inputPath);
 					recordUnaccepted(inputPath);
 					continue;
 				}
 
-				ElementActionImpl elementAction = (ElementActionImpl) action;
 				try {
 					Resource resource = jar.getResource(inputPath);
 					if (inputPath.equals(manifestName)) {
@@ -101,15 +105,16 @@ public class AnalyzerAction extends ContainerActionImpl {
 						inputData = collect(inputPath, resource.openInputStream(),
 							Math.toIntExact(resource.size()));
 					}
-					ByteData outputData = elementAction.apply(inputData);
-					recordAction(elementAction, inputPath);
-					Changes changes = elementAction.getLastActiveChanges();
+					ByteData outputData = ((ElementAction)action).apply(inputData);
+					recordAction(action, inputPath);
+					Changes changes = action.getLastActiveChanges();
 					if (changes.isChanged()) {
 						String outputPath = outputData.name();
-						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", elementAction.getClass()
+						getLogger().debug("[ {}.apply ]: Active transform [ {} ] [ {} ]", action.getClass()
 							.getSimpleName(), inputPath, outputPath);
 						if (changes.isRenamed()) {
-							if (!overwrite && (jar.getResource(outputPath) != null)) {
+							if (!isOverwrite() && (jar.getResource(outputPath) != null)) {
+								recordDuplicate(action, inputPath);
 								analyzer.error(
 									"Transform for %s overwrites existing resource %s. Use 'overwrite' option to allow overwriting.",
 									inputPath, outputPath);
@@ -117,17 +122,14 @@ public class AnalyzerAction extends ContainerActionImpl {
 							}
 							jar.remove(inputPath);
 						}
-						Resource outputResource;
-						if ( changes.isContentChanged() ) {
-							outputResource = new EmbeddedResource(outputData.buffer(), resource.lastModified());
-						} else {
-							outputResource = resource;
-						}
+						Resource outputResource = changes.isContentChanged()
+							? new EmbeddedResource(outputData.buffer(), resource.lastModified())
+							: resource;
 						jar.putResource(outputPath, outputResource);
 					}
 				} catch (Exception e) {
 					analyzer.exception(e, "Failure while transforming %s", inputPath);
-					recordError(elementAction, inputPath, e);
+					recordError(action, inputPath, e);
 				}
 			}
 		} finally {

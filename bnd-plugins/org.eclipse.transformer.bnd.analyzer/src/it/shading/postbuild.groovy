@@ -25,6 +25,16 @@ new JarFile(artifact_main).withCloseable { jarFile ->
 	assertThat(shaded_class).isNotNull();
 	JarEntry old_class = jarFile.getJarEntry("conditioner/Conditioner.class");
 	assertThat(old_class).isNull();
+
+	JarEntry shaded_resource = jarFile.getJarEntry("shaded/conditioner/resource.foo");
+	assertThat(shaded_resource).isNotNull();
+	JarEntry old_resource = jarFile.getJarEntry("conditioner/resource.foo");
+	assertThat(old_resource).isNull();
+
+	JarEntry shaded_archive = jarFile.getJarEntry("shaded/conditioner/sac-1.3.jar");
+	assertThat(shaded_archive).isNotNull();
+	JarEntry old_archive = jarFile.getJarEntry("conditioner/sac-1.3.jar");
+	assertThat(old_archive).isNull();
 }
 
 return true

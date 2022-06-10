@@ -66,19 +66,21 @@ public class TransformerDirectoryMojo extends AbstractTransformerMojo {
 		throws Exception {
 		getLogger().debug("Updating directory {}", transformDirectory);
 
-		// Remove first, then write changed files
-		getLogger().debug("Removed from outputDirectory {}", removed);
-		for (String remove : removed) {
-			File file = IO.getBasedFile(transformDirectory, remove);
-			IO.delete(file);
-		}
-
+		// Write changed files first, then remove
 		getLogger().debug("Changed in outputDirectory {}", changed);
 		for (String change : changed) {
 			File file = IO.getBasedFile(transformDirectory, change);
 			IO.mkdirs(file.getParentFile());
 			Resource resource = jar.getResource(change);
 			resource.write(file);
+		}
+
+		getLogger().debug("Removed from outputDirectory {}", removed);
+		for (String remove : removed) {
+			if (!changed.contains(remove)) {
+				File file = IO.getBasedFile(transformDirectory, remove);
+				IO.delete(file);
+			}
 		}
 
 		getBuildContext().refresh(transformDirectory);
