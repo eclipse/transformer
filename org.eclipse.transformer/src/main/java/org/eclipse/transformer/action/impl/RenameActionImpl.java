@@ -17,7 +17,6 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.RenameAction;
-import org.eclipse.transformer.util.FileUtils;
 
 /**
  * Terminal action. Used currently by container actions to ensure that all
@@ -73,7 +72,6 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 		startRecording(inputName);
 		try {
 			String outputName = relocateResource(inputName);
-			outputName = FileUtils.sanitize(outputName); // Avoid ZipSlip
 			setResourceNames(inputName, outputName);
 			return outputName;
 		} finally {
