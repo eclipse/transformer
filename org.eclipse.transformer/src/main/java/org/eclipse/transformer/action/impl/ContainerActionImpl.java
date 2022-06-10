@@ -12,8 +12,6 @@
 package org.eclipse.transformer.action.impl;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 import org.eclipse.transformer.action.Action;

@@ -18,21 +18,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.Manifest;
 
-import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.osgi.EmbeddedResource;
-import aQute.bnd.osgi.Jar;
-import aQute.bnd.osgi.ManifestResource;
-import aQute.bnd.osgi.Resource;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ContainerActionImpl;
+
+import aQute.bnd.osgi.Analyzer;
+import aQute.bnd.osgi.EmbeddedResource;
+import aQute.bnd.osgi.Jar;
+import aQute.bnd.osgi.ManifestResource;
+import aQute.bnd.osgi.Resource;
 
 public class AnalyzerAction extends ContainerActionImpl {
 	private final boolean		overwrite;

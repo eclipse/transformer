@@ -24,8 +24,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import aQute.lib.io.ByteBufferOutputStream;
-import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionType;
@@ -34,6 +32,9 @@ import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
+
+import aQute.lib.io.ByteBufferOutputStream;
+import aQute.lib.io.IO;
 
 /**
  * Top level ZIP action. A ZIP action is a container action which iterates

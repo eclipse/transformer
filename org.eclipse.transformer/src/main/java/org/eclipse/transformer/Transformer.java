@@ -32,10 +32,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import aQute.bnd.unmodifiable.Sets;
-import aQute.lib.io.IO;
-import aQute.lib.strings.Strings;
-import aQute.libg.uri.URIUtil;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.BundleData;
@@ -66,6 +62,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
+
+import aQute.bnd.unmodifiable.Sets;
+import aQute.lib.io.IO;
+import aQute.lib.strings.Strings;
+import aQute.libg.uri.URIUtil;
 
 public class Transformer {
 	public enum ResultCode {
