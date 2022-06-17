@@ -11,10 +11,13 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -153,6 +156,18 @@ public abstract class ActionImpl implements Action {
 	public abstract ActionType getActionType();
 
 	//
+
+	private Charset encoding = UTF_8;
+
+	@Override
+	public Charset getEncoding() {
+		return encoding;
+	}
+
+	@Override
+	public void setEncoding(Charset encoding) {
+		this.encoding = encoding;
+	}
 
 	private final SelectionRule resourceSelectionRule;
 

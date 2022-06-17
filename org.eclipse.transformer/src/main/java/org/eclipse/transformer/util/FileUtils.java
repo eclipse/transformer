@@ -11,8 +11,6 @@
 
 package org.eclipse.transformer.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -20,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
@@ -307,13 +306,13 @@ public class FileUtils {
 		return new ByteBufferInputStream(byteData.buffer());
 	}
 
-	public static BufferedReader reader(ByteBuffer buffer) {
-		BufferedReader reader = IO.reader(buffer, UTF_8);
+	public static BufferedReader reader(ByteBuffer buffer, Charset encoding) {
+		BufferedReader reader = IO.reader(buffer, encoding);
 		return reader;
 	}
 
-	public static BufferedWriter writer(OutputStream outputStream) {
-		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
+	public static BufferedWriter writer(OutputStream outputStream, Charset encoding) {
+		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, encoding);
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 		return writer;
 	}

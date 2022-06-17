@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
@@ -69,8 +70,8 @@ public class ByteDataImpl implements ByteData {
 	//
 
 	@Override
-	public BufferedReader reader() {
-		return FileUtils.reader(buffer());
+	public BufferedReader reader(Charset encoding) {
+		return FileUtils.reader(buffer(), encoding);
 	}
 
 	@Override

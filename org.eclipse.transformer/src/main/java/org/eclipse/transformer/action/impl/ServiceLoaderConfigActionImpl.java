@@ -11,10 +11,13 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionType;
@@ -111,7 +114,7 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
+			try (BufferedReader reader = inputData.reader(getEncoding()); BufferedWriter writer = FileUtils.writer(outputStream, getEncoding())) {
 				transform(reader, writer);
 			} catch (IOException e) {
 				throw new TransformException("Failed to transform [ " + inputName + " ]", e);

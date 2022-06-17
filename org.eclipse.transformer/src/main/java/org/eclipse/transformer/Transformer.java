@@ -12,6 +12,7 @@
 package org.eclipse.transformer;
 
 import static aQute.bnd.exceptions.BiFunctionWithException.asBiFunction;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -136,6 +138,7 @@ public class Transformer {
 	public String							outputPath;
 	public File								outputFile;
 	public Map<String, Map<String, String>> perClassConstantStrings;
+	public Charset							encoding	= UTF_8;
 
 	//
 
@@ -163,6 +166,13 @@ public class Transformer {
 		}
 		if (!setOutput()) {
 			return ResultCode.TRANSFORM_ERROR_RC;
+		}
+		
+		try {
+			setEncoding();
+		} catch (Exception e) {
+			getLogger().error(consoleMarker, "Encoding type error:", e);
+			return ResultCode.ARGS_ERROR_RC;
 		}
 
 		boolean loadedRules;
@@ -230,6 +240,13 @@ public class Transformer {
 
 	public String getOutputFileName() {
 		return outputName;
+	}
+
+	public void setEncoding() {
+		if (options.hasOption(AppOption.ENCODING)) {
+			String encoding = options.getOptionValue(AppOption.ENCODING);
+			this.encoding = Charset.forName(encoding);
+		}
 	}
 
 	/**
@@ -1132,6 +1149,15 @@ public class Transformer {
 			ContainerAction zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, initData);
 
 			Action renameAction = useSelector.addUsing(RenameActionImpl::new, initData);
+
+			classAction.setEncoding(encoding);
+			javaAction.setEncoding(encoding);
+			jspAction.setEncoding(encoding);
+			serviceConfigAction.setEncoding(encoding);
+			manifestAction.setEncoding(encoding);
+			featureAction.setEncoding(encoding);
+			textAction.setEncoding(encoding);
+			propertiesAction.setEncoding(encoding);
 
 			// Directory actions know about all actions except for directory
 			// actions, and except for the properties action.

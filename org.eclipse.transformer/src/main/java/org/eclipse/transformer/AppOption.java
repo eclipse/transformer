@@ -84,7 +84,9 @@ public enum AppOption {
 
 	RULES_PER_CLASS_CONSTANT(
 		new Settings("tp", "per-class-constant", "Transformation per class constant string replacements",
-			Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP));
+			Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+	ENCODING(
+		new Settings("enc", "encoding", "File encoding (default: UTF-8)", Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP));
 
 	AppOption(Settings settings) {
 		this.settings = settings;

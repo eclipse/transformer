@@ -12,6 +12,7 @@
 package org.eclipse.transformer.action;
 
 import java.io.File;
+import java.nio.charset.Charset;
 
 import org.eclipse.transformer.TransformException;
 import org.slf4j.Logger;
@@ -34,6 +35,10 @@ public interface Action {
 	 * @return The type of this action.
 	 */
 	ActionType getActionType();
+
+	Charset getEncoding();
+	
+	void setEncoding(Charset encoding); 
 
 	/**
 	 * Tell if this is an element type action.

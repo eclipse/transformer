@@ -136,7 +136,7 @@ public class XmlActionImpl extends ElementActionImpl {
 
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-		try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
+		try (BufferedReader reader = inputData.reader(getEncoding()); BufferedWriter writer = FileUtils.writer(outputStream, getEncoding())) {
 			transformAsPlainText(inputName, reader, writer);
 		} catch (IOException e) {
 			throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -202,7 +202,7 @@ public class XmlActionImpl extends ElementActionImpl {
 
 	public void transform(String inputName, InputStream input, OutputStream output) throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding(UTF_8.name());
+		inputSource.setEncoding(getEncoding().name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
@@ -223,7 +223,7 @@ public class XmlActionImpl extends ElementActionImpl {
 	public void transformUsingSaxParser(String inputName, InputStream input, OutputStream output)
 		throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding(UTF_8.name());
+		inputSource.setEncoding(getEncoding().name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
