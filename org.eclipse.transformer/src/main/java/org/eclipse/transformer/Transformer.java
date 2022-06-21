@@ -993,6 +993,19 @@ public class Transformer {
 			return false;
 		}
 
+		try {
+			inputFile = inputFile.getCanonicalFile();
+			inputPath = inputFile.getAbsolutePath();
+		} catch (IOException e) {
+			getLogger().error(consoleMarker, "Input error [ {} ] [ {} ] ", inputName, e.toString(), e);
+			return false;
+		}
+		if (inputFile.getParent() == null) {
+			getLogger().error(consoleMarker,
+				"Input directory is invalid. Don't designate the top directory. [ {} ] [ {} ]", inputName, inputPath);
+			return false;
+		}
+
 		getLogger().debug(consoleMarker, "Input [ {} ]", inputName);
 		getLogger().info(consoleMarker, "Input [ {} ]", inputPath);
 		return true;
@@ -1009,18 +1022,20 @@ public class Transformer {
 			useOutputName = options.normalize(useOutputName);
 
 		} else {
-			int indexOfLastSlash = inputName.lastIndexOf('/');
-			if (indexOfLastSlash == -1) {
-				useOutputName = OUTPUT_PREFIX + inputName;
-			} else {
-				String inputPrefix = inputName.substring(0, indexOfLastSlash + 1);
-				String inputSuffix = inputName.substring(indexOfLastSlash + 1);
-				useOutputName = inputPrefix + OUTPUT_PREFIX + inputSuffix;
-			}
+			File parent = inputFile.getParentFile();
+			File output = new File(parent, OUTPUT_PREFIX + inputFile.getName());
+			useOutputName = options.normalize(output.getAbsolutePath());
 		}
 
 		File useOutputFile = new File(useOutputName);
-		String useOutputPath = useOutputFile.getAbsolutePath();
+		String useOutputPath = null;
+		try {
+			useOutputFile = useOutputFile.getCanonicalFile();
+			useOutputPath = useOutputFile.getAbsolutePath();
+		} catch (IOException e) {
+			getLogger().error(consoleMarker, "Output error [ {} ] [ {} ]", outputName, e.toString(), e);
+			return false;
+		}
 
 		boolean putIntoDirectory = (inputFile.isFile() && useOutputFile.isDirectory());
 
@@ -1073,6 +1088,10 @@ public class Transformer {
 		outputName = useOutputName;
 		outputFile = useOutputFile;
 		outputPath = useOutputPath;
+		if (outputPath.startsWith(inputPath + File.separator)) {
+			getLogger().error(consoleMarker, "Output path is under input directory [ {} ]", useOutputPath);
+			return false;
+		}
 
 		return true;
 	}
