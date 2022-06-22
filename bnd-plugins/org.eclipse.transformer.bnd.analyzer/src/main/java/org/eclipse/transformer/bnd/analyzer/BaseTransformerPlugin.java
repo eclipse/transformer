@@ -20,7 +20,7 @@ import java.util.function.Function;
 import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.bnd.analyzer.action.AnalyzerAction;
@@ -93,9 +93,9 @@ public class BaseTransformerPlugin implements Plugin {
 		// See issue #296
 
 		ActionSelector actionSelector = transformer.getActionSelector();
-		Action.ActionInitData initData = transformer.getActionInitData();
+		ActionContext context = transformer.getActionContext();
 		boolean overwrite = options.hasOption(AppOption.OVERWRITE);
-		AnalyzerAction analyzerAction = new AnalyzerAction(initData, actionSelector, overwrite);
+		AnalyzerAction analyzerAction = new AnalyzerAction(context, actionSelector, overwrite);
 
 		analyzerAction.apply(analyzer);
 

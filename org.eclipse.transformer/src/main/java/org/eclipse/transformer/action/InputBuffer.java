@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
  * and write operations occurring synchronously in a single thread.
  * <p>
  * This type is part of the action API: The type is expected by
- * {@link Action.ActionInitData}.
+ * {@link ActionContext}.
  */
 public interface InputBuffer {
 	/**

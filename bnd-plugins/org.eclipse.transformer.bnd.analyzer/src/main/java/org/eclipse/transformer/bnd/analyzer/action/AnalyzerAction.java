@@ -20,6 +20,7 @@ import java.util.jar.Manifest;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
@@ -37,8 +38,8 @@ import aQute.bnd.osgi.Resource;
 public class AnalyzerAction extends ContainerActionImpl {
 	private final boolean		overwrite;
 
-	public AnalyzerAction(ActionInitData initData, ActionSelector actionSelector, boolean overwrite) {
-		super(initData, actionSelector);
+	public AnalyzerAction(ActionContext context, ActionSelector actionSelector, boolean overwrite) {
+		super(context, actionSelector);
 		this.overwrite = overwrite;
 	}
 

@@ -19,8 +19,8 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.action.Action;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -96,11 +96,11 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		if (jakartaPropertiesAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames()));
 
-			jakartaPropertiesAction = new PropertiesActionImpl(initData);
+			jakartaPropertiesAction = new PropertiesActionImpl(context);
 
 		}
 		return jakartaPropertiesAction;

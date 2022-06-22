@@ -14,6 +14,7 @@ package org.eclipse.transformer.action.impl;
 import java.io.File;
 import java.util.List;
 
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.SignatureRule;
 
@@ -27,8 +28,8 @@ import org.eclipse.transformer.action.SignatureRule;
  */
 public class JSPActionImpl extends TextActionImpl {
 
-	public JSPActionImpl(ActionInitData initData) {
-		super(initData);
+	public JSPActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	// Not exactly the same as 'JavaActionImpl.createActiveReplacements'.

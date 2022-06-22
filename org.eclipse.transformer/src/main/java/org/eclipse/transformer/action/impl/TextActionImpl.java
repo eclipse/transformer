@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SignatureRule;
@@ -39,10 +40,10 @@ import aQute.lib.io.ByteBufferOutputStream;
  */
 public class TextActionImpl extends ElementActionImpl {
 
-	public TextActionImpl(ActionInitData initData) {
-		super(initData);
+	public TextActionImpl(ActionContext context) {
+		super(context);
 
-		List<StringReplacement> replacements = createActiveReplacements(initData.getSignatureRule());
+		List<StringReplacement> replacements = createActiveReplacements(context.getSignatureRule());
 		this.activeReplacements = replacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : replacements;
 	}
 

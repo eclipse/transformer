@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
@@ -41,7 +42,7 @@ import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
@@ -1113,27 +1114,27 @@ public class Transformer {
 
 	// As a separate method to allow re-use.
 
-	public Action.ActionInitData getActionInitData() {
-		return new ActionImpl.ActionInitDataImpl(getLogger(), getBuffer(), getSelectionRule(), getSignatureRule());
+	public ActionContext getActionContext() {
+		return new ActionContextImpl(getLogger(), getBuffer(), getSelectionRule(), getSignatureRule());
 	}
 
 	public ActionSelector getActionSelector() {
 		if (actionSelector == null) {
 			ActionSelector useSelector = new ActionSelectorImpl();
-			Action.ActionInitData initData = getActionInitData();
+			ActionContext context = getActionContext();
 
-			ContainerAction directoryAction = useSelector.addUsing(DirectoryActionImpl::new, initData);
+			ContainerAction directoryAction = useSelector.addUsing(DirectoryActionImpl::new, context);
 
-			Action classAction = useSelector.addUsing(ClassActionImpl::new, initData);
+			Action classAction = useSelector.addUsing(ClassActionImpl::new, context);
 			// The java and JSP actions must be before the text action.
-			Action javaAction = useSelector.addUsing(JavaActionImpl::new, initData);
-			Action jspAction = useSelector.addUsing(JSPActionImpl::new, initData);
-			Action serviceConfigAction = useSelector.addUsing(ServiceLoaderConfigActionImpl::new, initData);
-			Action manifestAction = useSelector.addUsing(ManifestActionImpl::newManifestAction, initData);
-			Action featureAction = useSelector.addUsing(ManifestActionImpl::newFeatureAction, initData);
-			Action textAction = useSelector.addUsing(TextActionImpl::new, initData);
-			// Action xmlAction = useRootAction.addUsing( XmlActionImpl::new, initData );
-			Action propertiesAction = useSelector.addUsing(PropertiesActionImpl::new, initData);
+			Action javaAction = useSelector.addUsing(JavaActionImpl::new, context);
+			Action jspAction = useSelector.addUsing(JSPActionImpl::new, context);
+			Action serviceConfigAction = useSelector.addUsing(ServiceLoaderConfigActionImpl::new, context);
+			Action manifestAction = useSelector.addUsing(ManifestActionImpl::newManifestAction, context);
+			Action featureAction = useSelector.addUsing(ManifestActionImpl::newFeatureAction, context);
+			Action textAction = useSelector.addUsing(TextActionImpl::new, context);
+			// Action xmlAction = useRootAction.addUsing( XmlActionImpl::new, context );
+			Action propertiesAction = useSelector.addUsing(PropertiesActionImpl::new, context);
 
 			List<Action> standardActions = new ArrayList<>();
 			standardActions.add(classAction);
@@ -1144,13 +1145,13 @@ public class Transformer {
 			standardActions.add(featureAction);
 			standardActions.add(textAction);
 
-			ContainerAction jarAction = useSelector.addUsing(ZipActionImpl::newJarAction, initData);
-			ContainerAction warAction = useSelector.addUsing(ZipActionImpl::newWarAction, initData);
-			ContainerAction rarAction = useSelector.addUsing(ZipActionImpl::newRarAction, initData);
-			ContainerAction earAction = useSelector.addUsing(ZipActionImpl::newEarAction, initData);
-			ContainerAction zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, initData);
+			ContainerAction jarAction = useSelector.addUsing(ZipActionImpl::newJarAction, context);
+			ContainerAction warAction = useSelector.addUsing(ZipActionImpl::newWarAction, context);
+			ContainerAction rarAction = useSelector.addUsing(ZipActionImpl::newRarAction, context);
+			ContainerAction earAction = useSelector.addUsing(ZipActionImpl::newEarAction, context);
+			ContainerAction zipAction = useSelector.addUsing(ZipActionImpl::newZipAction, context);
 
-			Action renameAction = useSelector.addUsing(RenameActionImpl::new, initData);
+			Action renameAction = useSelector.addUsing(RenameActionImpl::new, context);
 
 			// Directory actions know about all actions except for directory
 			// actions, and except for the properties action.

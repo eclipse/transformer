@@ -26,6 +26,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
@@ -55,8 +56,8 @@ import aQute.lib.io.ByteBufferOutputStream;
  */
 public class XmlActionImpl extends ElementActionImpl {
 
-	public XmlActionImpl(ActionInitData initData) {
-		super(initData);
+	public XmlActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	//

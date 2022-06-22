@@ -113,7 +113,7 @@ public abstract class AbstractTransformerMojo extends AbstractMojo {
 		}
 		transformer.logRules();
 
-		TransformerJarAction action = new TransformerJarAction(transformer.getActionInitData(),
+		TransformerJarAction action = new TransformerJarAction(transformer.getActionContext(),
 			transformer.getActionSelector(),
 			options.hasOption(AppOption.OVERWRITE));
 		action.apply(jar, inputName, outputName);

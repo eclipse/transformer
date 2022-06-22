@@ -225,13 +225,4 @@ public interface Action {
 
 	//
 
-	public interface ActionInitData {
-		Logger getLogger();
-
-		InputBuffer getBuffer();
-
-		SelectionRule getSelectionRule();
-
-		SignatureRule getSignatureRule();
-	}
 }

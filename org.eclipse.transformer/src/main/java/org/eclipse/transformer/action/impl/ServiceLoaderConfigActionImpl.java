@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
@@ -41,8 +42,8 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 
 	//
 
-	public ServiceLoaderConfigActionImpl(ActionInitData initData) {
-		super(initData);
+	public ServiceLoaderConfigActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	//

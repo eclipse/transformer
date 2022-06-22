@@ -27,10 +27,10 @@ import java.util.zip.ZipInputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -162,11 +162,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
 
-			jakartaServiceAction = new ServiceLoaderConfigActionImpl(initData);
+			jakartaServiceAction = new ServiceLoaderConfigActionImpl(context);
 		}
 		return jakartaServiceAction;
 	}
@@ -177,11 +177,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			javaxServiceAction = new ServiceLoaderConfigActionImpl(initData);
+			javaxServiceAction = new ServiceLoaderConfigActionImpl(context);
 		}
 		return javaxServiceAction;
 	}
@@ -194,11 +194,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = ZipActionImpl.newJarAction(initData);
+			jarJavaxServiceAction = ZipActionImpl.newJarAction(context);
 			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
 			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}

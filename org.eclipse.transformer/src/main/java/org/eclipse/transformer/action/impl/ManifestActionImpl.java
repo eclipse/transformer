@@ -24,6 +24,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
@@ -57,16 +58,16 @@ public class ManifestActionImpl extends ElementActionImpl {
 	private static final boolean	IS_MANIFEST				= true;
 	private static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
-	public static ManifestActionImpl newManifestAction(ActionInitData initData) {
-		return new ManifestActionImpl(initData, IS_MANIFEST);
+	public static ManifestActionImpl newManifestAction(ActionContext context) {
+		return new ManifestActionImpl(context, IS_MANIFEST);
 	}
 
-	public static ManifestActionImpl newFeatureAction(ActionInitData initData) {
-		return new ManifestActionImpl(initData, IS_FEATURE);
+	public static ManifestActionImpl newFeatureAction(ActionContext context) {
+		return new ManifestActionImpl(context, IS_FEATURE);
 	}
 
-	public ManifestActionImpl(ActionInitData initData, boolean isManifest) {
-		super(initData);
+	public ManifestActionImpl(ActionContext context, boolean isManifest) {
+		super(context);
 		this.isManifest = isManifest;
 	}
 

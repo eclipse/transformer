@@ -25,9 +25,9 @@ import java.util.stream.Stream;
 
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
@@ -121,10 +121,10 @@ public class ClassActionTest {
 		renames.put("original.provides.impl", "transformed.provides.impl");
 		renames.put("original.main", "transformed.main");
 
-		Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
-		ClassActionImpl classAction = new ClassActionImpl(initData);
+		ClassActionImpl classAction = new ClassActionImpl(context);
 
 		ByteData outputData = classAction.apply(inputData);
 
@@ -217,11 +217,11 @@ public class ClassActionTest {
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.host", "transformed.host");
 		renames.put("original.member", "transformed.member");
-		Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 
-		ClassActionImpl classAction = new ClassActionImpl(initData);
+		ClassActionImpl classAction = new ClassActionImpl(context);
 		ByteData outputData = classAction.apply(inputData);
 
 		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputData.buffer()));
@@ -261,10 +261,10 @@ public class ClassActionTest {
 		renames.put("original.enclosing", "transformed.enclosing");
 		renames.put("original.param", "transformed.param");
 		renames.put("original.result", "transformed.result");
-		Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
 			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
-		ClassActionImpl classAction = new ClassActionImpl(initData);
+		ClassActionImpl classAction = new ClassActionImpl(context);
 		ByteData outputData = classAction.apply(inputData);
 
 		ClassFile transformed = ClassFile.parseClassFile(ByteBufferDataInput.wrap(outputData.buffer()));

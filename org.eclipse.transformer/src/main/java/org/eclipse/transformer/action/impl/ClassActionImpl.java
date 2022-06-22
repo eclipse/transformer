@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SignatureRule;
@@ -236,10 +237,10 @@ public class ClassActionImpl extends ElementActionImpl {
 		return line;
 	}
 
-	public ClassActionImpl(ActionInitData initData) {
-		super(initData);
+	public ClassActionImpl(ActionContext context) {
+		super(context);
 
-		List<StringReplacement> useReplacements = createActiveReplacements(initData.getSignatureRule());
+		List<StringReplacement> useReplacements = createActiveReplacements(context.getSignatureRule());
 
 		this.activeReplacements = useReplacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : useReplacements;
 	}

@@ -20,6 +20,7 @@ import java.util.jar.Manifest;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
@@ -35,8 +36,8 @@ import aQute.bnd.osgi.Resource;
 
 public class TransformerJarAction extends ContainerActionImpl {
 
-	public TransformerJarAction(ActionInitData initData, ActionSelector selector, boolean overwrite) {
-		super(initData, selector);
+	public TransformerJarAction(ActionContext context, ActionSelector selector, boolean overwrite) {
+		super(context, selector);
 		this.overwrite = overwrite;
 	}
 

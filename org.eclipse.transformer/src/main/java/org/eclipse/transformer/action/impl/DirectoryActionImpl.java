@@ -15,6 +15,7 @@ import java.io.File;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.ElementAction;
@@ -31,8 +32,8 @@ import org.eclipse.transformer.util.FileUtils;
  */
 public class DirectoryActionImpl extends ContainerActionImpl {
 
-	public DirectoryActionImpl(ActionInitData initData) {
-		super(initData);
+	public DirectoryActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	//

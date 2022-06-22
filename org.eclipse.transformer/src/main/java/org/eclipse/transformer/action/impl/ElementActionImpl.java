@@ -14,14 +14,15 @@ package org.eclipse.transformer.action.impl;
 import java.io.File;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.ElementAction;
 
 public abstract class ElementActionImpl extends ActionImpl implements ElementAction {
 
-	public ElementActionImpl(ActionInitData initData) {
-		super(initData);
+	public ElementActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	@Override

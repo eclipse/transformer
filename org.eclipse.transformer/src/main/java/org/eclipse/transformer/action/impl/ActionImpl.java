@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,6 +26,7 @@ import java.util.Map;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
@@ -80,68 +83,26 @@ import aQute.lib.io.IO;
  * unnecessary reallocations of the buffer while transforming many resources.
  */
 public abstract class ActionImpl implements Action {
-	public ActionImpl(ActionInitData initData) {
-		this.logger = initData.getLogger();
-
-		// Transformation rules data ...
-
-		this.resourceSelectionRule = initData.getSelectionRule();
-		this.signatureRule = initData.getSignatureRule();
+	public ActionImpl(ActionContext context) {
+		this.context = requireNonNull(context);
 
 		// Change tracking ...
 
 		this.changes = new ArrayDeque<>();
 		this.activeChanges = null;
 		this.lastActiveChanges = null;
-
-		// Buffer for the resource which is being transformed.
-
-		this.buffer = initData.getBuffer();
 	}
 
 	//
 
-	public static class ActionInitDataImpl implements ActionInitData {
-		public ActionInitDataImpl(Logger logger, InputBuffer inputBuffer, SelectionRule selectionRule,
-			SignatureRule signatureRule) {
-			this.logger = logger;
-			this.inputBuffer = inputBuffer;
-			this.selectionRule = selectionRule;
-			this.signatureRule = signatureRule;
-		}
+	private final ActionContext context;
 
-		private final Logger		logger;
-		private final InputBuffer	inputBuffer;
-		private final SelectionRule	selectionRule;
-		private final SignatureRule	signatureRule;
-
-		@Override
-		public Logger getLogger() {
-			return logger;
-		}
-
-		@Override
-		public InputBuffer getBuffer() {
-			return inputBuffer;
-		}
-
-		@Override
-		public SelectionRule getSelectionRule() {
-			return selectionRule;
-		}
-
-		@Override
-		public SignatureRule getSignatureRule() {
-			return signatureRule;
-		}
+	protected ActionContext getContext() {
+		return context;
 	}
-
-	//
-
-	private final Logger logger;
 
 	protected Logger getLogger() {
-		return logger;
+		return getContext().getLogger();
 	}
 
 	//
@@ -154,11 +115,9 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final SelectionRule resourceSelectionRule;
-
 	@Override
 	public SelectionRule getResourceSelectionRule() {
-		return resourceSelectionRule;
+		return getContext().getSelectionRule();
 	}
 
 	@Override
@@ -168,11 +127,9 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final SignatureRule signatureRule;
-
 	@Override
 	public SignatureRule getSignatureRule() {
-		return signatureRule;
+		return getContext().getSignatureRule();
 	}
 
 	public Map<String, String> getPackageRenames() {
@@ -339,10 +296,8 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final InputBuffer buffer;
-
 	protected InputBuffer getBuffer() {
-		return buffer;
+		return getContext().getBuffer();
 	}
 
 	//
