@@ -113,7 +113,9 @@ public interface Action {
 	 * @param resourceName The name of the resource.
 	 * @return True or false telling if the resource is to be transformed.
 	 */
-	boolean selectResource(String resourceName);
+	default boolean selectResource(String resourceName) {
+		return getResourceSelectionRule().select(resourceName);
+	}
 
 	//
 
@@ -164,7 +166,9 @@ public interface Action {
 	 * @param inputPath The initial path to the resource.
 	 * @return An output path for the resource.
 	 */
-	String relocateResource(String inputPath);
+	default String relocateResource(String inputPath) {
+		return getSignatureRule().relocateResource(inputPath);
+	}
 
 	/**
 	 * Stop recording transformation of a resource.
@@ -193,7 +197,10 @@ public interface Action {
 	 * @param inputResourceName The input resource name.
 	 * @param outputResourceName The output resource name.
 	 */
-	void setResourceNames(String inputResourceName, String outputResourceName);
+	default void setResourceNames(String inputResourceName, String outputResourceName) {
+		getActiveChanges().setInputResourceName(inputResourceName)
+			.setOutputResourceName(outputResourceName);
+	}
 
 	//
 
@@ -203,7 +210,9 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         had changes.
 	 */
-	boolean isChanged();
+	default boolean isChanged() {
+		return getActiveChanges().isChanged();
+	}
 
 	/**
 	 * Tell if the current application of this action had changes other than a
@@ -212,7 +221,9 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         had changes other than resource name changes.
 	 */
-	boolean isContentChanged();
+	default boolean isContentChanged() {
+		return getActiveChanges().isContentChanged();
+	}
 
 	/**
 	 * Tell if the current application of this action changed the name of the
@@ -221,7 +232,9 @@ public interface Action {
 	 * @return True or false telling if the current application of this action
 	 *         changed the name of the resource.
 	 */
-	boolean isRenamed();
+	default boolean isRenamed() {
+		return getActiveChanges().isRenamed();
+	}
 
 	//
 

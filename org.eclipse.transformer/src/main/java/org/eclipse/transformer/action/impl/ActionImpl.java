@@ -120,11 +120,6 @@ public abstract class ActionImpl implements Action {
 		return getContext().getSelectionRule();
 	}
 
-	@Override
-	public boolean selectResource(String resourceName) {
-		return getResourceSelectionRule().select(resourceName);
-	}
-
 	//
 
 	@Override
@@ -192,11 +187,6 @@ public abstract class ActionImpl implements Action {
 		return getSignatureRule().transformSignature(initialSignature, signatureType);
 	}
 
-	@Override
-	public String relocateResource(String inputPath) {
-		return getSignatureRule().relocateResource(inputPath);
-	}
-
 	//
 
 	@Override
@@ -262,29 +252,6 @@ public abstract class ActionImpl implements Action {
 	@Override
 	public Changes getActiveChanges() {
 		return activeChanges;
-	}
-
-	@Override
-	public void setResourceNames(String inputResourceName, String outputResourceName) {
-		getActiveChanges().setInputResourceName(inputResourceName)
-			.setOutputResourceName(outputResourceName);
-	}
-
-	//
-
-	@Override
-	public boolean isChanged() {
-		return getActiveChanges().isChanged();
-	}
-
-	@Override
-	public boolean isRenamed() {
-		return getActiveChanges().isRenamed();
-	}
-
-	@Override
-	public boolean isContentChanged() {
-		return getActiveChanges().isContentChanged();
 	}
 
 	//
