@@ -13,6 +13,7 @@ package org.eclipse.transformer.action;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -64,8 +65,15 @@ public interface ByteData {
 	//
 
 	/**
-	 * Answer a reader over this buffer.
+	 * Return an input stream over this buffer.
 	 *
+	 * @return An input stream over this buffer.
+	 */
+	InputStream stream();
+
+	/**
+	 * Answer a reader over this buffer.
+	 * The reader uses the charset returned by {@link #charset()}.
 	 * @return A reader on this buffer.
 	 */
 	BufferedReader reader();

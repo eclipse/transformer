@@ -13,6 +13,7 @@ package org.eclipse.transformer.action.impl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
@@ -67,6 +68,11 @@ public class ByteDataImpl implements ByteData {
 	}
 
 	//
+
+	@Override
+	public InputStream stream() {
+		return FileUtils.stream(buffer());
+	}
 
 	@Override
 	public BufferedReader reader() {

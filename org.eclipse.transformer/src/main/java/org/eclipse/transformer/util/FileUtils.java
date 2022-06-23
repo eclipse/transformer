@@ -303,12 +303,13 @@ public class FileUtils {
 
 	//
 
-	public static InputStream stream(ByteData byteData) {
-		return new ByteBufferInputStream(byteData.buffer());
+	public static InputStream stream(ByteBuffer buffer) {
+		InputStream stream = IO.stream(buffer);
+		return stream;
 	}
 
-	public static BufferedReader reader(ByteBuffer buffer) {
-		BufferedReader reader = IO.reader(buffer, UTF_8);
+	public static BufferedReader reader(ByteBuffer buffer, Charset charset) {
+		BufferedReader reader = IO.reader(buffer, charset);
 		return reader;
 	}
 

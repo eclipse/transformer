@@ -99,7 +99,7 @@ public class XmlActionImpl extends ElementActionImpl {
 	static final boolean XML_AS_PLAIN_TEXT;
 	static {
 		String value = System.getProperty("XML_AS_PLAIN_TEXT", "true");
-		XML_AS_PLAIN_TEXT = Boolean.valueOf(value);
+		XML_AS_PLAIN_TEXT = Boolean.parseBoolean(value);
 	}
 
 	@Override
@@ -117,7 +117,7 @@ public class XmlActionImpl extends ElementActionImpl {
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			transformUsingSaxParser(inputName, FileUtils.stream(inputData), outputStream);
+			transformUsingSaxParser(inputName, inputData.stream(), outputStream);
 
 			if (!isChanged()) {
 				return inputData;

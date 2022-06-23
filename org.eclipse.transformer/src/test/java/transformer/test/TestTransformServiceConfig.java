@@ -284,11 +284,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 			inputData = action.collect(inputName, inputStream);
 		}
 
-		List<String> inputLines = TestUtils.loadLines(FileUtils.stream(inputData));
+		List<String> inputLines = TestUtils.loadLines(inputData.stream());
 
 		ByteData transformedData = action.apply(inputData);
 
-		List<String> transformedLines = TestUtils.loadLines(FileUtils.stream(transformedData));
+		List<String> transformedLines = TestUtils.loadLines(transformedData.stream());
 		TestUtils.filter(transformedLines);
 		TestUtils.verify(inputName, expectedLines, transformedLines);
 	}

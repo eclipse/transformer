@@ -137,7 +137,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		try {
 			String outputPath = relocateResource(inputPath);
 			setResourceNames(inputPath, outputPath);
-			InputStream inputStream = FileUtils.stream(inputData);
+			InputStream inputStream = inputData.stream();
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 			applyStream(inputPath, inputStream, outputPath, outputStream);
 			if (!isChanged()) {

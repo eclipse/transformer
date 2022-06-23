@@ -566,7 +566,7 @@ public class TestTransformClass extends CaptureTest {
 		display(classAction.getLastActiveChanges());
 
 		ByteArrayOutputStream capturedOutput = new ByteArrayOutputStream();
-		FileUtils.transfer(FileUtils.stream(outputStreamData), capturedOutput);
+		FileUtils.transfer(outputStreamData.stream(), capturedOutput);
 		byte[] outputBytes = capturedOutput.toByteArray();
 		display("Output class size [ %s ]", outputBytes.length);
 		ClassFile outputClass = parse(outputBytes);

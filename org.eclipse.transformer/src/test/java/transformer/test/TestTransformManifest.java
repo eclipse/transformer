@@ -361,7 +361,7 @@ public class TestTransformManifest extends CaptureTest {
 			manifestOutput = manifestAction.apply(manifestAction.collect(inputPath, input));
 		}
 
-		List<String> outputLines = displayManifest(inputPath + " transformed", FileUtils.stream(manifestOutput));
+		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
 
 		System.out.println("Verify output [ " + inputPath + " ]");
 

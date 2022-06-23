@@ -115,7 +115,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 
 			Manifest initialManifest;
 			try {
-				initialManifest = new Manifest(FileUtils.stream(inputData));
+				initialManifest = new Manifest(inputData.stream());
 			} catch (IOException e) {
 				throw new TransformException("Failed to parse manifest [ " + inputData.name() + " ]", e);
 			}
