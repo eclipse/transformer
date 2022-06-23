@@ -79,7 +79,7 @@ public class TransformClassLoader extends ClassLoader {
 		ClassActionImpl classAction = getClassAction();
 		ByteData inputData = classAction.collect(resourceName, inputStream);
 		ByteData outputData = classAction.apply(inputData);
-		return FileUtils.stream(outputData);
+		return outputData.stream();
 	}
 
 	//
@@ -102,7 +102,7 @@ public class TransformClassLoader extends ClassLoader {
 		} else {
 			ByteData inputData = configAction.collect(resourceName, inputStream);
 			ByteData outputData = configAction.apply(inputData);
-			return FileUtils.stream(outputData);
+			return outputData.stream();
 		}
 	}
 

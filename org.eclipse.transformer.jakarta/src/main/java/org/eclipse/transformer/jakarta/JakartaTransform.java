@@ -18,6 +18,7 @@ import java.util.function.Function;
 
 public class JakartaTransform {
 
+	public static final String	DEFAULT_SELECTION_REFERENCE		= "jakarta-selection.properties";
 	public static final String	DEFAULT_RENAMES_REFERENCE		= "jakarta-renames.properties";
 	public static final String	DEFAULT_VERSIONS_REFERENCE		= "jakarta-versions.properties";
 	public static final String	DEFAULT_BUNDLES_REFERENCE		= "jakarta-bundles.properties";
@@ -31,6 +32,7 @@ public class JakartaTransform {
 	public static Map<String, String> getOptionDefaults() {
 		Map<String, String> optionDefaults = new HashMap<>();
 
+		optionDefaults.put("selection", DEFAULT_SELECTION_REFERENCE);
 		optionDefaults.put("renames", DEFAULT_RENAMES_REFERENCE);
 		optionDefaults.put("versions", DEFAULT_VERSIONS_REFERENCE);
 		optionDefaults.put("bundles", DEFAULT_BUNDLES_REFERENCE);

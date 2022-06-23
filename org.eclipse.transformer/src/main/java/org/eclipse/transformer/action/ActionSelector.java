@@ -32,8 +32,8 @@ public interface ActionSelector {
 		getActions().addAll(actions);
 	}
 
-	default <ACTION extends Action> ACTION addUsing(Function<? super Action.ActionInitData, ACTION> init, Action.ActionInitData initData){
-		ACTION action = init.apply(initData);
+	default <ACTION extends Action> ACTION addUsing(Function<? super ActionContext, ACTION> init, ActionContext context){
+		ACTION action = init.apply(context);
 		addAction(action);
 		return action;
 	}

@@ -26,6 +26,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.ElementAction;
@@ -51,29 +52,29 @@ import aQute.lib.io.IO;
  */
 public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
-	public static ZipActionImpl newZipAction(ActionInitData initData) {
-		return new ZipActionImpl(initData, "Zip Action", ActionType.ZIP, ".zip");
+	public static ZipActionImpl newZipAction(ActionContext context) {
+		return new ZipActionImpl(context, "Zip Action", ActionType.ZIP, ".zip");
 	}
 
-	public static ZipActionImpl newJarAction(ActionInitData initData) {
-		return new ZipActionImpl(initData, "Jar Action", ActionType.JAR, ".jar");
+	public static ZipActionImpl newJarAction(ActionContext context) {
+		return new ZipActionImpl(context, "Jar Action", ActionType.JAR, ".jar");
 	}
 
-	public static ZipActionImpl newWarAction(ActionInitData initData) {
-		return new ZipActionImpl(initData, "WAR Action", ActionType.WAR, ".war");
+	public static ZipActionImpl newWarAction(ActionContext context) {
+		return new ZipActionImpl(context, "WAR Action", ActionType.WAR, ".war");
 	}
 
-	public static ZipActionImpl newRarAction(ActionInitData initData) {
-		return new ZipActionImpl(initData, "RAR Action", ActionType.RAR, ".rar");
+	public static ZipActionImpl newRarAction(ActionContext context) {
+		return new ZipActionImpl(context, "RAR Action", ActionType.RAR, ".rar");
 	}
 
-	public static ZipActionImpl newEarAction(ActionInitData initData) {
-		return new ZipActionImpl(initData, "EAR Action", ActionType.EAR, ".ear");
+	public static ZipActionImpl newEarAction(ActionContext context) {
+		return new ZipActionImpl(context, "EAR Action", ActionType.EAR, ".ear");
 	}
 
-	public ZipActionImpl(ActionInitData initData, String name, ActionType actionType,
-		String extension) {
-		super(initData);
+	public ZipActionImpl(ActionContext context, String name, ActionType actionType,
+						 String extension) {
+		super(context);
 
 		this.name = name;
 		this.actionType = actionType;
@@ -136,7 +137,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		try {
 			String outputPath = relocateResource(inputPath);
 			setResourceNames(inputPath, outputPath);
-			InputStream inputStream = FileUtils.stream(inputData);
+			InputStream inputStream = inputData.stream();
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 			applyStream(inputPath, inputStream, outputPath, outputStream);
 			if (!isChanged()) {
@@ -145,7 +146,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 			ByteBuffer outputBuffer = isContentChanged()
 				? outputStream.toByteBuffer()
 				: inputData.buffer();
-			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer);
+			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer, inputData.charset());
 			return outputData;
 		} finally {
 			stopRecording(inputPath);

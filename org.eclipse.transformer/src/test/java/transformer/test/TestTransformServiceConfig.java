@@ -15,22 +15,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -46,7 +45,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformServiceConfig extends CaptureTest {
@@ -64,8 +62,8 @@ public class TestTransformServiceConfig extends CaptureTest {
 		System.setProperties(prior);
 	}
 
-	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Set<String> useIncludes,
-		Set<String> useExcludes) {
+	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Map<String, String> useIncludes,
+												 Map<String, String> useExcludes) {
 
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
@@ -128,20 +126,20 @@ public class TestTransformServiceConfig extends CaptureTest {
 	public static final String		JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
 	public static final String		JAKARTA_SERVLET_RESOURCES_VERSION	= "[2.6, 6.0)";
 
-	protected Set<String>			includes;
+	protected Map<String, String>			includes;
 
-	public Set<String> getIncludes() {
+	public Map<String, String> getIncludes() {
 		if (includes == null) {
-			includes = new HashSet<>();
-			includes.add(JAVAX_SAMPLE_READER_SERVICE_PATH);
-			includes.add(JAVAX_SAMPLE_WRITER_SERVICE_PATH);
+			includes = new HashMap<>();
+			includes.put(JAVAX_SAMPLE_READER_SERVICE_PATH, FileUtils.DEFAULT_CHARSET.name());
+			includes.put(JAVAX_SAMPLE_WRITER_SERVICE_PATH, FileUtils.DEFAULT_CHARSET.name());
 		}
 
 		return includes;
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	protected Map<String, String> packageRenames;
@@ -162,11 +160,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
 
-			jakartaServiceAction = new ServiceLoaderConfigActionImpl(initData);
+			jakartaServiceAction = new ServiceLoaderConfigActionImpl(context);
 		}
 		return jakartaServiceAction;
 	}
@@ -177,11 +175,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			javaxServiceAction = new ServiceLoaderConfigActionImpl(initData);
+			javaxServiceAction = new ServiceLoaderConfigActionImpl(context);
 		}
 		return javaxServiceAction;
 	}
@@ -194,11 +192,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, createBuffer(),
-				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
+			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = ZipActionImpl.newJarAction(initData);
+			jarJavaxServiceAction = ZipActionImpl.newJarAction(context);
 			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
 			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}
@@ -284,11 +282,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 			inputData = action.collect(inputName, inputStream);
 		}
 
-		List<String> inputLines = TestUtils.loadLines(FileUtils.stream(inputData));
+		List<String> inputLines = TestUtils.loadLines(inputData.stream());
 
 		ByteData transformedData = action.apply(inputData);
 
-		List<String> transformedLines = TestUtils.loadLines(FileUtils.stream(transformedData));
+		List<String> transformedLines = TestUtils.loadLines(transformedData.stream());
 		TestUtils.filter(transformedLines);
 		TestUtils.verify(inputName, expectedLines, transformedLines);
 	}

@@ -18,12 +18,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformXML extends CaptureTest {
@@ -68,12 +66,12 @@ public class TestTransformXML extends CaptureTest {
 
 	//
 
-	public Set<String> getIncludes() {
-		return Collections.emptySet();
+	public Map<String, String> getIncludes() {
+		return Collections.emptyMap();
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	//
@@ -106,11 +104,11 @@ public class TestTransformXML extends CaptureTest {
 		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
 					Collections.emptyMap()));
-			textAction = new TextActionImpl(initData);
+			textAction = new TextActionImpl(context);
 		}
 
 		return textAction;
@@ -176,7 +174,7 @@ public class TestTransformXML extends CaptureTest {
 		List<String> finalLines;
 		try (InputStream resourceInput = TestUtils.getResourceStream(resourceRef)) {
 			ByteData xmlOutput = useTextAction.apply(useTextAction.collect(resourceRef, resourceInput));
-			finalLines = display(resourceRef, FileUtils.stream(xmlOutput));
+			finalLines = display(resourceRef, xmlOutput.stream());
 		}
 
 		verify(resourceRef, "initial lines", initialOccurrences, initialLines);

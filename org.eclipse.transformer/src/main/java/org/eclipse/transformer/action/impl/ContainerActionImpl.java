@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.function.Function;
 
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ContainerAction;
@@ -40,13 +41,13 @@ import org.eclipse.transformer.action.ContainerAction;
  */
 public abstract class ContainerActionImpl extends ActionImpl implements ContainerAction {
 
-	public ContainerActionImpl(ActionInitData initData, ActionSelector actionSelector) {
-		super(initData);
+	public ContainerActionImpl(ActionContext context, ActionSelector actionSelector) {
+		super(context);
 		this.actionSelector = actionSelector;
 	}
 
-	public ContainerActionImpl(ActionInitData initData) {
-		this(initData, new ActionSelectorImpl());
+	public ContainerActionImpl(ActionContext context) {
+		this(context, new ActionSelectorImpl());
 	}
 
 	@Override
@@ -55,15 +56,8 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	@Override
 	public abstract ActionType getActionType();
 
-	// Used only for testing.
-
-	private Action.ActionInitData getInitData() {
-		return new ActionImpl.ActionInitDataImpl(getLogger(), getBuffer(), getResourceSelectionRule(),
-			getSignatureRule());
-	}
-
-	public <ACTION extends Action> ACTION addUsing(Function<? super Action.ActionInitData, ACTION> init) {
-		return getActionSelector().addUsing(init, getInitData());
+	public <ACTION extends Action> ACTION addUsing(Function<? super ActionContext, ACTION> init) {
+		return getActionSelector().addUsing(init, getContext());
 	}
 
 	//

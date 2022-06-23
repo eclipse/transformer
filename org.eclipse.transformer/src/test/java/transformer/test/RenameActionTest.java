@@ -16,8 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.lang.reflect.Method;
 import java.util.Collections;
 
-import org.eclipse.transformer.action.Action;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import aQute.bnd.unmodifiable.Maps;
+import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.RenameActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -27,8 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import aQute.bnd.unmodifiable.Maps;
 
 /**
  *
@@ -50,10 +49,10 @@ class RenameActionTest {
 
 	@Test
 	void relocate_resource() {
-		Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(logger, new InputBufferImpl(),
-			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()), new SignatureRuleImpl(logger,
+		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
+			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()), new SignatureRuleImpl(logger,
 				Maps.of("com.a.b.*", "com.shaded.a.b"), null, null, null, null, null, Collections.emptyMap()));
-		RenameActionImpl action = new RenameActionImpl(initData);
+		RenameActionImpl action = new RenameActionImpl(context);
 
 		assertThat(action.relocateResource("a/b/c/packageinfo")).isEqualTo("a/b/c/packageinfo");
 		assertThat(action.relocateResource("com/a/b/c/packageinfo")).isEqualTo("com/shaded/a/b/c/packageinfo");

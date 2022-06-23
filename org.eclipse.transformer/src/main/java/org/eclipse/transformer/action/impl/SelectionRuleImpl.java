@@ -11,50 +11,74 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import static org.eclipse.transformer.util.FileUtils.DEFAULT_CHARSET;
 
-import org.eclipse.transformer.TransformProperties;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+
+import aQute.bnd.unmodifiable.Maps;
 import org.eclipse.transformer.action.SelectionRule;
 import org.slf4j.Logger;
 
 public class SelectionRuleImpl implements SelectionRule {
+	private static final char RESOURCE_WILDCARD = '*';
 
-	public SelectionRuleImpl(Logger logger, Set<String> includes, Set<String> excludes) {
+	public SelectionRuleImpl(Logger logger, Map<String, String> includes, Map<String, String> excludes) {
 		this.logger = logger;
 
-		if (includes == null) {
-			this.included = Collections.emptySet();
-			this.includedExact = Collections.emptySet();
-			this.includedHead = Collections.emptySet();
-			this.includedTail = Collections.emptySet();
-			this.includedAny = Collections.emptySet();
-		} else {
-			this.included = new HashSet<>(includes);
-			this.includedExact = new HashSet<>();
-			this.includedHead = new HashSet<>();
-			this.includedTail = new HashSet<>();
-			this.includedAny = new HashSet<>();
-			TransformProperties.processSelections(this.included, this.includedExact, this.includedHead,
-				this.includedTail, this.includedAny);
-		}
+		included = processSelections(includes);
+		excluded = processSelections(excludes);
+	}
 
-		if (excludes == null) {
-			this.excluded = Collections.emptySet();
-			this.excludedExact = Collections.emptySet();
-			this.excludedHead = Collections.emptySet();
-			this.excludedTail = Collections.emptySet();
-			this.excludedAny = Collections.emptySet();
-		} else {
-			this.excluded = new HashSet<>(excludes);
-			this.excludedExact = new HashSet<>();
-			this.excludedHead = new HashSet<>();
-			this.excludedTail = new HashSet<>();
-			this.excludedAny = new HashSet<>();
-			TransformProperties.processSelections(this.excluded, this.excludedExact, this.excludedHead,
-				this.excludedTail, this.excludedAny);
+	private final MatchSet	included;
+	private final MatchSet	excluded;
+
+	private MatchSet processSelections(Map<String, String> selections) {
+		if (selections == null) {
+			return null;
 		}
+		Map<String, Charset> exact = new HashMap<>();
+		Map<String, Charset> head = new HashMap<>();
+		Map<String, Charset> tail = new HashMap<>();
+		Map<String, Charset> middle = new HashMap<>();
+		Charset all = null;
+		for (Map.Entry<String, String> selectionEntry : selections.entrySet()) {
+			String selection = selectionEntry.getKey();
+			int selectionLength = selection.length();
+			if (selectionLength == 0) {
+				continue;
+			}
+
+			String charsetName = selectionEntry.getValue();
+			Charset charset = DEFAULT_CHARSET;
+			if (!charsetName.isEmpty()) {
+				try {
+					charset = Charset.forName(charsetName);
+				} catch (IllegalArgumentException e) {
+					getLogger().warn("Invalid charset name for selection [ {} ]: \"{}\". Defaulting to {}}", selection, charsetName, DEFAULT_CHARSET, e);
+				}
+			}
+			boolean matchHead = selection.charAt(0) == RESOURCE_WILDCARD;
+			boolean matchTail = selection.charAt(selectionLength - 1) == RESOURCE_WILDCARD;
+			if (matchHead) {
+				if (selectionLength == 1) { // A single '*' matches everything
+					all = charset;
+				} else if (matchTail) {
+					middle.put(selection.substring(1, selectionLength - 1), charset);
+				} else {
+					head.put(selection.substring(1), charset);
+				}
+			} else if (matchTail) {
+				tail.put(selection.substring(0, selectionLength - 1), charset);
+			} else {
+				exact.put(selection, charset);
+			}
+		}
+		if ((all == null) && exact.isEmpty() && head.isEmpty() && tail.isEmpty() && middle.isEmpty()) {
+			return null;
+		}
+		return new MatchSet(exact, head, tail, middle, all);
 	}
 
 	//
@@ -67,93 +91,93 @@ public class SelectionRuleImpl implements SelectionRule {
 
 	//
 
-	private final Set<String>	included;
-	private final Set<String>	includedExact;
-	private final Set<String>	includedHead;
-	private final Set<String>	includedTail;
-	private final Set<String>	includedAny;
-
-	private final Set<String>	excluded;
-	private final Set<String>	excludedExact;
-	private final Set<String>	excludedHead;
-	private final Set<String>	excludedTail;
-	private final Set<String>	excludedAny;
-
 	@Override
 	public boolean select(String resourceName) {
-		boolean isIncluded = selectIncluded(resourceName);
-		boolean isExcluded = rejectExcluded(resourceName);
-
-		return (isIncluded && !isExcluded);
+		return selectIncluded(resourceName) && !rejectExcluded(resourceName);
 	}
 
 	@Override
 	public boolean selectIncluded(String resourceName) {
-		if (included.isEmpty()) {
-			getLogger().debug("Include [ {} ]: {}", resourceName, "No includes");
+		if (included == null) {
+			getLogger().debug("Include [ {} ]: {}", resourceName, "*=UTF-8 (No includes)");
 			return true;
-
-		} else if (includedExact.contains(resourceName)) {
-			getLogger().debug("Include [ {} ]: {}", resourceName, "Exact include");
-			return true;
-
-		} else {
-			for (String tail : includedHead) {
-				if (resourceName.endsWith(tail)) {
-					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match tail", tail);
-					return true;
-				}
-			}
-			for (String head : includedTail) {
-				if (resourceName.startsWith(head)) {
-					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match head", head);
-					return true;
-				}
-			}
-			for (String middle : includedAny) {
-				if (resourceName.contains(middle)) {
-					getLogger().debug("Include [ {} ]: {} ({})", resourceName, "Match middle", middle);
-					return true;
-				}
-			}
-
-			getLogger().debug("Do not include [ {} ]", resourceName);
-			return false;
 		}
+		Map.Entry<String, Charset> match = included.match(resourceName);
+		if (match != null) {
+			getLogger().debug("Include [ {} ]: {}", resourceName, match);
+			return true;
+		}
+		getLogger().debug("Do not include [ {} ]", resourceName);
+		return false;
 	}
 
 	@Override
 	public boolean rejectExcluded(String resourceName) {
-		if (excluded.isEmpty()) {
-			getLogger().debug("Do not exclude[ {} ]: {}", resourceName, "No excludes");
+		if (excluded == null) {
+			getLogger().debug("Do not exclude [ {} ]: {}", resourceName, "No excludes");
 			return false;
-
-		} else if (excludedExact.contains(resourceName)) {
-			getLogger().debug("Exclude [ {} ]: {}", resourceName, "Exact exclude");
+		}
+		Map.Entry<String, Charset> match = excluded.match(resourceName);
+		if (match != null) {
+			getLogger().debug("Exclude [ {} ]: {}", resourceName, match.getKey());
 			return true;
+		}
+		getLogger().debug("Do not exclude [ {} ]", resourceName);
+		return false;
+	}
 
-		} else {
-			for (String tail : excludedHead) {
-				if (resourceName.endsWith(tail)) {
-					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match tail", tail);
-					return true;
-				}
+	@Override
+	public Charset charset(String resourceName) {
+		if (included != null) {
+			Map.Entry<String, Charset> match = included.match(resourceName);
+			if (match != null) {
+				getLogger().trace("Charset [ {} ]: {}", resourceName, match);
+				return match.getValue();
 			}
-			for (String head : excludedTail) {
-				if (resourceName.startsWith(head)) {
-					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match head", head);
-					return true;
-				}
-			}
-			for (String middle : excludedAny) {
-				if (resourceName.contains(middle)) {
-					getLogger().debug("Exclude[ {} ]: {} ({})", resourceName, "Match middle", middle);
-					return true;
-				}
-			}
+		}
+		getLogger().trace("Charset [ {} ]: <<default>> {}", resourceName, DEFAULT_CHARSET);
+		return DEFAULT_CHARSET;
+	}
 
-			getLogger().debug("Do not exclude [ {} ]", resourceName);
-			return false;
+	static class MatchSet {
+		MatchSet(Map<String, Charset> exact, Map<String, Charset> head, Map<String, Charset> tail, Map<String, Charset> middle, Charset all) {
+			this.exact = Maps.copyOf(exact);
+			this.head = Maps.copyOf(head);
+			this.tail = Maps.copyOf(tail);
+			this.middle = Maps.copyOf(middle);
+			this.all = all;
+		}
+
+		private final Map<String, Charset> exact;
+		private final Map<String, Charset> head;
+		private final Map<String, Charset> tail;
+		private final Map<String, Charset> middle;
+		private final Charset all;
+
+		Map.Entry<String, Charset> match(String resourceName) {
+			Charset charset = exact.get(resourceName);
+			if (charset != null) {
+				return Maps.entry(resourceName, charset);
+			}
+			for (Map.Entry<String, Charset> entry : head.entrySet()) {
+				if (resourceName.endsWith(entry.getKey())) {
+					return entry;
+				}
+			}
+			for (Map.Entry<String, Charset> entry : tail.entrySet()) {
+				if (resourceName.startsWith(entry.getKey())) {
+					return entry;
+				}
+			}
+			for (Map.Entry<String, Charset> entry : middle.entrySet()) {
+				if (resourceName.contains(entry.getKey())) {
+					return entry;
+				}
+			}
+			if (all != null) {
+				return Maps.entry("*", all);
+			}
+			return null;
 		}
 	}
 }

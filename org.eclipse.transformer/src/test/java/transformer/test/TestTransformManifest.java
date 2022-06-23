@@ -23,14 +23,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
-import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionImpl;
+import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
@@ -105,12 +103,12 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_TRANSACTION_TSR				= "jakarta.transaction.TransactionSynchronizationRegistry";
 	public static final String	JAKARTA_TRANSACTION_UT				= "jakarta.transaction.UserTransaction";
 
-	public Set<String> getIncludes() {
-		return Collections.emptySet();
+	public Map<String, String> getIncludes() {
+		return Collections.emptyMap();
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	public Map<String, String> getPackageRenames() {
@@ -200,12 +198,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, getBundleUpdates(),
 					null, getDirectStrings(), Collections.emptyMap()));
 
-			jakartaManifestAction = ManifestActionImpl.newManifestAction(initData);
+			jakartaManifestAction = ManifestActionImpl.newManifestAction(context);
 		}
 		return jakartaManifestAction;
 	}
@@ -216,12 +214,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()));
 
-			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(initData);
+			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(context);
 		}
 
 		return jakartaFeatureAction;
@@ -235,12 +233,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()));
 
-			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(initData);
+			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(context);
 
 		}
 		return jakartaManifestActionTx;
@@ -252,12 +250,12 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()));
 
-			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(initData);
+			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(context);
 		}
 
 		return specificJakartaManifestAction;
@@ -361,7 +359,7 @@ public class TestTransformManifest extends CaptureTest {
 			manifestOutput = manifestAction.apply(manifestAction.collect(inputPath, input));
 		}
 
-		List<String> outputLines = displayManifest(inputPath + " transformed", FileUtils.stream(manifestOutput));
+		List<String> outputLines = displayManifest(inputPath + " transformed", manifestOutput.stream());
 
 		System.out.println("Verify output [ " + inputPath + " ]");
 
@@ -618,8 +616,8 @@ public class TestTransformManifest extends CaptureTest {
 	 * Subclass which allows us to call protected methods of ManifestActionImpl
 	 */
 	class ManifestActionImpl_Test extends ManifestActionImpl {
-		public ManifestActionImpl_Test(ActionInitData initData) {
-			super(initData, true);
+		public ManifestActionImpl_Test(ActionContext context) {
+			super(context, true);
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {
@@ -645,10 +643,10 @@ public class TestTransformManifest extends CaptureTest {
 		if (manifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, null, null, null, Collections.emptyMap()));
-			manifestAction_test = new ManifestActionImpl_Test(initData);
+			manifestAction_test = new ManifestActionImpl_Test(context);
 		}
 
 		return manifestAction_test;
@@ -660,13 +658,13 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificManifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			Action.ActionInitData initData = new ActionImpl.ActionInitDataImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),
 					null, null, null, Collections.emptyMap()));
 
-			specificManifestAction_test = new ManifestActionImpl_Test(initData);
+			specificManifestAction_test = new ManifestActionImpl_Test(context);
 		}
 
 		return specificManifestAction_test;

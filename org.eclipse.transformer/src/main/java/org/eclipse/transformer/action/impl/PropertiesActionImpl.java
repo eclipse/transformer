@@ -12,6 +12,7 @@
 package org.eclipse.transformer.action.impl;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 
@@ -31,8 +32,8 @@ import org.eclipse.transformer.action.ByteData;
  */
 public class PropertiesActionImpl extends ElementActionImpl {
 
-	public PropertiesActionImpl(ActionInitData initData) {
-		super(initData);
+	public PropertiesActionImpl(ActionContext context) {
+		super(context);
 	}
 
 	@Override

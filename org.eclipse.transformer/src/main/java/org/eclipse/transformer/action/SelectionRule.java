@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action;
 
+import java.nio.charset.Charset;
+
 public interface SelectionRule {
 	boolean select(String resourceName);
 
@@ -18,4 +20,5 @@ public interface SelectionRule {
 
 	boolean rejectExcluded(String resourceName);
 
+	Charset charset(String resourceName);
 }

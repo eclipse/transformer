@@ -11,10 +11,13 @@
 
 package org.eclipse.transformer.action.impl;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,8 +25,10 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
@@ -34,8 +39,6 @@ import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
-
-import aQute.lib.io.IO;
 
 /**
  * <em>Root action implementation.</em>
@@ -80,68 +83,26 @@ import aQute.lib.io.IO;
  * unnecessary reallocations of the buffer while transforming many resources.
  */
 public abstract class ActionImpl implements Action {
-	public ActionImpl(ActionInitData initData) {
-		this.logger = initData.getLogger();
-
-		// Transformation rules data ...
-
-		this.resourceSelectionRule = initData.getSelectionRule();
-		this.signatureRule = initData.getSignatureRule();
+	public ActionImpl(ActionContext context) {
+		this.context = requireNonNull(context);
 
 		// Change tracking ...
 
 		this.changes = new ArrayDeque<>();
 		this.activeChanges = null;
 		this.lastActiveChanges = null;
-
-		// Buffer for the resource which is being transformed.
-
-		this.buffer = initData.getBuffer();
 	}
 
 	//
 
-	public static class ActionInitDataImpl implements ActionInitData {
-		public ActionInitDataImpl(Logger logger, InputBuffer inputBuffer, SelectionRule selectionRule,
-			SignatureRule signatureRule) {
-			this.logger = logger;
-			this.inputBuffer = inputBuffer;
-			this.selectionRule = selectionRule;
-			this.signatureRule = signatureRule;
-		}
+	private final ActionContext context;
 
-		private final Logger		logger;
-		private final InputBuffer	inputBuffer;
-		private final SelectionRule	selectionRule;
-		private final SignatureRule	signatureRule;
-
-		@Override
-		public Logger getLogger() {
-			return logger;
-		}
-
-		@Override
-		public InputBuffer getBuffer() {
-			return inputBuffer;
-		}
-
-		@Override
-		public SelectionRule getSelectionRule() {
-			return selectionRule;
-		}
-
-		@Override
-		public SignatureRule getSignatureRule() {
-			return signatureRule;
-		}
+	protected ActionContext getContext() {
+		return context;
 	}
-
-	//
-
-	private final Logger logger;
 
 	protected Logger getLogger() {
-		return logger;
+		return getContext().getLogger();
 	}
 
 	//
@@ -154,25 +115,16 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final SelectionRule resourceSelectionRule;
-
 	@Override
 	public SelectionRule getResourceSelectionRule() {
-		return resourceSelectionRule;
-	}
-
-	@Override
-	public boolean selectResource(String resourceName) {
-		return getResourceSelectionRule().select(resourceName);
+		return getContext().getSelectionRule();
 	}
 
 	//
 
-	private final SignatureRule signatureRule;
-
 	@Override
 	public SignatureRule getSignatureRule() {
-		return signatureRule;
+		return getContext().getSignatureRule();
 	}
 
 	public Map<String, String> getPackageRenames() {
@@ -233,11 +185,6 @@ public abstract class ActionImpl implements Action {
 
 	public String transformSignature(String initialSignature, SignatureType signatureType) {
 		return getSignatureRule().transformSignature(initialSignature, signatureType);
-	}
-
-	@Override
-	public String relocateResource(String inputPath) {
-		return getSignatureRule().relocateResource(inputPath);
 	}
 
 	//
@@ -307,29 +254,6 @@ public abstract class ActionImpl implements Action {
 		return activeChanges;
 	}
 
-	@Override
-	public void setResourceNames(String inputResourceName, String outputResourceName) {
-		getActiveChanges().setInputResourceName(inputResourceName)
-			.setOutputResourceName(outputResourceName);
-	}
-
-	//
-
-	@Override
-	public boolean isChanged() {
-		return getActiveChanges().isChanged();
-	}
-
-	@Override
-	public boolean isRenamed() {
-		return getActiveChanges().isRenamed();
-	}
-
-	@Override
-	public boolean isContentChanged() {
-		return getActiveChanges().isContentChanged();
-	}
-
 	//
 
 	@Override
@@ -339,10 +263,8 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	private final InputBuffer buffer;
-
 	protected InputBuffer getBuffer() {
-		return buffer;
+		return getContext().getBuffer();
 	}
 
 	//
@@ -372,8 +294,9 @@ public abstract class ActionImpl implements Action {
 		// This is a good case for a category of files and entries which should
 		// be omitted.
 
+		Charset charset = resourceCharset(inputName);
 		try {
-			return FileUtils.read(getLogger(), inputName, inputStream, inputCount, getBuffer());
+			return FileUtils.read(getLogger(), inputName, charset, inputStream, inputCount, getBuffer());
 		} catch (IOException e) {
 			throw new TransformException("Failed to read [ " + inputName + " ] count [ " + inputCount + " ]", e);
 		}

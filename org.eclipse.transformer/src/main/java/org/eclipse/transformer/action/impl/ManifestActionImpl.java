@@ -18,12 +18,14 @@ import static org.eclipse.transformer.util.SignatureUtils.stripWildcard;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
@@ -57,16 +59,16 @@ public class ManifestActionImpl extends ElementActionImpl {
 	private static final boolean	IS_MANIFEST				= true;
 	private static final boolean	IS_FEATURE				= !IS_MANIFEST;
 
-	public static ManifestActionImpl newManifestAction(ActionInitData initData) {
-		return new ManifestActionImpl(initData, IS_MANIFEST);
+	public static ManifestActionImpl newManifestAction(ActionContext context) {
+		return new ManifestActionImpl(context, IS_MANIFEST);
 	}
 
-	public static ManifestActionImpl newFeatureAction(ActionInitData initData) {
-		return new ManifestActionImpl(initData, IS_FEATURE);
+	public static ManifestActionImpl newFeatureAction(ActionContext context) {
+		return new ManifestActionImpl(context, IS_FEATURE);
 	}
 
-	public ManifestActionImpl(ActionInitData initData, boolean isManifest) {
-		super(initData);
+	public ManifestActionImpl(ActionContext context, boolean isManifest) {
+		super(context);
 		this.isManifest = isManifest;
 	}
 
@@ -114,7 +116,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 
 			Manifest initialManifest;
 			try {
-				initialManifest = new Manifest(FileUtils.stream(inputData));
+				initialManifest = new Manifest(inputData.stream());
 			} catch (IOException e) {
 				throw new TransformException("Failed to parse manifest [ " + inputData.name() + " ]", e);
 			}
@@ -128,6 +130,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 				return inputData;
 			}
 
+			Charset charset = inputData.charset();
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 			try {
 				write(finalManifest, outputStream);
@@ -135,7 +138,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 				throw new TransformException("Failed to write manifest [ " + inputData.name() + " ]", e);
 			}
 
-			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer(), charset);
 			getLogger().debug("[ {}.{} ]: Final [ {} ]", className, methodName, outputData);
 			return outputData;
 		} finally {

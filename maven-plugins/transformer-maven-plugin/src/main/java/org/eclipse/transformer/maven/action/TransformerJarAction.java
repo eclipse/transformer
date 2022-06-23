@@ -13,6 +13,7 @@ package org.eclipse.transformer.maven.action;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.jar.Manifest;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
+import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
@@ -35,8 +37,8 @@ import aQute.bnd.osgi.Resource;
 
 public class TransformerJarAction extends ContainerActionImpl {
 
-	public TransformerJarAction(ActionInitData initData, ActionSelector selector, boolean overwrite) {
-		super(initData, selector);
+	public TransformerJarAction(ActionContext context, ActionSelector selector, boolean overwrite) {
+		super(context, selector);
 		this.overwrite = overwrite;
 	}
 
@@ -112,7 +114,8 @@ public class TransformerJarAction extends ContainerActionImpl {
 					ByteBuffer bb = resource.buffer();
 					ByteData inputData;
 					if (bb != null) {
-						inputData = new ByteDataImpl(inputPath, bb);
+						Charset charset = resourceCharset(inputPath);
+						inputData = new ByteDataImpl(inputPath, bb, charset);
 					} else {
 						inputData = collect(inputPath, resource.openInputStream(), Math.toIntExact(resource.size()));
 					}
