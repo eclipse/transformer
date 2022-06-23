@@ -11,12 +11,11 @@
 package transformer.test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
@@ -25,11 +24,11 @@ import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformPropertiesFile extends CaptureTest {
@@ -46,8 +45,8 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		System.setProperties(prior);
 	}
 
-	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Set<String> useIncludes,
-		Set<String> useExcludes) {
+	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Map<String, String> useIncludes,
+												 Map<String, String> useExcludes) {
 
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
@@ -65,19 +64,19 @@ public class TestTransformPropertiesFile extends CaptureTest {
 
 	public static final String	JAKARTA_PATH	= "jakarta/servlet/Bundle.properties";
 
-	protected Set<String>		includes;
+	protected Map<String, String>		includes;
 
-	public Set<String> getIncludes() {
+	public Map<String, String> getIncludes() {
 		if (includes == null) {
-			includes = new HashSet<>();
-			includes.add(JAVAX_PATH);
+			includes = new HashMap<>();
+			includes.put(JAVAX_PATH, FileUtils.DEFAULT_CHARSET.name());
 		}
 
 		return includes;
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	protected Map<String, String> packageRenames;

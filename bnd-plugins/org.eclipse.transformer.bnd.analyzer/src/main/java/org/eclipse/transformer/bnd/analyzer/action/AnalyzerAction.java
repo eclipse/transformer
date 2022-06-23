@@ -13,6 +13,7 @@ package org.eclipse.transformer.bnd.analyzer.action;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,8 @@ public class AnalyzerAction extends ContainerActionImpl {
 					ByteBuffer bb = resource.buffer();
 					ByteData inputData;
 					if (bb != null) {
-						inputData = new ByteDataImpl(inputPath, bb);
+						Charset charset = resourceCharset(inputPath);
+						inputData = new ByteDataImpl(inputPath, bb, charset);
 					} else {
 						inputData = collect(inputPath, resource.openInputStream(),
 							Math.toIntExact(resource.size()));

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 /**
  * A byte data buffer.
@@ -77,6 +78,13 @@ public interface ByteData {
 	 * @return A reader on this buffer.
 	 */
 	BufferedReader reader();
+
+	/**
+	 * The charset to use for this ByteData.
+	 *
+	 * @return The charset to use for this ByteData.
+	 */
+	Charset charset();
 
 	/**
 	 * Copy this byte data to an output stream.

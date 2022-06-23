@@ -25,14 +25,21 @@ import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
+import aQute.bnd.classfile.AnnotationInfo;
+import aQute.bnd.classfile.AnnotationsAttribute;
+import aQute.bnd.classfile.Attribute;
+import aQute.bnd.classfile.ClassFile;
+import aQute.bnd.classfile.ElementValueInfo;
+import aQute.bnd.classfile.FieldInfo;
+import aQute.bnd.classfile.MethodInfo;
+import aQute.lib.io.ByteBufferDataInput;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.ActionContext;
@@ -49,15 +56,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import aQute.bnd.classfile.AnnotationInfo;
-import aQute.bnd.classfile.AnnotationsAttribute;
-import aQute.bnd.classfile.Attribute;
-import aQute.bnd.classfile.ClassFile;
-import aQute.bnd.classfile.ElementValueInfo;
-import aQute.bnd.classfile.FieldInfo;
-import aQute.bnd.classfile.MethodInfo;
-import aQute.lib.io.ByteBufferDataInput;
 import transformer.test.data.Sample_InjectAPI_Jakarta;
 import transformer.test.data.Sample_InjectAPI_Javax;
 import transformer.test.data.Sample_Repeat_Target;
@@ -213,27 +211,21 @@ public class TestTransformClass extends CaptureTest {
 
 	//
 
-	protected Set<String> includes;
+	protected Map<String, String> includes;
 
-	public Set<String> getIncludes() {
+	public Map<String, String> getIncludes() {
 		if (includes == null) {
-			includes = new HashSet<>();
-			includes.add(SignatureUtils.classNameToResourceName(INJECT_JAVAX_CLASS_NAME));
-			includes.add(SignatureUtils.classNameToResourceName(INJECT_JAKARTA_CLASS_NAME));
-
-			includes.add(SignatureUtils.classNameToResourceName(REPEAT_TARGET_CLASS_NAME));
-
-			// includes.add( TEST_DATA_RESOURCE_NAME + '/' +
-			// ANNOTATED_SERVLET_SIMPLE_CLASS_NAME);
-			// includes.add( TEST_DATA_RESOURCE_NAME + '/' +
-			// MIXED_SERVLET_SIMPLE_CLASS_NAME);
+			includes = new HashMap<>();
+			includes.put(SignatureUtils.classNameToResourceName(INJECT_JAVAX_CLASS_NAME), "");
+			includes.put(SignatureUtils.classNameToResourceName(INJECT_JAKARTA_CLASS_NAME), "");
+			includes.put(SignatureUtils.classNameToResourceName(REPEAT_TARGET_CLASS_NAME), "");
 		}
 
 		return includes;
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	protected Map<String, String> toJakartaRenames;
@@ -266,9 +258,9 @@ public class TestTransformClass extends CaptureTest {
 	public static final String	OVERRIDE_TARGET_RESOURCE_NAME	= SignatureUtils
 		.classNameToResourceName(OVERRIDE_TARGET_CLASS_NAME);
 
-	public Set<String> getOverrideIncludes() {
-		Set<String> overrideIncludes = new HashSet<>();
-		overrideIncludes.add(OVERRIDE_TARGET_RESOURCE_NAME);
+	public Map<String, String> getOverrideIncludes() {
+		Map<String, String> overrideIncludes = new HashMap<>();
+		overrideIncludes.put(OVERRIDE_TARGET_RESOURCE_NAME, FileUtils.DEFAULT_CHARSET.name());
 		return overrideIncludes;
 	}
 
@@ -530,7 +522,7 @@ public class TestTransformClass extends CaptureTest {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
 		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
-			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
+			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
 		return new ClassActionImpl(context);
@@ -831,7 +823,7 @@ public class TestTransformClass extends CaptureTest {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
 		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
-			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()), createSignatureRule(
+			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()), createSignatureRule(
 				useLogger, Collections.emptyMap(), null, null, getDirectStrings(), Collections.emptyMap()));
 
 		return new ClassActionImpl(context);
@@ -841,7 +833,7 @@ public class TestTransformClass extends CaptureTest {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
 		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
-			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
+			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, Collections.emptyMap(), null, null, null, PER_CLASS_CONSTANT_MASTER));
 
 		return new ClassActionImpl(context);
@@ -1206,7 +1198,7 @@ public class TestTransformClass extends CaptureTest {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
 		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
-			createSelectionRule(useLogger, Collections.emptySet(), Collections.emptySet()),
+			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
 
 		return new ClassActionImpl(context);

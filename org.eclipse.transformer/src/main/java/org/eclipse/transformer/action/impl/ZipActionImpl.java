@@ -146,7 +146,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 			ByteBuffer outputBuffer = isContentChanged()
 				? outputStream.toByteBuffer()
 				: inputData.buffer();
-			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer);
+			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer, inputData.charset());
 			return outputData;
 		} finally {
 			stopRecording(inputPath);

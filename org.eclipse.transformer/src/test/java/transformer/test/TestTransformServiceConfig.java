@@ -15,13 +15,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -46,7 +45,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformServiceConfig extends CaptureTest {
@@ -64,8 +62,8 @@ public class TestTransformServiceConfig extends CaptureTest {
 		System.setProperties(prior);
 	}
 
-	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Set<String> useIncludes,
-		Set<String> useExcludes) {
+	public SelectionRuleImpl createSelectionRule(CaptureLoggerImpl useLogger, Map<String, String> useIncludes,
+												 Map<String, String> useExcludes) {
 
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
@@ -128,20 +126,20 @@ public class TestTransformServiceConfig extends CaptureTest {
 	public static final String		JAKARTA_SERVLET_HTTP_VERSION		= "[2.6, 6.0)";
 	public static final String		JAKARTA_SERVLET_RESOURCES_VERSION	= "[2.6, 6.0)";
 
-	protected Set<String>			includes;
+	protected Map<String, String>			includes;
 
-	public Set<String> getIncludes() {
+	public Map<String, String> getIncludes() {
 		if (includes == null) {
-			includes = new HashSet<>();
-			includes.add(JAVAX_SAMPLE_READER_SERVICE_PATH);
-			includes.add(JAVAX_SAMPLE_WRITER_SERVICE_PATH);
+			includes = new HashMap<>();
+			includes.put(JAVAX_SAMPLE_READER_SERVICE_PATH, FileUtils.DEFAULT_CHARSET.name());
+			includes.put(JAVAX_SAMPLE_WRITER_SERVICE_PATH, FileUtils.DEFAULT_CHARSET.name());
 		}
 
 		return includes;
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	protected Map<String, String> packageRenames;
@@ -195,7 +193,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
 
 			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
-				createSelectionRule(useLogger, Collections.emptySet(), getExcludes()),
+				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
 			jarJavaxServiceAction = ZipActionImpl.newJarAction(context);

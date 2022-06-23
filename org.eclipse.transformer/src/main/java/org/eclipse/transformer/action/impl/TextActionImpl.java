@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +95,8 @@ public class TextActionImpl extends ElementActionImpl {
 
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
+			Charset charset = inputData.charset();
+			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
 				transform(inputName, reader, writer);
 			} catch (IOException e) {
 				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -105,7 +107,7 @@ public class TextActionImpl extends ElementActionImpl {
 			} else if (!isContentChanged()) {
 				return inputData.copy(outputName);
 			} else {
-				return new ByteDataImpl(outputName, outputStream.toByteBuffer());
+				return new ByteDataImpl(outputName, outputStream.toByteBuffer(), charset);
 			}
 
 		} finally {

@@ -109,8 +109,8 @@ public class Transformer {
 	 */
 	private URI								base	= IO.work.toURI();
 
-	public Set<String>						includes;
-	public Set<String>						excludes;
+	public Map<String, String>				includes;
+	public Map<String, String>				excludes;
 
 	public boolean							invert;
 	public Map<String, String>				packageRenames;
@@ -334,8 +334,8 @@ public class Transformer {
 		invert = options.hasOption(AppOption.INVERT);
 
 		if ( !selectionProperties.isEmpty() ) {
-			includes = new HashSet<>();
-			excludes = new HashSet<>();
+			includes = new HashMap<>();
+			excludes = new HashMap<>();
 			TransformProperties.addSelections(includes, excludes, selectionProperties);
 			getLogger().info(consoleMarker, "Selection rules are in use");
 		} else {
@@ -494,14 +494,14 @@ public class Transformer {
 		}
 	}
 
-	private void addImmediateSelection(String selection, @SuppressWarnings("unused") String ignored) {
+	private void addImmediateSelection(String selection, String charset) {
 		if ( includes == null ) {
-			includes = new HashSet<>();
-			excludes = new HashSet<>();
+			includes = new HashMap<>();
+			excludes = new HashMap<>();
 			getLogger().info(consoleMarker, "Selection rules use forced by immediate data");
 		}
 
-		TransformProperties.addSelection(includes, excludes, selection);
+		TransformProperties.addSelection(includes, excludes, selection, charset);
 	}
 
 	private void addImmediateRename(
@@ -870,16 +870,14 @@ public class Transformer {
 		if ((includes == null) || includes.isEmpty()) {
 			getLogger().debug("  [ ** NONE ** ]");
 		} else {
-			for (String include : includes) {
-				getLogger().debug("  [ {} ]", include);
-			}
+			includes.forEach((include, charset) -> getLogger().debug("  [ {} ] [ {} ]", include, charset));
 		}
 
 		getLogger().debug("Excludes:");
 		if ((excludes == null) || excludes.isEmpty()) {
 			getLogger().debug("  [ ** NONE ** ]");
 		} else {
-			for (String exclude : excludes) {
+			for (String exclude : excludes.keySet()) {
 				getLogger().debug("  [ {} ]", exclude);
 			}
 		}

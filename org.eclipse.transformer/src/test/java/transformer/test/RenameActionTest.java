@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.lang.reflect.Method;
 import java.util.Collections;
 
+import aQute.bnd.unmodifiable.Maps;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
@@ -27,8 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import aQute.bnd.unmodifiable.Maps;
 
 /**
  *
@@ -51,7 +50,7 @@ class RenameActionTest {
 	@Test
 	void relocate_resource() {
 		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
-			new SelectionRuleImpl(logger, Collections.emptySet(), Collections.emptySet()), new SignatureRuleImpl(logger,
+			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()), new SignatureRuleImpl(logger,
 				Maps.of("com.a.b.*", "com.shaded.a.b"), null, null, null, null, null, Collections.emptyMap()));
 		RenameActionImpl action = new RenameActionImpl(context);
 

@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
@@ -43,7 +42,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformManifest extends CaptureTest {
@@ -105,12 +103,12 @@ public class TestTransformManifest extends CaptureTest {
 	public static final String	JAKARTA_TRANSACTION_TSR				= "jakarta.transaction.TransactionSynchronizationRegistry";
 	public static final String	JAKARTA_TRANSACTION_UT				= "jakarta.transaction.UserTransaction";
 
-	public Set<String> getIncludes() {
-		return Collections.emptySet();
+	public Map<String, String> getIncludes() {
+		return Collections.emptyMap();
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	public Map<String, String> getPackageRenames() {

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
@@ -38,19 +39,22 @@ public class ByteDataImpl implements ByteData {
 	 *
 	 * @param name A name associated with the data.
 	 * @param buffer Byte data associated with the name.
+	 * @param charset The charset for the byte data.
 	 */
-	public ByteDataImpl(String name, ByteBuffer buffer) {
+	public ByteDataImpl(String name, ByteBuffer buffer, Charset charset) {
 		this.name = name;
 		this.buffer = buffer;
+		this.charset = charset;
 	}
 
 	@Override
 	public String toString() {
-		return super.toString() + "(name=\"" + name + "\", buffer=" + buffer + ")";
+		return super.toString() + "(name=\"" + name + "\", buffer=" + buffer + ", charset=" + charset + ")";
 	}
 
 	private final String		name;
 	private final ByteBuffer	buffer;
+	private final Charset		charset;
 
 	@Override
 	public String name() {
@@ -76,7 +80,12 @@ public class ByteDataImpl implements ByteData {
 
 	@Override
 	public BufferedReader reader() {
-		return FileUtils.reader(buffer());
+		return FileUtils.reader(buffer(), charset());
+	}
+
+	@Override
+	public Charset charset() {
+		return charset;
 	}
 
 	@Override
@@ -93,6 +102,6 @@ public class ByteDataImpl implements ByteData {
 
 	@Override
 	public ByteDataImpl copy(String name) {
-		return new ByteDataImpl(name, buffer());
+		return new ByteDataImpl(name, buffer(), charset());
 	}
 }

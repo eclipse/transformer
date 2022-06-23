@@ -18,6 +18,7 @@ import static org.eclipse.transformer.util.SignatureUtils.stripWildcard;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -129,6 +130,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 				return inputData;
 			}
 
+			Charset charset = inputData.charset();
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 			try {
 				write(finalManifest, outputStream);
@@ -136,7 +138,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 				throw new TransformException("Failed to write manifest [ " + inputData.name() + " ]", e);
 			}
 
-			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer());
+			ByteData outputData = new ByteDataImpl(inputData.name(), outputStream.toByteBuffer(), charset);
 			getLogger().debug("[ {}.{} ]: Final [ {} ]", className, methodName, outputData);
 			return outputData;
 		} finally {

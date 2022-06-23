@@ -16,6 +16,7 @@ import static org.eclipse.transformer.util.SignatureUtils.classNameToResourceNam
 import java.io.DataInput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -494,6 +495,7 @@ public class ClassActionImpl extends ElementActionImpl {
 
 			ClassFile outputClass = classBuilder.build();
 
+			Charset charset = inputData.charset();
 			ByteBufferDataOutput outputClassData = new ByteBufferDataOutput(inputData.length() + FileUtils.PAGE_SIZE);
 			try {
 				outputClass.write(outputClassData);
@@ -501,7 +503,7 @@ public class ClassActionImpl extends ElementActionImpl {
 				throw new TransformException("Failed to write transformed class bytes", e);
 			}
 
-			ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer());
+			ByteData outputData = new ByteDataImpl(outputName, outputClassData.toByteBuffer(), charset);
 			useLogger.debug("  Class output: [ {} ]", outputData);
 			return outputData;
 		} finally {

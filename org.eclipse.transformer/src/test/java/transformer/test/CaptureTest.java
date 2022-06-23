@@ -14,14 +14,12 @@ package transformer.test;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.slf4j.Logger;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class CaptureTest {
@@ -64,7 +62,7 @@ public class CaptureTest {
 
 	//
 
-	public SelectionRuleImpl createSelectionRule(Logger useLogger, Set<String> useIncludes, Set<String> useExcludes) {
+	public SelectionRuleImpl createSelectionRule(Logger useLogger, Map<String, String> useIncludes, Map<String, String> useExcludes) {
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
 

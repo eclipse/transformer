@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +25,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
@@ -37,8 +39,6 @@ import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
-
-import aQute.lib.io.IO;
 
 /**
  * <em>Root action implementation.</em>
@@ -294,8 +294,9 @@ public abstract class ActionImpl implements Action {
 		// This is a good case for a category of files and entries which should
 		// be omitted.
 
+		Charset charset = resourceCharset(inputName);
 		try {
-			return FileUtils.read(getLogger(), inputName, inputStream, inputCount, getBuffer());
+			return FileUtils.read(getLogger(), inputName, charset, inputStream, inputCount, getBuffer());
 		} catch (IOException e) {
 			throw new TransformException("Failed to read [ " + inputName + " ] count [ " + inputCount + " ]", e);
 		}

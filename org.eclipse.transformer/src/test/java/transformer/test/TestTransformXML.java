@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import transformer.test.util.CaptureLoggerImpl;
 
 public class TestTransformXML extends CaptureTest {
@@ -68,12 +66,12 @@ public class TestTransformXML extends CaptureTest {
 
 	//
 
-	public Set<String> getIncludes() {
-		return Collections.emptySet();
+	public Map<String, String> getIncludes() {
+		return Collections.emptyMap();
 	}
 
-	public Set<String> getExcludes() {
-		return Collections.emptySet();
+	public Map<String, String> getExcludes() {
+		return Collections.emptyMap();
 	}
 
 	//

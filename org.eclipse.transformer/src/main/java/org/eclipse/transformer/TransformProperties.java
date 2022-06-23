@@ -30,67 +30,29 @@ public class TransformProperties {
 	/** Character used to define a package rename. */
 	public static final char	PACKAGE_RENAME_ASSIGNMENT	= '=';
 
-	/** Prefix character for resources which are to be excluded. */
-	public static final char	RESOURCE_EXCLUSION_PREFIX	= '!';
-
-	/** Used to demark head and tail regions in resource selections. */
-	public static final char	RESOURCE_WILDCARD			= '*';
+	/** Charset value for resources which are to be excluded.
+	 * We cannot use '!' as a key prefix since lines that start
+	 * with '!' are comments in a properties file.
+	 */
+	public static final String	RESOURCE_EXCLUSION	= "!";
 
 	//
 
-	public static void addSelections(Set<String> included, Set<String> excluded, Map<String, String> selections) {
+	public static void addSelections(Map<String, String> included, Map<String, String> excluded, Map<String, String> selections) {
 		for (Map.Entry<String, String> selectionEntry : selections.entrySet()) {
 			String selection = selectionEntry.getKey();
-			addSelection(included, excluded, selection);
+			String charset = selectionEntry.getValue();
+			addSelection(included, excluded, selection, charset);
 		}
 	}
 
-	public static void addSelection(Set<String> included, Set<String> excluded, String selection) {
-		if (selection.charAt(0) == RESOURCE_EXCLUSION_PREFIX) {
-			excluded.add(selection.substring(1));
+	public static void addSelection(Map<String, String> included, Map<String, String> excluded, String selection, String charset) {
+		selection = selection.trim();
+		charset = charset.trim();
+		if (charset.startsWith(RESOURCE_EXCLUSION)) {
+			excluded.put(selection, charset.substring(1));
 		} else {
-			included.add(selection);
-		}
-	}
-
-	public static void processSelections(Set<String> selections, Set<String> selectionsExact,
-		Set<String> selectionsHead, Set<String> selectionsTail, Set<String> selectionsAny) {
-
-		for (String selection : selections) {
-			selection = selection.trim();
-
-			int selectionLength = selection.length();
-			if (selectionLength == 0) {
-				continue;
-			}
-
-			boolean matchHead = (selection.charAt(0) == RESOURCE_WILDCARD);
-
-			// A single '*' matches everything. Matching everything is encoded
-			// as an empty selections collections.
-
-			if (selectionLength == 1) {
-				selections.clear();
-				selectionsExact.clear();
-				selectionsHead.clear();
-				selectionsTail.clear();
-				selectionsAny.clear();
-				return;
-			}
-
-			boolean matchTail = (selection.charAt(selectionLength - 1) == RESOURCE_WILDCARD);
-
-			if (matchHead) {
-				if (matchTail) {
-					selectionsAny.add(selection.substring(1, selectionLength - 1));
-				} else {
-					selectionsHead.add(selection.substring(1));
-				}
-			} else if (matchTail) {
-				selectionsTail.add(selection.substring(0, selectionLength - 1));
-			} else {
-				selectionsExact.add(selection);
-			}
+			included.put(selection, charset);
 		}
 	}
 
@@ -203,7 +165,7 @@ public class TransformProperties {
 					//       encode this.
 					//
 					// See issue #300.
-					
+
 					if ( nameBuilder.length() != 0 ) {
 						throw new IllegalArgumentException("Package version syntax error: Version missing for package [ " + newPackageName + " ] and attribute [ " + nameBuilder.toString() + " ]");
 					}

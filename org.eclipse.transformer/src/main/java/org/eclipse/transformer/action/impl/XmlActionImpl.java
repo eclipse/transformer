@@ -115,14 +115,15 @@ public class XmlActionImpl extends ElementActionImpl {
 
 			setResourceNames(inputName, inputName);
 
+			Charset charset = inputData.charset();
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-			transformUsingSaxParser(inputName, inputData.stream(), outputStream);
+			transformUsingSaxParser(inputName, inputData.stream(), charset, outputStream);
 
 			if (!isChanged()) {
 				return inputData;
 			} else {
-				return new ByteDataImpl(inputName, outputStream.toByteBuffer());
+				return new ByteDataImpl(inputName, outputStream.toByteBuffer(), charset);
 			}
 
 		} finally {
@@ -137,7 +138,8 @@ public class XmlActionImpl extends ElementActionImpl {
 
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
-		try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream)) {
+		Charset charset = inputData.charset();
+		try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
 			transformAsPlainText(inputName, reader, writer);
 		} catch (IOException e) {
 			throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -146,7 +148,7 @@ public class XmlActionImpl extends ElementActionImpl {
 		if (!isChanged()) {
 			return inputData;
 		} else {
-			return new ByteDataImpl(inputName, outputStream.toByteBuffer());
+			return new ByteDataImpl(inputName, outputStream.toByteBuffer(), charset);
 		}
 	}
 
@@ -201,9 +203,9 @@ public class XmlActionImpl extends ElementActionImpl {
 		return instance;
 	}
 
-	public void transform(String inputName, InputStream input, OutputStream output) throws TransformException {
+	public void transform(String inputName, InputStream input, Charset charset, OutputStream output) throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding(UTF_8.name());
+		inputSource.setEncoding(charset.name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
@@ -221,10 +223,10 @@ public class XmlActionImpl extends ElementActionImpl {
 		}
 	}
 
-	public void transformUsingSaxParser(String inputName, InputStream input, OutputStream output)
+	public void transformUsingSaxParser(String inputName, InputStream input, Charset charset, OutputStream output)
 		throws TransformException {
 		InputSource inputSource = new InputSource(input);
-		inputSource.setEncoding(UTF_8.name());
+		inputSource.setEncoding(charset.name());
 
 		XMLContentHandler handler = new XMLContentHandler(inputName, inputSource, output);
 
@@ -236,7 +238,7 @@ public class XmlActionImpl extends ElementActionImpl {
 		}
 
 		try {
-			parser.parse(input, handler);
+			parser.parse(inputSource, handler);
 		} catch (Exception e) {
 			throw new TransformException("Failed to parse [ " + inputName + " ]", e);
 		}

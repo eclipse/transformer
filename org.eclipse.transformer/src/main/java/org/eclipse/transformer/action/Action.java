@@ -12,6 +12,7 @@
 package org.eclipse.transformer.action;
 
 import java.io.File;
+import java.nio.charset.Charset;
 
 import org.eclipse.transformer.TransformException;
 import org.slf4j.Logger;
@@ -115,6 +116,16 @@ public interface Action {
 	 */
 	default boolean selectResource(String resourceName) {
 		return getResourceSelectionRule().select(resourceName);
+	}
+
+	/**
+	 * Return the charset for the specified resource name.
+	 *
+	 * @param resourceName The name of the resource.
+	 * @return The charset to use when reading or writing.
+	 */
+	default Charset resourceCharset(String resourceName) {
+		return getResourceSelectionRule().charset(resourceName);
 	}
 
 	//

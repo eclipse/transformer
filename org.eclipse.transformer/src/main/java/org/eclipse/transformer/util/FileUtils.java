@@ -11,8 +11,6 @@
 
 package org.eclipse.transformer.util;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -20,18 +18,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.slf4j.Logger;
-
-import aQute.lib.io.ByteBufferInputStream;
-import aQute.lib.io.IO;
 
 public class FileUtils {
 	private FileUtils() {}
@@ -44,6 +42,12 @@ public class FileUtils {
 
 	/** Maximum array size. Adjusted per ByteArrayInputStream comments. */
 	public static final int	MAX_ARRAY_LENGTH	= Integer.MAX_VALUE - 8;
+
+	/**
+	 * Default Charset to use when the selection rules do not specify a
+	 * charset for a resource.
+	 */
+	public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
 	/**
 	 * Verify that an integer value is usable as an array size.
@@ -110,7 +114,7 @@ public class FileUtils {
 	 * @throws IOException Thrown if a read fails, or if overflow or underflow
 	 *             occurs.
 	 */
-	public static ByteData read(Logger logger, String inputName, InputStream inputStream, int requested, InputBuffer inputBuffer)
+	public static ByteData read(Logger logger, String inputName, Charset charset, InputStream inputStream, int requested, InputBuffer inputBuffer)
 		throws IOException {
 
 		logger.debug("Reading [ {} ] bytes [ {} ]", inputName, requested);
@@ -127,12 +131,7 @@ public class FileUtils {
 			logger.debug("Read [ {} ] bytes [ {} ]", inputName, finalBuffer.limit());
 		}
 
-		return new ByteDataImpl(inputName, finalBuffer);
-	}
-
-	public static ByteData read(Logger logger, String inputName, InputStream inputStream, InputBuffer inputBuffer)
-		throws IOException {
-		return read(logger, inputName, inputStream, -1, inputBuffer);
+		return new ByteDataImpl(inputName, finalBuffer, charset);
 	}
 
 	/**
@@ -313,8 +312,8 @@ public class FileUtils {
 		return reader;
 	}
 
-	public static BufferedWriter writer(OutputStream outputStream) {
-		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, UTF_8);
+	public static BufferedWriter writer(OutputStream outputStream, Charset charset) {
+		OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream, charset);
 		BufferedWriter writer = new BufferedWriter(outputWriter);
 		return writer;
 	}
