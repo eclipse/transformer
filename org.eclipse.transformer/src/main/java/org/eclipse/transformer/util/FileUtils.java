@@ -11,12 +11,13 @@
 
 package org.eclipse.transformer.util;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.regex.Pattern;
 
+import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ByteData;
@@ -307,8 +309,8 @@ public class FileUtils {
 		return stream;
 	}
 
-	public static BufferedReader reader(ByteBuffer buffer, Charset charset) {
-		BufferedReader reader = IO.reader(buffer, charset);
+	public static Reader reader(ByteBuffer buffer, Charset charset) {
+		Reader reader = new InputStreamReader(new ByteBufferInputStream(buffer), charset);
 		return reader;
 	}
 

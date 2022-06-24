@@ -11,17 +11,16 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-
-import aQute.lib.io.IO;
 
 // This implementation is retained as distinct from the interface.
 // That is because ElementAction.apply exposes ByteData as a type.
@@ -79,7 +78,7 @@ public class ByteDataImpl implements ByteData {
 	}
 
 	@Override
-	public BufferedReader reader() {
+	public Reader reader() {
 		return FileUtils.reader(buffer(), charset());
 	}
 
