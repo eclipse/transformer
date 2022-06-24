@@ -166,6 +166,16 @@ public class Transformer {
 			return ResultCode.TRANSFORM_ERROR_RC;
 		}
 
+		if (options.hasOption(AppOption.ZIP_ENTRY_ENCODE)) {
+			String zipEntryEncode = options.getOptionValue(AppOption.ZIP_ENTRY_ENCODE);
+			try {
+				ZipActionImpl.setZipEntryEncode(zipEntryEncode);
+			} catch (RuntimeException e) {
+				getLogger().error(consoleMarker, "Zip entry encode is invalid.", e);
+				return ResultCode.ARGS_ERROR_RC;
+			}
+		}
+
 		boolean loadedRules;
 		try {
 			loadedRules = setRules(getImmediateData());

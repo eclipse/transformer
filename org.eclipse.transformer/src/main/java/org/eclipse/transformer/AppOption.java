@@ -78,6 +78,8 @@ public enum AppOption {
 		Settings.NO_GROUP)),
 	OVERWRITE(new Settings("o", "overwrite", "Overwrite", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
 		Settings.NO_GROUP)),
+	ZIP_ENTRY_ENCODE(new Settings("zipenc", "zip-entry-encode", "Entry encode in zip (default: UTF-8)", Settings.HAS_ARG,
+		!Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
 	DRYRUN(new Settings("d", "dryrun", "Dry run", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
 		Settings.NO_GROUP)),

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.attribute.FileTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -51,6 +52,11 @@ import aQute.lib.io.IO;
  * This is important for Bnd and Maven plugins.
  */
 public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
+	private static Charset zipEntryEncode = Charset.forName("UTF-8");
+
+	public static void setZipEntryEncode(String zipEntryEncode) {
+		ZipActionImpl.zipEntryEncode = Charset.forName(zipEntryEncode);
+	}
 
 	public static ZipActionImpl newZipAction(ActionContext context) {
 		return new ZipActionImpl(context, "Zip Action", ActionType.ZIP, ".zip");
@@ -204,9 +210,13 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		// base stream. We don't want that here.
 
 		try {
-			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+			ZipInputStream zipInputStream = (actionType == ActionType.ZIP) ?
+											new ZipInputStream(inputStream, zipEntryEncode) :
+											new ZipInputStream(inputStream);
 
-			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+			ZipOutputStream zipOutputStream = (actionType == ActionType.ZIP) ?
+											new ZipOutputStream(outputStream, zipEntryEncode) :
+											new ZipOutputStream(outputStream);
 			try {
 				applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream);
 			} finally {
