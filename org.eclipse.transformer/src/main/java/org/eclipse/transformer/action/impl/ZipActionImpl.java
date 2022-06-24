@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action.impl;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -363,12 +365,16 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 
 								String putInputName = inputName; // Need these to be effectively final.
 								String putOutputName = outputName;
-								putEntry(zipOutputStream, outputEntry, () -> {
-									// Note the use of 'apply' and not the internal 'applyStream'.
-									// Recording must be performed.  And, the streams must be put through
-									// conversion to zip streams as a part of handling nested archives.
-									zipAction.apply(putInputName, zipInputStream, putOutputName, zipOutputStream);
-								});
+								if (outputEntry.getMethod() == ZipEntry.STORED) {
+									putEntryForStored(zipAction, putInputName, putOutputName, zipInputStream, zipOutputStream, inputEntry, outputEntry);
+								} else {
+									putEntry(zipOutputStream, outputEntry, () -> {
+										// Note the use of 'apply' and not the internal 'applyStream'.
+										// Recording must be performed.  And, the streams must be put through
+										// conversion to zip streams as a part of handling nested archives.
+										zipAction.apply(putInputName, zipInputStream, putOutputName, zipOutputStream);
+									});
+								}
 
 								recordAction(zipAction, inputName);
 
@@ -587,5 +593,40 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		} finally {
 			zipOutputStream.closeEntry(); // throws IOException
 		}
+	}
+	
+	private void putEntryForStored(ZipActionImpl zipAction, String putInputName, String putOutputName,
+			ZipInputStream zipInputStream, ZipOutputStream zipOutputStream, ZipEntry inputEntry, ZipEntry outputEntry) throws IOException {
+		byte[] bytes = null;
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			BufferedOutputStream bos = new BufferedOutputStream(baos);) {
+			zipAction.apply(putInputName, zipInputStream, putOutputName, bos);
+			bos.flush();
+			bytes = baos.toByteArray();
+		}
+		outputEntry.setSize(bytes.length);
+		outputEntry.setCompressedSize(bytes.length);
+		CRC32 crc = new CRC32();
+		crc.update(bytes);
+		outputEntry.setCrc(crc.getValue());
+		if (inputEntry.getCrc() == outputEntry.getCrc()) {
+			outputEntry.setTime(inputEntry.getTime());
+
+			FileTime lastTime = inputEntry.getLastAccessTime();
+			if (lastTime != null) {
+				outputEntry.setLastAccessTime(lastTime);
+			}
+			FileTime createTime = inputEntry.getCreationTime();
+			if (createTime != null) {
+				outputEntry.setCreationTime(createTime);
+			}
+			FileTime modTime = inputEntry.getLastModifiedTime();
+			if (modTime != null) {
+				outputEntry.setLastModifiedTime(modTime);
+			}
+		}
+		zipOutputStream.putNextEntry(outputEntry);
+		zipOutputStream.write(bytes);
+		zipOutputStream.closeEntry();
 	}
 }
