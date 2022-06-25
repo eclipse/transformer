@@ -11,7 +11,6 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -19,14 +18,14 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import aQute.lib.io.ByteBufferOutputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
-
-import aQute.lib.io.ByteBufferOutputStream;
+import org.eclipse.transformer.util.LineSeparatorBufferedReader;
 
 /**
  * Action for general text updates. This action performs text updates, either
@@ -96,7 +95,7 @@ public class TextActionImpl extends ElementActionImpl {
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
 			Charset charset = inputData.charset();
-			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
+			try (LineSeparatorBufferedReader reader = new LineSeparatorBufferedReader(inputData.reader()); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
 				transform(inputName, reader, writer);
 			} catch (IOException e) {
 				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -117,7 +116,7 @@ public class TextActionImpl extends ElementActionImpl {
 
 	//
 
-	protected void transform(String inputName, BufferedReader reader, BufferedWriter writer) throws IOException {
+	protected void transform(String inputName, LineSeparatorBufferedReader reader, BufferedWriter writer) throws IOException {
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
 			String outputLine = transformString(inputName, "text line", inputLine);
@@ -128,7 +127,7 @@ public class TextActionImpl extends ElementActionImpl {
 			}
 
 			writer.write(outputLine);
-			writer.write('\n');
+			writer.write(reader.lineSeparator());
 		}
 	}
 

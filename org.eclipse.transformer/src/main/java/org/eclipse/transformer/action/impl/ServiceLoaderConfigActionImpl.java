@@ -11,19 +11,18 @@
 
 package org.eclipse.transformer.action.impl;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 
+import aQute.lib.io.ByteBufferOutputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
-
-import aQute.lib.io.ByteBufferOutputStream;
+import org.eclipse.transformer.util.LineSeparatorBufferedReader;
 
 /**
  * Transform service configuration bytes. Per:
@@ -114,7 +113,7 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 			ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
 			Charset charset = inputData.charset();
-			try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
+			try (LineSeparatorBufferedReader reader = new LineSeparatorBufferedReader(inputData.reader()); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
 				transform(reader, writer);
 			} catch (IOException e) {
 				throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -133,7 +132,7 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 		}
 	}
 
-	protected void transform(BufferedReader reader, BufferedWriter writer) throws IOException {
+	protected void transform(LineSeparatorBufferedReader reader, BufferedWriter writer) throws IOException {
 		String inputLine;
 		while ((inputLine = reader.readLine()) != null) {
 			// Goal is to find the input package name. Find it by
@@ -215,7 +214,7 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 			}
 
 			writer.write(outputLine);
-			writer.newLine();
+			writer.write(reader.lineSeparator());
 		}
 	}
 }

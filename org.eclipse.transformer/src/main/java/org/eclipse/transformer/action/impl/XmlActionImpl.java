@@ -13,31 +13,29 @@ package org.eclipse.transformer.action.impl;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import aQute.lib.io.ByteBufferOutputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.LineSeparatorBufferedReader;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import aQute.lib.io.ByteBufferOutputStream;
 
 /**
  * Prototype action for transforming XML resources.
@@ -139,7 +137,7 @@ public class XmlActionImpl extends ElementActionImpl {
 		ByteBufferOutputStream outputStream = new ByteBufferOutputStream(inputData.length());
 
 		Charset charset = inputData.charset();
-		try (BufferedReader reader = inputData.reader(); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
+		try (LineSeparatorBufferedReader reader = new LineSeparatorBufferedReader(inputData.reader()); BufferedWriter writer = FileUtils.writer(outputStream, charset)) {
 			transformAsPlainText(inputName, reader, writer);
 		} catch (IOException e) {
 			throw new TransformException("Failed to transform [ " + inputName + " ]", e);
@@ -244,7 +242,7 @@ public class XmlActionImpl extends ElementActionImpl {
 		}
 	}
 
-	protected void transformAsPlainText(String inputName, BufferedReader reader, BufferedWriter writer)
+	protected void transformAsPlainText(String inputName, LineSeparatorBufferedReader reader, BufferedWriter writer)
 		throws IOException {
 
 		String inputLine;
@@ -256,7 +254,7 @@ public class XmlActionImpl extends ElementActionImpl {
 				addReplacement();
 			}
 			writer.write(outputLine);
-			writer.write('\n');
+			writer.write(reader.lineSeparator());
 		}
 	}
 

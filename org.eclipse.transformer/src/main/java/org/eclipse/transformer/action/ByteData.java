@@ -11,10 +11,10 @@
 
 package org.eclipse.transformer.action;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
@@ -77,7 +77,7 @@ public interface ByteData {
 	 * The reader uses the charset returned by {@link #charset()}.
 	 * @return A reader on this buffer.
 	 */
-	BufferedReader reader();
+	Reader reader();
 
 	/**
 	 * The charset to use for this ByteData.
