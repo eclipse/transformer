@@ -243,17 +243,9 @@ class LineSeparatorBufferedReaderTest {
 		String testString = "\nfoo1=bar\r\n";
 		StringReader stringReader = new StringReader(testString);
 		LineSeparatorBufferedReader reader = new LineSeparatorBufferedReader(stringReader);
-		assertThat(reader.read()).isEqualTo('\n');
-		assertThat(reader.read()).isEqualTo('f');
-		assertThat(reader.read()).isEqualTo('o');
-		assertThat(reader.read()).isEqualTo('o');
-		assertThat(reader.read()).isEqualTo('1');
-		assertThat(reader.read()).isEqualTo('=');
-		assertThat(reader.read()).isEqualTo('b');
-		assertThat(reader.read()).isEqualTo('a');
-		assertThat(reader.read()).isEqualTo('r');
-		assertThat(reader.read()).isEqualTo('\r');
-		assertThat(reader.read()).isEqualTo('\n');
+		for (char c : testString.toCharArray()) {
+			assertThat(reader.read()).isEqualTo(c);
+		}
 		assertThat(reader.read()).isEqualTo(-1);
 	}
 
@@ -268,14 +260,10 @@ class LineSeparatorBufferedReaderTest {
 		if (lineSeparator) {
 			assertThat(reader.lineSeparator()).isEqualTo("\r");
 		}
-		assertThat(reader.read()).isEqualTo('f');
-		assertThat(reader.read()).isEqualTo('o');
-		assertThat(reader.read()).isEqualTo('o');
-		assertThat(reader.read()).isEqualTo('2');
-		assertThat(reader.read()).isEqualTo('=');
-		assertThat(reader.read()).isEqualTo('b');
-		assertThat(reader.read()).isEqualTo('a');
-		assertThat(reader.read()).isEqualTo('r');
+		String remainder = "foo2=bar";
+		for (char c : remainder.toCharArray()) {
+			assertThat(reader.read()).isEqualTo(c);
+		}
 		assertThat(reader.read()).isEqualTo(-1);
 	}
 
@@ -287,7 +275,7 @@ class LineSeparatorBufferedReaderTest {
 		char[] cbuf = new char[200];
 		assertThat(reader.read(cbuf)).isEqualTo(testString.length());
 		assertThat(cbuf).startsWith(testString.toCharArray());
-		assertThat(reader.read()).isEqualTo(-1);
+		assertThat(reader.read(cbuf)).isEqualTo(-1);
 	}
 
 	@ValueSource(booleans = {true, false})
@@ -303,14 +291,14 @@ class LineSeparatorBufferedReaderTest {
 		}
 		char[] cbuf = new char[200];
 		String remainder = "foo2=bar";
-		int length = reader.read(cbuf);
-		assertThat(length).isPositive();
-		assertThat(cbuf).startsWith(remainder.substring(0, length).toCharArray());
-		remainder = remainder.substring(length);
-		length = reader.read(cbuf);
-		assertThat(length).isPositive();
-		assertThat(cbuf).startsWith(remainder.substring(0, length).toCharArray());
-		assertThat(reader.read()).isEqualTo(-1);
+		for (int remaining; (remaining = remainder.length()) > 0;) {
+			int length = reader.read(cbuf);
+			assertThat(length).isBetween(1, remaining);
+			assertThat(cbuf).startsWith(remainder.substring(0, length)
+				.toCharArray());
+			remainder = remainder.substring(length);
+		}
+		assertThat(reader.read(cbuf)).isEqualTo(-1);
 	}
 
 	@Test
@@ -322,7 +310,8 @@ class LineSeparatorBufferedReaderTest {
 		assertThat(reader.read(cbuf)).isEqualTo(testString.length());
 		cbuf.flip();
 		assertThat(cbuf.toString()).isEqualTo(testString);
-		assertThat(reader.read()).isEqualTo(-1);
+		cbuf.clear();
+		assertThat(reader.read(cbuf)).isEqualTo(-1);
 	}
 
 	@ValueSource(booleans = {true, false})
@@ -338,16 +327,14 @@ class LineSeparatorBufferedReaderTest {
 		}
 		CharBuffer cbuf = CharBuffer.allocate(200);
 		String remainder = "foo2=bar";
-		int length = reader.read(cbuf);
-		cbuf.flip();
-		assertThat(length).isPositive();
-		assertThat(cbuf.toString()).isEqualTo(remainder.substring(0, length));
-		remainder = remainder.substring(length);
-		cbuf.clear();
-		length = reader.read(cbuf);
-		cbuf.flip();
-		assertThat(length).isPositive();
-		assertThat(cbuf.toString()).isEqualTo(remainder.substring(0, length));
-		assertThat(reader.read()).isEqualTo(-1);
+		for (int remaining; (remaining = remainder.length()) > 0;) {
+			int length = reader.read(cbuf);
+			cbuf.flip();
+			assertThat(length).isBetween(1, remaining);
+			assertThat(cbuf.toString()).isEqualTo(remainder.substring(0, length));
+			remainder = remainder.substring(length);
+			cbuf.clear();
+		}
+		assertThat(reader.read(cbuf)).isEqualTo(-1);
 	}
 }
