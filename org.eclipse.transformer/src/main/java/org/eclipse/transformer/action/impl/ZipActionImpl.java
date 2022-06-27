@@ -346,12 +346,6 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 
 					} else if (action.isArchiveAction()) {
 						ZipActionImpl zipAction = (ZipActionImpl) action;
-
-						// Zip actions continue to use streaming.
-						// Loading entire archives into memory is to be avoided.
-						// However, that means the new entry name must be known
-						// before invoking 'apply' on the selected action.
-
 						String outputName = zipAction.relocateResource(inputName);
 						outputName = FileUtils.sanitize(outputName);
 
@@ -359,19 +353,32 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 							recordDuplicate(zipAction, inputName);
 						} else {
 							try {
-								ZipEntry outputEntry = createEntry(inputEntry, outputName);
-
-								String putInputName = inputName; // Need these to be effectively final.
-								String putOutputName = outputName;
-								putEntry(zipOutputStream, outputEntry, () -> {
-									// Note the use of 'apply' and not the internal 'applyStream'.
-									// Recording must be performed.  And, the streams must be put through
-									// conversion to zip streams as a part of handling nested archives.
-									zipAction.apply(putInputName, zipInputStream, putOutputName, zipOutputStream);
-								});
+								if (inputEntry.getMethod() == ZipEntry.STORED) {
+									// For STORED, we must know the size of the result
+									// before creating the ZipEntry. So we cannot stream.
+									ByteData inputData = collect(inputName, zipInputStream, inputLength);
+									ByteData outputData = zipAction.apply(inputData);
+									ZipEntry outputEntry = createEntry(inputEntry, outputName, outputData);
+									putEntry(zipOutputStream, outputEntry, () -> {
+										outputData.writeTo(zipOutputStream);
+									});
+								} else {
+									// For COMPRESSED, we use streaming.
+									// Loading entire archives into memory is to be avoided.
+									// However, that means the new entry name must be known
+									// before invoking 'apply' on the selected action.
+									ZipEntry outputEntry = createEntry(inputEntry, outputName);
+									String putInputName = inputName; // Need these to be effectively final
+									String putOutputName = outputName;
+									putEntry(zipOutputStream, outputEntry, () -> {
+										// Note the use of 'apply' and not the internal 'applyStream'.
+										// Recording must be performed.  And, the streams must be put through
+										// conversion to zip streams as a part of handling nested archives.
+										zipAction.apply(putInputName, zipInputStream, putOutputName, zipOutputStream);
+									});
+								}
 
 								recordAction(zipAction, inputName);
-
 							} catch (Throwable th) {
 								recordError(zipAction, inputName, th);
 							}

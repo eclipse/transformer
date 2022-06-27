@@ -129,6 +129,14 @@ class TestCommandLine {
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
+	// Test zip with STORED archive to make sure ZipEntries are properly created.
+	@Test
+	void zip_nested_stored_archive() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + '/' + "nested_stored_archive.war";
+		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "nested_stored_archive.war";
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+	}
+
 	// Test war with duplicate entries.
 	@Test
 	void duplicate_entries() throws Exception {
