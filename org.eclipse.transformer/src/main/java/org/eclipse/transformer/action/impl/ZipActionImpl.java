@@ -337,7 +337,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 						String outputName = renameAction.apply(inputName);
 						outputName = FileUtils.sanitize(outputName);
 
-						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+						if ( isDuplicate(inputName, inputPath, outputName, outputPath, seen) ) {
 							recordDuplicate(action, inputName);
 						} else {
 							copy(inputEntry, zipInputStream, outputName, zipOutputStream, copyBuffer);
@@ -355,7 +355,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 						String outputName = zipAction.relocateResource(inputName);
 						outputName = FileUtils.sanitize(outputName);
 
-						if ( isDuplicate(inputName, inputPath, inputName, outputPath, seen) ) {
+						if ( isDuplicate(inputName, inputPath, outputName, outputPath, seen) ) {
 							recordDuplicate(zipAction, inputName);
 						} else {
 							try {
