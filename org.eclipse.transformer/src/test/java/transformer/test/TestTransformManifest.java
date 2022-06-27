@@ -31,11 +31,9 @@ import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
-import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.PropertiesUtils;
 import org.eclipse.transformer.util.SignatureUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -198,7 +196,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, getBundleUpdates(),
 					null, getDirectStrings(), Collections.emptyMap()));
@@ -214,7 +212,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()));
@@ -233,7 +231,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()));
@@ -250,7 +248,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()));
@@ -643,7 +641,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (manifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, null, null, null, Collections.emptyMap()));
 			manifestAction_test = new ManifestActionImpl_Test(context);
@@ -658,7 +656,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificManifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),

@@ -32,6 +32,10 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import aQute.bnd.unmodifiable.Sets;
+import aQute.lib.io.IO;
+import aQute.lib.strings.Strings;
+import aQute.libg.uri.URIUtil;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
@@ -39,7 +43,6 @@ import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
-import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
@@ -47,7 +50,6 @@ import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.DirectoryActionImpl;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.JSPActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
@@ -63,11 +65,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
-
-import aQute.bnd.unmodifiable.Sets;
-import aQute.lib.io.IO;
-import aQute.lib.strings.Strings;
-import aQute.libg.uri.URIUtil;
 
 public class Transformer {
 	public enum ResultCode {
@@ -231,16 +228,6 @@ public class Transformer {
 
 	public String getOutputFileName() {
 		return outputName;
-	}
-
-	/**
-	 * Thread-local buffer for use by this transformer. The thread-local
-	 * property is not currently necessary, and is provided for future use.
-	 */
-	private final InputBuffer buffer = new InputBufferImpl();
-
-	public InputBuffer getBuffer() {
-		return buffer;
 	}
 
 	public static final Set<AppOption> TARGETABLE_RULES = Sets.of(AppOption.RULES_SELECTIONS, AppOption.RULES_RENAMES,
@@ -1113,7 +1100,7 @@ public class Transformer {
 	// As a separate method to allow re-use.
 
 	public ActionContext getActionContext() {
-		return new ActionContextImpl(getLogger(), getBuffer(), getSelectionRule(), getSignatureRule());
+		return new ActionContextImpl(getLogger(), getSelectionRule(), getSignatureRule());
 	}
 
 	public ActionSelector getActionSelector() {

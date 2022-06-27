@@ -23,11 +23,9 @@ import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
-import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +102,7 @@ public class TestTransformXML extends CaptureTest {
 		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
 					Collections.emptyMap()));

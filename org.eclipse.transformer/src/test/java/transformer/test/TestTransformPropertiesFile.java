@@ -11,7 +11,6 @@
 package transformer.test;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,7 +19,6 @@ import java.util.Properties;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
@@ -95,7 +93,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		if (jakartaPropertiesAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, new InputBufferImpl(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames()));
 

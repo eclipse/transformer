@@ -22,8 +22,6 @@ import org.slf4j.Logger;
 public interface ActionContext {
 	Logger getLogger();
 
-	InputBuffer getBuffer();
-
 	SelectionRule getSelectionRule();
 
 	SignatureRule getSignatureRule();

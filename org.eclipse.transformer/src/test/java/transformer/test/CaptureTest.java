@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.transformer.action.BundleData;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.slf4j.Logger;
@@ -54,10 +53,6 @@ public class CaptureTest {
 		for (CaptureLoggerImpl.LogEvent event : capturedEvents) {
 			System.out.printf("Captured Event [ %s ]\n", event.toStringFormatted());
 		}
-	}
-
-	public InputBufferImpl createBuffer() {
-		return new InputBufferImpl();
 	}
 
 	//

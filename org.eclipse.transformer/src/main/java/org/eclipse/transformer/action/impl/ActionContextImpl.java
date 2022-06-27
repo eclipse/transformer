@@ -20,32 +20,24 @@ package org.eclipse.transformer.action.impl;
 import static java.util.Objects.requireNonNull;
 
 import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.slf4j.Logger;
 
 public class ActionContextImpl implements ActionContext {
-	public ActionContextImpl(Logger logger, InputBuffer inputBuffer, SelectionRule selectionRule, SignatureRule signatureRule) {
+	public ActionContextImpl(Logger logger, SelectionRule selectionRule, SignatureRule signatureRule) {
 		this.logger = requireNonNull(logger);
-		this.inputBuffer = requireNonNull(inputBuffer);
 		this.selectionRule = requireNonNull(selectionRule);
 		this.signatureRule = requireNonNull(signatureRule);
 	}
 
 	private final Logger logger;
-	private final InputBuffer inputBuffer;
 	private final SelectionRule selectionRule;
 	private final SignatureRule signatureRule;
 
 	@Override
 	public Logger getLogger() {
 		return logger;
-	}
-
-	@Override
-	public InputBuffer getBuffer() {
-		return inputBuffer;
 	}
 
 	@Override
