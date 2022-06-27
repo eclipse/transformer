@@ -82,9 +82,11 @@ public class LineSeparatorBufferedReader extends BufferedReader {
 		lineSeparator(); // consume any line separator characters
 		int c = pushBack;
 		if (c != -1) {
-			pushBack = -1;
-			target.put((char) c);
-			return 1;
+			if (target.remaining() > 0) {
+				pushBack = -1;
+				target.put((char) c);
+				return 1;
+			}
 		}
 		return super.read(target);
 	}
@@ -101,7 +103,7 @@ public class LineSeparatorBufferedReader extends BufferedReader {
 			eol = 0;
 			return null;
 		}
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder(80);
 		for (; c != -1; c = read0()) {
 			if (c == '\n') {
 				if (eol == '\r') {
@@ -154,11 +156,11 @@ public class LineSeparatorBufferedReader extends BufferedReader {
 		if (e == '\r') {
 			eol = 0;
 			int c = read0();
-			if (c == '\n') {
-				return "\r\n";
+			if (c != '\n') {
+				pushBack = c;
+				return "\r";
 			}
-			pushBack = c;
-			return "\r";
+			return "\r\n";
 		}
 		return "";
 	}
