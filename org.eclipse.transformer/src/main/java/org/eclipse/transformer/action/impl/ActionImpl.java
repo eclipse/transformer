@@ -33,7 +33,6 @@ import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
-import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.action.SignatureRule.SignatureType;
@@ -263,12 +262,6 @@ public abstract class ActionImpl implements Action {
 
 	//
 
-	protected InputBuffer getBuffer() {
-		return getContext().getBuffer();
-	}
-
-	//
-
 	/**
 	 * Collect the data for an action on an input stream. Returns a data
 	 * structure containing input data upon which the action can be performed.
@@ -296,7 +289,7 @@ public abstract class ActionImpl implements Action {
 
 		Charset charset = resourceCharset(inputName);
 		try {
-			return FileUtils.read(getLogger(), inputName, charset, inputStream, inputCount, getBuffer());
+			return FileUtils.read(getLogger(), inputName, charset, inputStream, inputCount);
 		} catch (IOException e) {
 			throw new TransformException("Failed to read [ " + inputName + " ] count [ " + inputCount + " ]", e);
 		}

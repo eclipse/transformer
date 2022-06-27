@@ -25,7 +25,6 @@ import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -341,7 +340,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
@@ -359,7 +358,7 @@ public class TestTransformClass extends CaptureTest {
 
 			Map<String, String> toJavaxRenames = TransformProperties.invert(getToJakartaRenames());
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, toJavaxRenames, null, null, null, Collections.emptyMap()));
 
@@ -375,7 +374,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_DirectOverride == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(), null));
 
@@ -391,7 +390,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_PerClassDirectOverride == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(),
 					toJakartaPerClassDirectStrings()));
@@ -408,7 +407,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_PackageRenamesOnly == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, null));
 
@@ -521,7 +520,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createToJakartaClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+		ActionContext context = new ActionContextImpl(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
@@ -822,7 +821,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createDirectClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+		ActionContext context = new ActionContextImpl(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()), createSignatureRule(
 				useLogger, Collections.emptyMap(), null, null, getDirectStrings(), Collections.emptyMap()));
 
@@ -832,7 +831,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createPerClassConstantClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+		ActionContext context = new ActionContextImpl(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, Collections.emptyMap(), null, null, null, PER_CLASS_CONSTANT_MASTER));
 
@@ -1197,7 +1196,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createStandardClassAction() throws IOException {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+		ActionContext context = new ActionContextImpl(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
 

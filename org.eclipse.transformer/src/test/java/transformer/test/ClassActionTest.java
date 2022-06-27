@@ -43,7 +43,6 @@ import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
-import org.eclipse.transformer.action.impl.InputBufferImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.util.FileUtils;
@@ -121,7 +120,7 @@ public class ClassActionTest {
 		renames.put("original.provides.impl", "transformed.provides.impl");
 		renames.put("original.main", "transformed.main");
 
-		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		ClassActionImpl classAction = new ClassActionImpl(context);
@@ -217,7 +216,7 @@ public class ClassActionTest {
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.host", "transformed.host");
 		renames.put("original.member", "transformed.member");
-		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 
@@ -261,7 +260,7 @@ public class ClassActionTest {
 		renames.put("original.enclosing", "transformed.enclosing");
 		renames.put("original.param", "transformed.param");
 		renames.put("original.result", "transformed.result");
-		ActionContext context = new ActionContextImpl(logger, new InputBufferImpl(),
+		ActionContext context = new ActionContextImpl(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		ClassActionImpl classAction = new ClassActionImpl(context);

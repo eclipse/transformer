@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -160,7 +159,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
 
@@ -175,7 +174,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
@@ -192,7 +191,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
 
-			ActionContext context = new ActionContextImpl(useLogger, createBuffer(),
+			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 

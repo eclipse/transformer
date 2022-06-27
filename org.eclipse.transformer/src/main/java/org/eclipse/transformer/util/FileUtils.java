@@ -29,7 +29,6 @@ import aQute.lib.io.ByteBufferInputStream;
 import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.InputBuffer;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.slf4j.Logger;
 
@@ -111,23 +110,18 @@ public class FileUtils {
 	 * @param inputStream A stream to be read.
 	 * @param requested The count of bytes to read from the stream. If less than
 	 *            zero, all available bytes will be read.
-	 * @param inputBuffer A byte buffer wrapper.
 	 * @return Byte data from the read.
 	 * @throws IOException Thrown if a read fails, or if overflow or underflow
 	 *             occurs.
 	 */
-	public static ByteData read(Logger logger, String inputName, Charset charset, InputStream inputStream, int requested, InputBuffer inputBuffer)
+	public static ByteData read(Logger logger, String inputName, Charset charset, InputStream inputStream, int requested)
 		throws IOException {
 
 		logger.debug("Reading [ {} ] bytes [ {} ]", inputName, requested);
 
-		ByteBuffer initialBuffer = inputBuffer.getInputBuffer();
+		ByteBuffer initialBuffer = ByteBuffer.allocate((requested < 0) ? BUFFER_ADJUSTMENT : requested);
 
 		ByteBuffer finalBuffer = read(inputName, inputStream, initialBuffer, requested);
-
-		if ( finalBuffer != initialBuffer ) {
-			inputBuffer.setInputBuffer(finalBuffer);
-		}
 
 		if ( requested < 0 ) {
 			logger.debug("Read [ {} ] bytes [ {} ]", inputName, finalBuffer.limit());
