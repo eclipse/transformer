@@ -244,9 +244,7 @@ public class XmlActionImpl extends ElementActionImpl {
 
 	protected void transformAsPlainText(String inputName, LineSeparatorBufferedReader reader, BufferedWriter writer)
 		throws IOException {
-
-		String inputLine;
-		while ((inputLine = reader.readLine()) != null) {
+		for (String inputLine; (inputLine = reader.readLine()) != null; writer.write(reader.lineSeparator())) {
 			String outputLine = replaceText(inputName, inputLine);
 			if (outputLine == null) {
 				outputLine = inputLine;
@@ -254,7 +252,6 @@ public class XmlActionImpl extends ElementActionImpl {
 				addReplacement();
 			}
 			writer.write(outputLine);
-			writer.write(reader.lineSeparator());
 		}
 	}
 
