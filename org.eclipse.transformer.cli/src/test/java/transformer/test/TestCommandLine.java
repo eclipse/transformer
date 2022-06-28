@@ -39,7 +39,7 @@ import org.slf4j.MarkerFactory;
 
 class TestCommandLine {
 
-	private static final String	STATIC_CONTENT_DIR			= "src/test/data/command-line";
+	private static final String	STATIC_CONTENT_DIR			= "src/test/data";
 	private String DYNAMIC_CONTENT_DIR;
 
 	private String currentDirectory	= ".";
@@ -74,21 +74,21 @@ class TestCommandLine {
 
 	@Test
 	void testManifestActionAccepted() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + '/' + "MANIFEST.MF";
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "MANIFEST.MF";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/MANIFEST.MF";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/MANIFEST.MF";
 		verifyAction(ManifestActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
 	@Test
 	void testJavaActionAccepted() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + '/' + "A.java";
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "A.java";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/A.java";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/A.java";
 		verifyAction(JavaActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
 	@Test
 	void testInputDirectoryNameOnlyAccepted() throws Exception {
-		File inputFile = IO.copy(new File(STATIC_CONTENT_DIR), new File(DYNAMIC_CONTENT_DIR));
+		File inputFile = IO.copy(new File(STATIC_CONTENT_DIR + "/command-line"), new File(DYNAMIC_CONTENT_DIR));
 		String inputFileName = inputFile.getCanonicalPath().replace(File.separatorChar, '/');
 		String expectedOutputFileName = new File(inputFile.getParentFile(), Transformer.OUTPUT_PREFIX + inputFile.getName()).getCanonicalPath()
 			.replace(File.separatorChar, '/');
@@ -97,7 +97,7 @@ class TestCommandLine {
 
 	@Test
 	void testInputDirectoryNameOnlyWithLastSlashAccepted() throws Exception {
-		File inputFile = IO.copy(new File(STATIC_CONTENT_DIR), new File(DYNAMIC_CONTENT_DIR));
+		File inputFile = IO.copy(new File(STATIC_CONTENT_DIR + "/command-line"), new File(DYNAMIC_CONTENT_DIR));
 		String inputFileName = inputFile.getCanonicalPath().replace(File.separatorChar, '/') + "/";
 		String expectedOutputFileName = new File(inputFile.getParentFile(), Transformer.OUTPUT_PREFIX + inputFile.getName()).getCanonicalPath()
 			.replace(File.separatorChar, '/');
@@ -106,7 +106,7 @@ class TestCommandLine {
 
 	@Test
 	void testInputFileNameOnlyAccepted() throws Exception {
-		File inputFile = new File(IO.copy(new File(STATIC_CONTENT_DIR), new File(DYNAMIC_CONTENT_DIR)), "A.java");
+		File inputFile = new File(IO.copy(new File(STATIC_CONTENT_DIR + "/command-line"), new File(DYNAMIC_CONTENT_DIR)), "A.java");
 		String inputFileName = inputFile.getCanonicalPath().replace(File.separatorChar, '/');
 		String expectedOutputFileName = new File(inputFile.getParentFile(), Transformer.OUTPUT_PREFIX + inputFile.getName()).getCanonicalPath()
 			.replace(File.separatorChar, '/');
@@ -115,41 +115,89 @@ class TestCommandLine {
 
 	@Test
 	void testInvalidOutputDirectoryRejected() throws Exception {
-		IO.copy(new File(STATIC_CONTENT_DIR), new File(DYNAMIC_CONTENT_DIR));
-		String inputFileName = DYNAMIC_CONTENT_DIR + '/';
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "foo";
+		IO.copy(new File(STATIC_CONTENT_DIR + "/command-line"), new File(DYNAMIC_CONTENT_DIR));
+		String inputFileName = DYNAMIC_CONTENT_DIR + "/";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/foo";
 		verifyActionInvalidDirectoryRejected(DirectoryActionImpl.class.getName(), inputFileName, outputFileName);
 	}
 
 	// Test compressed zip with copying to make sure ZipEntries are properly created.
 	@Test
 	void zip_entry_creation() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + '/' + "sac-1.3.jar";
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "sac-1.3.jar";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/sac-1.3.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/sac-1.3.jar";
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
 	// Test zip with STORED archive to make sure ZipEntries are properly created.
 	@Test
 	void zip_nested_stored_archive() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + '/' + "nested_stored_archive.war";
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "nested_stored_archive.war";
+		String inputFileName = STATIC_CONTENT_DIR +  "/command-line/nested_stored_archive.war";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/nested_stored_archive.war";
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+	}
+
+	// Test zip with entry names encoded with a charset other than UTF-8.
+	@Test
+	void zip_non_UTF_8_encoding() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR  + "/zip-encoding/japan.zip";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/japan.zip";
+		System.out.printf("verifyAction: Input is: [%s] Output is: [%s]\n", inputFileName, outputFileName);
+
+		TransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, inputFileName, outputFileName, "-o",
+			"--immediate", "selection", "*/japan.zip", "MS932" //  configure MS932 charset for japan.zip
+		);
+
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+
+		assertThat(transformer.setInput()).as("transformer.setInput()")
+			.isTrue();
+		assertThat(transformer.getInputFileName()).as("input file name")
+			.isEqualTo(inputFileName);
+
+		assertThat(transformer.setOutput()).as("transformer.setOutput()")
+			.isTrue();
+		assertThat(transformer.getOutputFileName()).as("output file name")
+			.isEqualTo(outputFileName);
+
+		assertThat(transformer.setRules(transformer.getImmediateData())).as("transformer.setRules()")
+			.isTrue();
+		assertThat(transformer.acceptAction()).as("transformer.acceptAction()")
+			.isTrue();
+		assertThat(transformer.acceptedAction.getClass()
+			.getName()).as("action class name")
+			.isEqualTo(ZipActionImpl.class.getName());
+
+		transformer.transform();
+
+		Changes lastActiveChanges = transformer.getLastActiveChanges();
+		if (lastActiveChanges instanceof ContainerChanges) {
+			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+			int numDuplicated = containerChanges.getAllDuplicated();
+			int numFailed = containerChanges.getAllFailed();
+
+			assertThat(numDuplicated).as("Duplicates were processed")
+				.isZero();
+			assertThat(numFailed).as("Failures were processed")
+				.isZero();
+		}
+
+		File outputFile = new File(outputFileName);
+		assertThat(outputFile).as("output file")
+			.isFile();
 	}
 
 	// Test war with duplicate entries.
 	@Test
 	void duplicate_entries() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + '/' + "servlet_plu_singlethreadmodel_web.war";
-		String outputFileName = DYNAMIC_CONTENT_DIR + '/' + "servlet_plu_singlethreadmodel_web.war";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/servlet_plu_singlethreadmodel_web.war";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/servlet_plu_singlethreadmodel_web.war";
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, 3);
 	}
 
 	@Test
 	void testSetLogLevelQuiet() throws Exception {
-		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
-			"--logName", name, "--quiet"
-		});
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, "--logName", name, "--quiet");
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
 		assertThat(logger.isTraceEnabled()).isFalse();
@@ -161,9 +209,7 @@ class TestCommandLine {
 
 	@Test
 	void testSetLogLevelDefault() throws Exception {
-		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
-			"--logName", name
-		});
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, "--logName", name);
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
 		assertThat(logger.isTraceEnabled()).isFalse();
@@ -175,9 +221,7 @@ class TestCommandLine {
 
 	@Test
 	void testSetLogLevelDebug() throws Exception {
-		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
-			"--logName", name, "--verbose"
-		});
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, "--logName", name, "--verbose");
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
 		assertThat(logger.isTraceEnabled()).isFalse();
@@ -189,9 +233,7 @@ class TestCommandLine {
 
 	@Test
 	void testSetLogLevelTrace() throws Exception {
-		TransformerCLI cli = new TransformerCLI(System.out, System.err, new String[] {
-			"--logName", name, "--trace"
-		});
+		TransformerCLI cli = new TransformerCLI(System.out, System.err, "--logName", name, "--trace");
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 		Logger logger = transformer.getLogger();
 		assertThat(logger.isTraceEnabled()).isTrue();
@@ -210,11 +252,7 @@ class TestCommandLine {
 		logFile.delete();
 		assertThat(logFile).doesNotExist();
 		try (PrintStream out = new PrintStream(sysOut); PrintStream err = new PrintStream(sysErr)) {
-			TransformerCLI cli = new TransformerCLI(out, err, new String[] {
-				"--logName", name,
-				"--verbose",
-				"--logFile", logFileName
-			});
+			TransformerCLI cli = new TransformerCLI(out, err, "--logName", name, "--verbose", "--logFile", logFileName);
 			Transformer transformer = new Transformer(cli.getLogger(), cli);
 			Logger logger = transformer.getLogger();
 			assertThat(logger.isDebugEnabled()).isTrue();
@@ -272,19 +310,19 @@ class TestCommandLine {
 
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 
-		assertThat(transformer.setInput()).as("options.setInput()")
+		assertThat(transformer.setInput()).as("transformer.setInput()")
 			.isTrue();
 		assertThat(transformer.getInputFileName()).as("input file name")
 			.isEqualTo(inputFileName);
 
-		assertThat(transformer.setOutput()).as("options.setOutput()")
+		assertThat(transformer.setOutput()).as("transformer.setOutput()")
 			.isTrue();
 		assertThat(transformer.getOutputFileName()).as("output file name")
 			.isEqualTo(expectedOutputFileName);
 
-		assertThat(transformer.setRules(transformer.getImmediateData())).as("options.setRules()")
+		assertThat(transformer.setRules(transformer.getImmediateData())).as("transformer.setRules()")
 			.isTrue();
-		assertThat(transformer.acceptAction()).as("options.acceptAction()")
+		assertThat(transformer.acceptAction()).as("transformer.acceptAction()")
 			.isTrue();
 		assertThat(transformer.acceptedAction.getClass()
 			.getName()).as("action class name")
@@ -322,12 +360,12 @@ class TestCommandLine {
 
 		Transformer transformer = new Transformer(cli.getLogger(), cli);
 
-		assertThat(transformer.setInput()).as("options.setInput()")
+		assertThat(transformer.setInput()).as("transformer.setInput()")
 			.isTrue();
 		assertThat(transformer.getInputFileName()).as("input file name")
 			.isEqualTo(inputFileName);
 
-		assertThat(transformer.setOutput()).as("options.setOutput() unexpectedly succeeded")
+		assertThat(transformer.setOutput()).as("transformer.setOutput() unexpectedly succeeded")
 			.isFalse();
 	}
 }

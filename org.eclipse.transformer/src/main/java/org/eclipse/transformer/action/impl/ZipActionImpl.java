@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.file.attribute.FileTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -203,10 +204,13 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		// Don't use try-with-resources: Zip streams, when closed, close their
 		// base stream. We don't want that here.
 
-		try {
-			ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+		Charset charset = resourceCharset(inputPath);
+		getLogger().debug("Zip Charset [ {} ]: {}", inputPath, charset);
 
-			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
+		try {
+			ZipInputStream zipInputStream = new ZipInputStream(inputStream, charset);
+
+			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream, charset);
 			try {
 				applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream);
 			} finally {
