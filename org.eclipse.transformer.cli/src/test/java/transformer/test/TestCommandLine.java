@@ -137,6 +137,56 @@ class TestCommandLine {
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
+	// Test zip with entry names encoded with a charset other than UTF-8.
+	@Test
+	void zip_non_UTF_8_encoding() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR  + "/zip-encoding/japan.zip";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/japan.zip";
+		System.out.printf("verifyAction: Input is: [%s] Output is: [%s]\n", inputFileName, outputFileName);
+
+		TransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, inputFileName, outputFileName, "-o",
+			"--immediate", "selection", "*/japan.zip", "MS932" //  configure MS932 charset for japan.zip
+		);
+
+		Transformer transformer = new Transformer(cli.getLogger(), cli);
+
+		assertThat(transformer.setInput()).as("transformer.setInput()")
+			.isTrue();
+		assertThat(transformer.getInputFileName()).as("input file name")
+			.isEqualTo(inputFileName);
+
+		assertThat(transformer.setOutput()).as("transformer.setOutput()")
+			.isTrue();
+		assertThat(transformer.getOutputFileName()).as("output file name")
+			.isEqualTo(outputFileName);
+
+		assertThat(transformer.setRules(transformer.getImmediateData())).as("transformer.setRules()")
+			.isTrue();
+		assertThat(transformer.acceptAction()).as("transformer.acceptAction()")
+			.isTrue();
+		assertThat(transformer.acceptedAction.getClass()
+			.getName()).as("action class name")
+			.isEqualTo(ZipActionImpl.class.getName());
+
+		transformer.transform();
+
+		Changes lastActiveChanges = transformer.getLastActiveChanges();
+		if (lastActiveChanges instanceof ContainerChanges) {
+			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+			int numDuplicated = containerChanges.getAllDuplicated();
+			int numFailed = containerChanges.getAllFailed();
+
+			assertThat(numDuplicated).as("Duplicates were processed")
+				.isZero();
+			assertThat(numFailed).as("Failures were processed")
+				.isZero();
+		}
+
+		File outputFile = new File(outputFileName);
+		assertThat(outputFile).as("output file")
+			.isFile();
+	}
+
 	// Test war with duplicate entries.
 	@Test
 	void duplicate_entries() throws Exception {
