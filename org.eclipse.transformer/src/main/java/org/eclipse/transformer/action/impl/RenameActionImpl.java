@@ -33,11 +33,6 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 	//
 
 	@Override
-	public String getName() {
-		return "Rename Action";
-	}
-
-	@Override
 	public ActionType getActionType() {
 		return ActionType.RENAME;
 	}
@@ -47,11 +42,6 @@ public class RenameActionImpl extends ElementActionImpl implements RenameAction 
 	@Override
 	public boolean acceptResource(String resourcePath, File resourceFile) {
 		return true;
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
 	}
 
 	//

@@ -26,7 +26,7 @@ import org.eclipse.transformer.util.LineSeparatorBufferedReader;
 
 /**
  * Transform service configuration bytes. Per:
- * https://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html A
+ * <a href="https://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html">...</a> A
  * service provider is identified by placing a provider-configuration file in
  * the resource directory META-INF/services. The file's name is the
  * fully-qualified binary name of the service's type. The file contains a list
@@ -37,7 +37,6 @@ import org.eclipse.transformer.util.LineSeparatorBufferedReader;
  * must be encoded in UTF-8.
  */
 public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
-	public static final String	META_INF			= "META-INF/";
 	public static final String	META_INF_SERVICES	= "META-INF/services/";
 
 	//
@@ -47,11 +46,6 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 	}
 
 	//
-
-	@Override
-	public String getName() {
-		return "Service Config Action";
-	}
 
 	@Override
 	public ActionType getActionType() {
@@ -88,11 +82,6 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
 		return resourceName.contains(META_INF_SERVICES) && !resourceName.endsWith(META_INF_SERVICES);
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException();
 	}
 
 	//

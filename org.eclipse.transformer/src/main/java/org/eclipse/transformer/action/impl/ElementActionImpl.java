@@ -15,7 +15,6 @@ import java.io.File;
 
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.ElementAction;
 
@@ -24,12 +23,6 @@ public abstract class ElementActionImpl extends ActionImpl implements ElementAct
 	public ElementActionImpl(ActionContext context) {
 		super(context);
 	}
-
-	@Override
-	public abstract String getName();
-
-	@Override
-	public abstract ActionType getActionType();
 
 	@Override
 	public boolean isElementAction() {

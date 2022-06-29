@@ -15,7 +15,6 @@ import java.io.File;
 import java.nio.charset.Charset;
 
 import org.eclipse.transformer.TransformException;
-import org.slf4j.Logger;
 
 public interface Action {
 	/**
@@ -25,7 +24,9 @@ public interface Action {
 	 *
 	 * @return A unique short name for this action.
 	 */
-	String getName();
+	default String getName() {
+		return getActionType().getName();
+	}
 
 	//
 

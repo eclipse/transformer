@@ -42,6 +42,7 @@ import aQute.lib.io.ByteBufferDataInput;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
@@ -344,7 +345,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
-			toJakartaJarAction = ZipActionImpl.newJarAction(context);
+			toJakartaJarAction = new ZipActionImpl(context, ActionType.JAR);
 		}
 
 		return toJakartaJarAction;
@@ -362,7 +363,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, toJavaxRenames, null, null, null, Collections.emptyMap()));
 
-			toJavaxJarAction = ZipActionImpl.newJarAction(context);
+			toJavaxJarAction = new ZipActionImpl(context, ActionType.JAR);
 		}
 
 		return toJavaxJarAction;
@@ -378,7 +379,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(), null));
 
-			toJakartaJarAction_DirectOverride = ZipActionImpl.newJarAction(context);
+			toJakartaJarAction_DirectOverride = new ZipActionImpl(context, ActionType.JAR);
 		}
 
 		return toJakartaJarAction_DirectOverride;
@@ -395,7 +396,7 @@ public class TestTransformClass extends CaptureTest {
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(),
 					toJakartaPerClassDirectStrings()));
 
-			toJakartaJarAction_PerClassDirectOverride = ZipActionImpl.newJarAction(context);
+			toJakartaJarAction_PerClassDirectOverride = new ZipActionImpl(context, ActionType.JAR);
 		}
 
 		return toJakartaJarAction_PerClassDirectOverride;
@@ -411,7 +412,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, null));
 
-			toJakartaJarAction_PackageRenamesOnly = ZipActionImpl.newJarAction(context);
+			toJakartaJarAction_PackageRenamesOnly = new ZipActionImpl(context, ActionType.JAR);
 		}
 
 		return toJakartaJarAction_PackageRenamesOnly;

@@ -21,15 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.action.SignatureRule.SignatureType;
-import org.eclipse.transformer.util.FileUtils;
-import org.slf4j.Logger;
-
 import aQute.bnd.classfile.AnnotationDefaultAttribute;
 import aQute.bnd.classfile.AnnotationInfo;
 import aQute.bnd.classfile.AnnotationsAttribute;
@@ -88,6 +79,14 @@ import aQute.bnd.classfile.builder.ClassFileBuilder;
 import aQute.bnd.classfile.builder.MutableConstantPool;
 import aQute.lib.io.ByteBufferDataInput;
 import aQute.lib.io.ByteBufferDataOutput;
+import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.ByteData;
+import org.eclipse.transformer.action.SignatureRule;
+import org.eclipse.transformer.action.SignatureRule.SignatureType;
+import org.eclipse.transformer.util.FileUtils;
+import org.slf4j.Logger;
 
 /**
  * Transform class bytes.
@@ -139,7 +138,7 @@ public class ClassActionImpl extends ElementActionImpl {
 	 * Adjust an input path according to the changes made to the name of the
 	 * class stored at that path. The input path is expected to match the input
 	 * class name using usual java class resource placement. If the input path
-	 * does does not match the input class name, the class is incorrectly
+	 * does not match the input class name, the class is incorrectly
 	 * placed. Find an approximate location for the class based on whether the
 	 * input path begins with "WEB-INF/classes/" or "META-INF/versions/".
 	 * Otherwise, use the usual path for the output class name using java class
@@ -222,7 +221,7 @@ public class ClassActionImpl extends ElementActionImpl {
 
 		ByteBuffer buffer = inputData.buffer();
 		while (buffer.hasRemaining()) {
-			int nextWidth = (buffer.remaining() > DUMP_WIDTH) ? DUMP_WIDTH : buffer.remaining();
+			int nextWidth = Math.min(buffer.remaining(), DUMP_WIDTH);
 			String nextLine = traceDumpLine(outputBuilder, buffer, nextWidth);
 			useLogger.trace(nextLine);
 		}
@@ -247,7 +246,7 @@ public class ClassActionImpl extends ElementActionImpl {
 	}
 
 	protected List<StringReplacement> createActiveReplacements(SignatureRule signatureRule) {
-		List<StringReplacement> replacements = new ArrayList<StringReplacement>();
+		List<StringReplacement> replacements = new ArrayList<>();
 
 		if ( !signatureRule.getDirectPerClassUpdates().isEmpty() ) {
 			replacements.add(this::directPerClassUpdate);
@@ -266,7 +265,7 @@ public class ClassActionImpl extends ElementActionImpl {
 		return replacements;
 	}
 
-	private List<StringReplacement> activeReplacements;
+	private final List<StringReplacement> activeReplacements;
 
 	@Override
 	protected List<StringReplacement> getActiveReplacements() {
@@ -293,11 +292,6 @@ public class ClassActionImpl extends ElementActionImpl {
 	}
 
 	//
-
-	@Override
-	public String getName() {
-		return "Class Action";
-	}
 
 	@Override
 	public ActionType getActionType() {
@@ -351,13 +345,6 @@ public class ClassActionImpl extends ElementActionImpl {
 
 	protected void setModifiedConstants(int modifiedConstants) {
 		getActiveChanges().addModifiedConstants(modifiedConstants);
-	}
-
-	//
-
-	@Override
-	public String getAcceptExtension() {
-		return ".class";
 	}
 
 	//

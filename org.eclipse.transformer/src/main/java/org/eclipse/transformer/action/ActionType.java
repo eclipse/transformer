@@ -12,26 +12,42 @@
 package org.eclipse.transformer.action;
 
 public enum ActionType {
-	RENAME,
+	RENAME("Rename Action", ""),
 
-	CLASS,
-	MANIFEST,
-	FEATURE, // Sub of MANIFEST
-	SERVICE_LOADER_CONFIG,
-	PROPERTIES,
+	CLASS("Class Action", ".class"),
+	MANIFEST("Manifest Action", "manifest.mf"),
+	FEATURE("Feature Action", ".mf"), // Sub of MANIFEST
+	SERVICE_LOADER_CONFIG("Service Config Action", ""),
+	PROPERTIES("Properties Action", ".properties"), // Sub of TEXT
 
-	TEXT,
-	JAVA, // Sub of TEXT
-	JSP, // Sub of TEXT
-	XML, // Currently unused
+	TEXT("Text Action", ""),
+	JAVA("Java Action", ".java"), // Sub of TEXT
+	JSP("JSP Action", ".jsp"), // Sub of TEXT
+	XML("XML Action", ".xml"), // Sub of TEXT
 
-	ZIP,
-	JAR,
-	WAR,
-	RAR,
-	EAR,
+	ZIP("Zip Action", ".zip"),
+	JAR("Jar Action", ".jar"),
+	WAR("WAR Action", ".war"),
+	RAR("RAR Action", ".rar"),
+	EAR("EAR Action", ".ear"),
 
-	DIRECTORY;
+	DIRECTORY("Directory Action", "");
+
+	private final String name;
+	private final String extension;
+
+	ActionType(String name, String extension) {
+		this.name = name;
+		this.extension = extension;
+	}
+
+	public String getExtension() {
+		return extension;
+	}
+
+	public String getName() {
+		return name;
+	}
 
 	public boolean matches(String tag) {
 		return name().regionMatches(true, 0, tag, 0, tag.length());

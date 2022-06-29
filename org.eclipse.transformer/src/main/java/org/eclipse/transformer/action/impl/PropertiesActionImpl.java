@@ -45,18 +45,8 @@ public class PropertiesActionImpl extends TextActionImpl {
 	}
 
 	@Override
-	public String getName() {
-		return "Properties Action";
-	}
-
-	@Override
 	public ActionType getActionType() {
 		return ActionType.PROPERTIES;
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		return ".properties";
 	}
 
 	@Override

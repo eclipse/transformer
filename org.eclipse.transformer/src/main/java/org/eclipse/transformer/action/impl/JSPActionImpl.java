@@ -53,11 +53,6 @@ public class JSPActionImpl extends TextActionImpl {
 	//
 
 	@Override
-	public String getName() {
-		return "JSP Action";
-	}
-
-	@Override
 	public ActionType getActionType() {
 		return ActionType.JSP;
 	}
@@ -67,10 +62,5 @@ public class JSPActionImpl extends TextActionImpl {
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
 		return acceptExtension(resourceName, resourceFile);
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		return ".jsp";
 	}
 }

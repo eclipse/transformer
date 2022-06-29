@@ -43,7 +43,7 @@ public class TextActionImpl extends ElementActionImpl {
 	public TextActionImpl(ActionContext context) {
 		super(context);
 
-		List<StringReplacement> replacements = createActiveReplacements(context.getSignatureRule());
+		List<StringReplacement> replacements = createActiveReplacements(getSignatureRule());
 		this.activeReplacements = replacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : replacements;
 	}
 
@@ -63,11 +63,6 @@ public class TextActionImpl extends ElementActionImpl {
 	}
 
 	@Override
-	public String getName() {
-		return "Text Action";
-	}
-
-	@Override
 	public ActionType getActionType() {
 		return ActionType.TEXT;
 	}
@@ -76,13 +71,6 @@ public class TextActionImpl extends ElementActionImpl {
 	public boolean acceptResource(String resourceName, File resourceFile) {
 		return (getTextSubstitutions(resourceName) != null);
 	}
-
-	@Override
-	public String getAcceptExtension() {
-		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
-	}
-
-	//
 
 	@Override
 	public ByteData apply(ByteData inputData) throws TransformException {

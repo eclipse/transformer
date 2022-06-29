@@ -57,11 +57,6 @@ public class JavaActionImpl extends TextActionImpl {
 	//
 
 	@Override
-	public String getName() {
-		return "Java Action";
-	}
-
-	@Override
 	public ActionType getActionType() {
 		return ActionType.JAVA;
 	}
@@ -71,10 +66,5 @@ public class JavaActionImpl extends TextActionImpl {
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
 		return acceptExtension(resourceName, resourceFile);
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		return ".java";
 	}
 }
