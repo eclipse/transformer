@@ -25,6 +25,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import aQute.lib.io.ByteBufferOutputStream;
+import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
@@ -34,9 +36,6 @@ import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
-
-import aQute.lib.io.ByteBufferOutputStream;
-import aQute.lib.io.IO;
 
 /**
  * Top level ZIP action. A ZIP action is a container action which iterates
@@ -53,43 +52,12 @@ import aQute.lib.io.IO;
  */
 public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
-	public static ZipActionImpl newZipAction(ActionContext context) {
-		return new ZipActionImpl(context, "Zip Action", ActionType.ZIP, ".zip");
-	}
-
-	public static ZipActionImpl newJarAction(ActionContext context) {
-		return new ZipActionImpl(context, "Jar Action", ActionType.JAR, ".jar");
-	}
-
-	public static ZipActionImpl newWarAction(ActionContext context) {
-		return new ZipActionImpl(context, "WAR Action", ActionType.WAR, ".war");
-	}
-
-	public static ZipActionImpl newRarAction(ActionContext context) {
-		return new ZipActionImpl(context, "RAR Action", ActionType.RAR, ".rar");
-	}
-
-	public static ZipActionImpl newEarAction(ActionContext context) {
-		return new ZipActionImpl(context, "EAR Action", ActionType.EAR, ".ear");
-	}
-
-	public ZipActionImpl(ActionContext context, String name, ActionType actionType,
-						 String extension) {
+	public ZipActionImpl(ActionContext context, ActionType actionType) {
 		super(context);
-
-		this.name = name;
 		this.actionType = actionType;
-		this.extension = extension;
 	}
 
-	private final String		name;
 	private final ActionType	actionType;
-	private final String		extension;
-
-	@Override
-	public String getName() {
-		return name;
-	}
 
 	@Override
 	public ActionType getActionType() {
@@ -104,11 +72,6 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
 		return acceptExtension(resourceName, resourceFile);
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		return extension;
 	}
 
 	// Entry from the transformer, or, from the directory action.

@@ -29,7 +29,6 @@ import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
@@ -103,14 +102,6 @@ public abstract class ActionImpl implements Action {
 	protected Logger getLogger() {
 		return getContext().getLogger();
 	}
-
-	//
-
-	@Override
-	public abstract String getName();
-
-	@Override
-	public abstract ActionType getActionType();
 
 	//
 
@@ -203,12 +194,15 @@ public abstract class ActionImpl implements Action {
 	}
 
 	public String getAcceptExtension() {
-		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
+		String acceptExtension = getActionType().getExtension();
+		if (acceptExtension.isEmpty()) {
+			throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
+		}
+		return acceptExtension;
 	}
 
 	//
 
-	@SuppressWarnings("unchecked")
 	protected abstract Changes newChanges();
 
 	private final Deque<Changes>	changes;
@@ -325,7 +319,7 @@ public abstract class ActionImpl implements Action {
 
 	/**
 	 * Write data to an output stream. Convert any exception thrown when
-	 * attempting the write into a {@link TransformException}.
+	 * attempting to write into a {@link TransformException}.
 	 *
 	 * @param outputData Data to be written.
 	 * @param outputStream Stream to which to write the data.

@@ -26,6 +26,7 @@ import java.util.zip.ZipInputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
@@ -195,7 +196,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = ZipActionImpl.newJarAction(context);
+			jarJavaxServiceAction = new ZipActionImpl(context, ActionType.JAR);
 			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
 			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}

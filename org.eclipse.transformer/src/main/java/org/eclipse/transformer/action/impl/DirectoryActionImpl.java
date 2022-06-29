@@ -43,11 +43,6 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 		return ActionType.DIRECTORY;
 	}
 
-	@Override
-	public String getName() {
-		return "Directory Action";
-	}
-
 	//
 
 	@Override
@@ -67,7 +62,7 @@ public class DirectoryActionImpl extends ContainerActionImpl {
 	 * @param rootOutputFile The root output file.
 	 * @throws TransformException Thrown in case of a transformation error.
 	 *             Currently, never thrown: A failure to transform a single file
-	 *             does not cause the the transformation to fail as a whole. The
+	 *             does not cause the transformation to fail as a whole. The
 	 *             single file is copied, an error is emitted, and the
 	 *             transformation continues.
 	 */

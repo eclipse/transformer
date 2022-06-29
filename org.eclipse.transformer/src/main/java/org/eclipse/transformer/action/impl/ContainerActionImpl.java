@@ -17,7 +17,6 @@ import java.util.function.Function;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionSelector;
-import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ContainerAction;
 
 /**
@@ -49,12 +48,6 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 	public ContainerActionImpl(ActionContext context) {
 		this(context, new ActionSelectorImpl());
 	}
-
-	@Override
-	public abstract String getName();
-
-	@Override
-	public abstract ActionType getActionType();
 
 	public <ACTION extends Action> ACTION addUsing(Function<? super ActionContext, ACTION> init) {
 		return getActionSelector().addUsing(init, getContext());

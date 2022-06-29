@@ -27,6 +27,7 @@ import java.util.Properties;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
@@ -201,7 +202,7 @@ public class TestTransformManifest extends CaptureTest {
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, getBundleUpdates(),
 					null, getDirectStrings(), Collections.emptyMap()));
 
-			jakartaManifestAction = ManifestActionImpl.newManifestAction(context);
+			jakartaManifestAction = new ManifestActionImpl(context, ActionType.MANIFEST);
 		}
 		return jakartaManifestAction;
 	}
@@ -217,7 +218,7 @@ public class TestTransformManifest extends CaptureTest {
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()));
 
-			jakartaFeatureAction = ManifestActionImpl.newFeatureAction(context);
+			jakartaFeatureAction = new ManifestActionImpl(context, ActionType.FEATURE);
 		}
 
 		return jakartaFeatureAction;
@@ -236,7 +237,7 @@ public class TestTransformManifest extends CaptureTest {
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()));
 
-			jakartaManifestActionTx = ManifestActionImpl.newManifestAction(context);
+			jakartaManifestActionTx = new ManifestActionImpl(context, ActionType.MANIFEST);
 
 		}
 		return jakartaManifestActionTx;
@@ -253,7 +254,7 @@ public class TestTransformManifest extends CaptureTest {
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()));
 
-			specificJakartaManifestAction = ManifestActionImpl.newManifestAction(context);
+			specificJakartaManifestAction = new ManifestActionImpl(context, ActionType.MANIFEST);
 		}
 
 		return specificJakartaManifestAction;
@@ -615,7 +616,7 @@ public class TestTransformManifest extends CaptureTest {
 	 */
 	class ManifestActionImpl_Test extends ManifestActionImpl {
 		public ManifestActionImpl_Test(ActionContext context) {
-			super(context, true);
+			super(context, ActionType.MANIFEST);
 		}
 
 		public boolean callIsTrueMatch(String text, int matchStart, int keyLen) {

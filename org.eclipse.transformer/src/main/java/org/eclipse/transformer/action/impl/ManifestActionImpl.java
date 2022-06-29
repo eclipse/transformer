@@ -24,19 +24,17 @@ import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import org.eclipse.transformer.TransformException;
-import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.action.BundleData;
-import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.util.FileUtils;
-
 import aQute.bnd.header.Attrs;
 import aQute.bnd.header.OSGiHeader;
 import aQute.bnd.header.Parameters;
 import aQute.bnd.unmodifiable.Sets;
 import aQute.lib.io.ByteBufferOutputStream;
 import aQute.lib.manifest.ManifestUtil;
+import org.eclipse.transformer.TransformException;
+import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
+import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.ByteData;
 
 /**
  * Action for manifest, including feature manifest.
@@ -50,55 +48,25 @@ import aQute.lib.manifest.ManifestUtil;
  * the line length restrictions as are had by manifest.
  */
 public class ManifestActionImpl extends ElementActionImpl {
-	public static final String	META_INF				= "META-INF/";
-	public static final String	MANIFEST_MF				= "MANIFEST.MF";
-	public static final String	META_INF_MANIFEST_MF	= "META-INF/MANIFEST.MF";
 
-	//
-
-	private static final boolean	IS_MANIFEST				= true;
-	private static final boolean	IS_FEATURE				= !IS_MANIFEST;
-
-	public static ManifestActionImpl newManifestAction(ActionContext context) {
-		return new ManifestActionImpl(context, IS_MANIFEST);
-	}
-
-	public static ManifestActionImpl newFeatureAction(ActionContext context) {
-		return new ManifestActionImpl(context, IS_FEATURE);
-	}
-
-	public ManifestActionImpl(ActionContext context, boolean isManifest) {
+	public ManifestActionImpl(ActionContext context, ActionType actionType) {
 		super(context);
-		this.isManifest = isManifest;
+		this.actionType = actionType;
 	}
 
 	//
 
-	@Override
-	public String getName() {
-		return isManifest() ? "Manifest Action" : "Feature Action";
-	}
+	private final ActionType actionType;
 
 	@Override
 	public ActionType getActionType() {
-		return isManifest() ? ActionType.MANIFEST : ActionType.FEATURE;
+		return actionType;
 	}
-
 	//
 
-	private final boolean isManifest;
 
-	public boolean isManifest() {
-		return isManifest == IS_MANIFEST;
-	}
-
-	public boolean isFeature() {
-		return isManifest == IS_FEATURE;
-	}
-
-	@Override
-	public String getAcceptExtension() {
-		return isManifest() ? "manifest.mf" : ".mf";
+	private boolean isManifest() {
+		return getActionType() == ActionType.MANIFEST;
 	}
 
 	//
