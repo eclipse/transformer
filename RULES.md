@@ -19,7 +19,7 @@ All are in package **org.eclipse.transformer.action.impl**:
 	  * JavaActionImpl
 	  * JSPActionImpl
 	  * PropertiesActionImpl
-  * XmlActionImpl (not currently in use)
+      * XmlActionImpl
 
 ## Update Cases
 

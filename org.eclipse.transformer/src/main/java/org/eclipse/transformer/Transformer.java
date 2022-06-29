@@ -60,6 +60,7 @@ import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
+import org.eclipse.transformer.action.impl.XmlActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.PropertiesUtils;
 import org.slf4j.Logger;
@@ -1119,7 +1120,7 @@ public class Transformer {
 			Action manifestAction = useSelector.addUsing(c -> new ManifestActionImpl(c, ActionType.MANIFEST), context);
 			Action featureAction = useSelector.addUsing(c -> new ManifestActionImpl(c, ActionType.FEATURE), context);
 			Action textAction = useSelector.addUsing(TextActionImpl::new, context);
-			// Action xmlAction = useRootAction.addUsing( XmlActionImpl::new, context );
+			Action xmlAction = useSelector.addUsing(XmlActionImpl::new, context);
 			Action propertiesAction = useSelector.addUsing(PropertiesActionImpl::new, context);
 
 			List<Action> standardActions = new ArrayList<>();
@@ -1131,6 +1132,7 @@ public class Transformer {
 			standardActions.add(featureAction);
 			standardActions.add(textAction);
 			standardActions.add(propertiesAction); // after text so text can supersede
+			standardActions.add(xmlAction); // after text so text can supersede
 
 			ContainerAction jarAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.JAR), context);
 			ContainerAction warAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.WAR), context);
