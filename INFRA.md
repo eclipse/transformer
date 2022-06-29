@@ -8,17 +8,17 @@ The Eclipse Transformer is stored in a standard Git repository, hosted under the
 
 Build scripts and standard files are located at the root:
 
-| File      | Description                  |
-|-----------|------------------------------|
-| README.md | Standard project readme      |
-| INFRA.md  | Infrastructure notes         |
-| DEV.md    | Developer notes              |
-| RULES.md  | Update rules notes           |
-|           |                              |   
-| mvnw      | Maven build script           |
-| mvnw.cmd  | Maven build script (windows) |
-|           |
-| pom.xml   | Project parent maven metadata
+| File      | Description                   |
+|-----------|-------------------------------|
+| README.md | Standard project readme       |
+| INFRA.md  | Infrastructure notes          |
+| DEV.md    | Developer notes               |
+| RULES.md  | Update rules notes            |
+|           |                               |
+| mvnw      | Maven build script            |
+| mvnw.cmd  | Maven build script (windows)  |
+|           |                               |
+| pom.xml   | Project parent maven metadata |
 
 Project contents are currently managed as two maven modules:
 
@@ -46,7 +46,7 @@ Current packaging consists of the Jakarta command line interface:
 
     org.eclipse.transformer.cli-0.1.1-SNAPSHOT.jar
 
-Plus the core command line interface and the jar containing core function, together with dependency libraries, placed in a libraries folder:
+Plus the core command line interface and the jar containing core function, together with dependency libraries, placed in the libs folder:
 
     libs/
     libs/org.eclipse.transformer-0.1.1-SNAPSHOT.jar

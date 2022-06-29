@@ -12,16 +12,14 @@ All are in package **org.eclipse.transformer.action.impl**:
 * Leaf Type Actions
 
   * ClassActionImpl
-  * JavaActionImpl
   * ManifestActionImpl
-  * PropertiesActionImpl
+  * RenameActionImpl
   * ServiceLoaderConfigActionImpl
   * TextActionImpl
+	  * JavaActionImpl
+	  * JSPActionImpl
+	  * PropertiesActionImpl
   * XmlActionImpl (not currently in use)
-
-* Rename Action
-
-  * RenameActionImpl
 
 ## Update Cases
 
@@ -64,7 +62,7 @@ For example:
 
 **Command line argument**: -tv, --version
 
-**Property Format**: Specifies a package version assignment as a key-value pair which maps an package name to a version range.
+**Property Format**: Specifies a package version assignment as a key-value pair which maps a package name to a version range.
 
 For example:
 
@@ -94,7 +92,7 @@ The bundle version is not updated when the initial bundle symbolic name is '*'.
 
 **Description**: Updates bundle identity attributes of manifest which match specified bundle symbolic names.  The presence of bundle identity data is determined by matching manifest attribute "Bundle-SymbolicName".  Updates are made to bundle identity attributes according to the property data.  Updates are made to the attributes "Bundle-SymbolicName", "Bundle-Version", "Bundle-Name", and "Bundle-Description".
 
-**Used by**: Manifest action and featuure manifest action
+**Used by**: Manifest action and feature manifest action
 
 ### Case: Class simple string update
 
@@ -168,6 +166,6 @@ javax.servlet=jakarta.servlet
 
 **Wildcard support**: None
 
-**Description**: Updates target classes. All occurrences of mapping keys present in constant strings are replaced with mapping values.
+**Description**: Updates target classes. All occurrences of a mapping key present in constant strings are replaced with the mapping value.
 
 **Used by**: Class action

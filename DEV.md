@@ -71,9 +71,9 @@ The archive hierarchy is constructed according to these rules:
 
 * All archive container actions are children of the directory container action.
 
-* Archive container actions are selectively children of each other, according to usual JavaEE archive structure.  For example, the War container action is a child of the Ear containter action, but is not a child of any other archive container action.
+* Archive container actions are selectively children of each other, according to usual JavaEE archive structure.  For example, the War container action is a child of the Ear container action, but is not a child of any other archive container action.
 
-* All of the leaf actions are children of all of each of the container actions.
+* All the leaf actions are children of all of each of the container actions.
 
 The archive hierarchy is constructed by the transformer, with the structure fixed by transformer code.  The hierarchy  subject to modification, depending on use requirements, and is likely to be made configurable.
 

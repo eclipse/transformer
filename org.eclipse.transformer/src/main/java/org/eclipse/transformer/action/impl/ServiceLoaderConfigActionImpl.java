@@ -133,8 +133,7 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 	}
 
 	protected void transform(LineSeparatorBufferedReader reader, BufferedWriter writer) throws IOException {
-		String inputLine;
-		while ((inputLine = reader.readLine()) != null) {
+		for (String inputLine; (inputLine = reader.readLine()) != null; writer.write(reader.lineSeparator())) {
 			// Goal is to find the input package name. Find it by
 			// successively taking text off of the input line.
 
@@ -214,7 +213,6 @@ public class ServiceLoaderConfigActionImpl extends ElementActionImpl {
 			}
 
 			writer.write(outputLine);
-			writer.write(reader.lineSeparator());
 		}
 	}
 }
