@@ -79,7 +79,7 @@ Primary use cases are as follows:
 
 * **Archive case**: A target archive is specified to be transformed.  The command line interface is used to create a transformed copy of the archive.  All contents of the target archive, including nested archives, are transformed.  Particular transformations are selected for the archive based on the type of the file.  Particular updates made by the transformation are based on property files which are specified to the transformer.
 
-* **Directory case**: A target directory is specified to be transformed.  The command line interface is used to create a transformed copy of all of the resources within the directory, and within all sub-directories of the specified directory.  Transformation of each file within the target directory is according the simple resource case and the archive case.
+* **Directory case**: A target directory is specified to be transformed.  The command line interface is used to create a transformed copy of all the resources within the directory, and within all subdirectories of the specified directory.  Transformation of each file within the target directory is according the simple resource case and the archive case.
 
 Possible secondary use cases are as follows:
 
@@ -87,13 +87,13 @@ Possible secondary use cases are as follows:
 
 ## Usage
 
-The transformer CLI can be invoked by using `java -jar org.eclipse.transformer.cli-<version>.jar` from now on referred as `TransformerCLI`. This file can be found in the `org.eclipse.transformer.cli/target` folder when you build this project by yourself or you can download and extract the `org.eclipse.transformer.cli-<version>-distribution.jar` into a directory of your choice and start it from there.
+The transformer CLI can be invoked by using `java -jar org.eclipse.transformer.cli-<version>.jar` from now on referred as `TransformerCLI`. This file can be found in the `org.eclipse.transformer.cli/target` folder when you build this project by yourself, or you can download and extract the `org.eclipse.transformer.cli-<version>-distribution.jar` into a directory of your choice and start it from there.
 
 The primary use of the Eclipse Transformer is to create an updated copy an input file or directory.  Generally:
 
     TransformerCLI input [ output ] [ options ... ]
 
-To get more informations on available options use:
+To get more information on available options use:
 
     TransformerCLI --help
 
@@ -103,7 +103,7 @@ The input file is expected to be either a specific type of file (for example, a 
 
 In addition to the output file, the transformer produces a change report.  The change report tells if any updates were made to the target file, and provides details on what changes were made.  What details are provided depends on the type of file which is transformer.
 
-When the input file is a container type file, the transformer is applied to all of the elements of the container.
+When the input file is a container type file, the transformer is applied to all the elements of the container.
 
 The transformer recursively processes nested archives.  For example, Web Application Archives (WAR files) located within Enterprise Application Archives (EAR files) are processed.
 
@@ -121,13 +121,13 @@ For Jakarta related updates, usual target resources are implementation jar files
 
 Update data is specified using property files.  A set of default property files are included in the packaging of the Jakarta command line interface.  User specified property files must be provided when using the generic command line interface.  Property files are specified using command line options:
 
-| Command Line Option | Description                  | Jakarta Example                |
-| ------------------- | ---------------------------- | ------------------------------ |
-| -ts --selection     | Target selections            | None (select all)              |
-| -tr --renames       | Package renames              | jakarta-renames.properties     |
-| -tv --versions      | Package version assignments  | jakarta-versions.properties    |
-| -tb --bundles       | Bundle identity data         | jakarta-bundles.properties     |
-| -td --direct        | Java class direct updates    | jakarta-direct.properties      |
+| Command Line Option | Description                 | Jakarta Example              |
+|---------------------|-----------------------------|------------------------------|
+| -ts --selection     | Target selections           | jakarta-selection.properties |
+| -tr --renames       | Package renames             | jakarta-renames.properties   |
+| -tv --versions      | Package version assignments | jakarta-versions.properties  |
+| -tb --bundles       | Bundle identity data        | jakarta-bundles.properties   |
+| -td --direct        | Java class direct updates   | jakarta-direct.properties    |
 
 All property options may be specified zero, one, or multiple times.
 
@@ -135,17 +135,17 @@ When the same property option is specified multiple times, the property file dat
 
 An additional core property file is used as a master table for text updates:
 
-| Command Line Option | Description                  | Jakarta Example                |
-| ------------------- | ---------------------------- | ------------------------------ |
-| -tf --text          | Text master data             | jakarta-text-master.properties |
+| Command Line Option | Description      | Jakarta Example                |
+|---------------------|------------------|--------------------------------|
+| -tf --text          | Text master data | jakarta-text-master.properties |
 
 The master text properties file maps file selection patterns (for example, "\*.xml", or "\*.html") to specific text properties files.
 
 A special "immediate" option exists that allows the specification of rules data directly on the command line:
 
-| Command Line Option | Description                  | Jakarta Example                |
-| ------------------- | ---------------------------- | ------------------------------ |
-| -ti --immediate     | Immediate data               | None                           |
+| Command Line Option | Description    | Jakarta Example |
+|---------------------|----------------|-----------------|
+| -ti --immediate     | Immediate data | None            |
 
 The immediate option has the format:
 

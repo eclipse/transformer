@@ -36,7 +36,7 @@ After forking the main repo on GitHub, you can clone the main repo to your syste
     git clone https://github.com/eclipse/transformer.git
 
 This will clone the main repo to a local repo on your disk and set up the `origin` remote in Git.
-Next you will set up the the second side of the triangle to your fork repo.
+Next you will set up the second side of the triangle to your fork repo.
 
     cd transformer
     git remote add fork git@github.com:github-user/transformer.git
