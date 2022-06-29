@@ -11,29 +11,37 @@
 
 package org.eclipse.transformer.action.impl;
 
-import org.eclipse.transformer.TransformException;
+import java.io.File;
+import java.util.List;
+
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
-import org.eclipse.transformer.action.ByteData;
-
-// TODO:
-//
-// Is this action necessary?
-//
-// The rename action seems to handle the case which is processed by this properties action.
-//
-// See issue #290
+import org.eclipse.transformer.action.SignatureRule;
 
 /**
  * Action for properties resources.
  * <p>
- * This action does no content transformation. This action is used <em>only</em>
- * to rename properties files which are in a package dependent location.
+ * This action does content transformation. This action performs text updates
+ * to property file lines.
  */
-public class PropertiesActionImpl extends ElementActionImpl {
+public class PropertiesActionImpl extends TextActionImpl {
 
 	public PropertiesActionImpl(ActionContext context) {
 		super(context);
+	}
+
+	@Override
+	protected List<StringReplacement> createActiveReplacements(SignatureRule signatureRule) {
+		List<StringReplacement> replacements = super.createActiveReplacements(signatureRule);
+		if ( !signatureRule.getPackageRenames().isEmpty() ) {
+			replacements.add(this::packagesUpdate);
+			replacements.add(this::binaryPackagesUpdate);
+		}
+		// Do NOT add direct-per-class updates.
+		if ( !signatureRule.getDirectGlobalUpdates().isEmpty() ) {
+			replacements.add(this::directGlobalUpdate);
+		}
+		return replacements;
 	}
 
 	@Override
@@ -52,25 +60,7 @@ public class PropertiesActionImpl extends ElementActionImpl {
 	}
 
 	@Override
-	public ByteData apply(ByteData inputData) throws TransformException {
-		startRecording(inputData);
-
-		try {
-			String inputName = inputData.name();
-			String outputName = transformBinaryType(inputName);
-
-			if (outputName != null) {
-				getLogger().debug("Properties file {}, relocated to {}", inputName, outputName);
-				setResourceNames(inputName, outputName);
-				return inputData.copy(outputName);
-
-			} else {
-				setResourceNames(inputName, inputName);
-				return inputData;
-			}
-
-		} finally {
-			stopRecording(inputData);
-		}
+	public boolean acceptResource(String resourceName, File resourceFile) {
+		return acceptExtension(resourceName, resourceFile);
 	}
 }
