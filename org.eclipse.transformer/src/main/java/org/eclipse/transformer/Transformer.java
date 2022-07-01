@@ -13,6 +13,7 @@ package org.eclipse.transformer;
 
 import static aQute.bnd.exceptions.BiFunctionWithException.asBiFunction;
 import static java.util.Objects.requireNonNull;
+import static org.eclipse.transformer.util.FileUtils.DEFAULT_CHARSET;
 
 import java.io.File;
 import java.io.IOException;
@@ -486,6 +487,7 @@ public class Transformer {
 	private void addImmediateSelection(String selection, String charset) {
 		if ( includes == null ) {
 			includes = new HashMap<>();
+			includes.put("*", DEFAULT_CHARSET.name()); // set default inclusion
 			excludes = new HashMap<>();
 			getLogger().info(consoleMarker, "Selection rules use forced by immediate data");
 		}
