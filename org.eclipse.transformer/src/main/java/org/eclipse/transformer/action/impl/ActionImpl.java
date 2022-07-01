@@ -184,21 +184,8 @@ public abstract class ActionImpl implements Action {
 		throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
 	}
 
-	protected boolean acceptExtension(String resourceName, File resourceFile) {
-		String ext = getAcceptExtension();
-		int extLen = ext.length();
-		int resLen = resourceName.length();
-
-		boolean accept = ((resLen >= extLen) && resourceName.regionMatches(true, resLen - extLen, ext, 0, extLen));
-		return accept;
-	}
-
-	public String getAcceptExtension() {
-		String acceptExtension = getActionType().getExtension();
-		if (acceptExtension.isEmpty()) {
-			throw new UnsupportedOperationException(getClass().getSimpleName() + " does not support this method");
-		}
-		return acceptExtension;
+	protected boolean matchResourceName(String resourceName) {
+		return getActionType().resourceNameMatcher().test(resourceName);
 	}
 
 	//

@@ -65,6 +65,6 @@ public class JavaActionImpl extends TextActionImpl {
 
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
-		return acceptExtension(resourceName, resourceFile);
+		return matchResourceName(resourceName);
 	}
 }

@@ -11,16 +11,19 @@
 
 package org.eclipse.transformer.action;
 
+import java.util.Arrays;
+import java.util.function.Predicate;
+
 public enum ActionType {
-	RENAME("Rename Action", ""),
+	RENAME("Rename Action"),
 
 	CLASS("Class Action", ".class"),
 	MANIFEST("Manifest Action", "manifest.mf"),
 	FEATURE("Feature Action", ".mf"), // Sub of MANIFEST
-	SERVICE_LOADER_CONFIG("Service Config Action", ""),
+	SERVICE_LOADER_CONFIG("Service Config Action"),
 	PROPERTIES("Properties Action", ".properties"), // Sub of TEXT
 
-	TEXT("Text Action", ""),
+	TEXT("Text Action"),
 	JAVA("Java Action", ".java"), // Sub of TEXT
 	JSP("JSP Action", ".jsp"), // Sub of TEXT
 	XML("XML Action", ".xml"), // Sub of TEXT
@@ -31,18 +34,30 @@ public enum ActionType {
 	RAR("RAR Action", ".rar"),
 	EAR("EAR Action", ".ear"),
 
-	DIRECTORY("Directory Action", "");
+	DIRECTORY("Directory Action");
 
 	private final String name;
-	private final String extension;
+	private final Predicate<String> matcher;
 
-	ActionType(String name, String extension) {
+	ActionType(String name, String... extensions) {
 		this.name = name;
-		this.extension = extension;
+		this.matcher = Arrays.stream(extensions)
+			.map(this::extensionPredicate)
+			.reduce(Predicate::or)
+			.orElse(this::matchingUnsupported);
 	}
 
-	public String getExtension() {
-		return extension;
+	private Predicate<String> extensionPredicate(String extension) {
+		int length = extension.length();
+		return resourceName -> resourceName.regionMatches(true, resourceName.length() - length, extension, 0, length);
+	}
+
+	private boolean matchingUnsupported(String resourceName) {
+		throw new UnsupportedOperationException(getName().concat(" does not support resource name matching"));
+	}
+
+	public Predicate<String> resourceNameMatcher() {
+		return matcher;
 	}
 
 	public String getName() {
