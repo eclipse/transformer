@@ -459,12 +459,6 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				<scope>test</scope>
 			</dependency>
 			<dependency>
-				<groupId>jakarta.annotation</groupId>
-				<artifactId>jakarta.annotation-api</artifactId>
-				<version>2.0.0</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
 				<groupId>jakarta.inject</groupId>
 				<artifactId>jakarta.inject-api</artifactId>
 				<version>2.0.1</version>
@@ -474,24 +468,6 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				<groupId>jakarta.servlet</groupId>
 				<artifactId>jakarta.servlet-api</artifactId>
 				<version>5.0.0</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>jakarta.servlet.jsp</groupId>
-				<artifactId>jakarta.servlet.jsp-api</artifactId>
-				<version>2.3.6</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>jakarta.servlet.jsp.jstl</groupId>
-				<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-				<version>1.2.7</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>jakarta.management.j2ee</groupId>
-				<artifactId>jakarta.management.j2ee-api</artifactId>
-				<version>1.1.4</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>

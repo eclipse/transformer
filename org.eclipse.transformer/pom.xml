@@ -72,28 +72,12 @@
 			<artifactId>javax.security.auth.message-api</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>jakarta.annotation</groupId>
-			<artifactId>jakarta.annotation-api</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>jakarta.inject</groupId>
 			<artifactId>jakarta.inject-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>jakarta.servlet</groupId>
 			<artifactId>jakarta.servlet-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.servlet.jsp</groupId>
-			<artifactId>jakarta.servlet.jsp-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.servlet.jsp.jstl</groupId>
-			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>jakarta.management.j2ee</groupId>
-			<artifactId>jakarta.management.j2ee-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.jboss.shrinkwrap</groupId>
