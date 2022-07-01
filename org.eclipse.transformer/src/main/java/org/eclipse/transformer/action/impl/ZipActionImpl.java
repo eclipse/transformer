@@ -71,7 +71,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
-		return acceptExtension(resourceName, resourceFile);
+		return matchResourceName(resourceName);
 	}
 
 	// Entry from the transformer, or, from the directory action.

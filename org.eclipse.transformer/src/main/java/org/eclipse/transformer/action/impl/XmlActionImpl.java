@@ -51,6 +51,6 @@ public class XmlActionImpl extends TextActionImpl {
 
 	@Override
 	public boolean acceptResource(String resourceName, File resourceFile) {
-		return acceptExtension(resourceName, resourceFile);
+		return matchResourceName(resourceName);
 	}
 }
