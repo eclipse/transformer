@@ -17,6 +17,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 
+import aQute.bnd.header.Parameters;
+import aQute.bnd.osgi.Analyzer;
+import aQute.bnd.osgi.Constants;
+import aQute.bnd.service.Plugin;
+import aQute.service.reporter.Reporter;
 import org.eclipse.transformer.AppOption;
 import org.eclipse.transformer.TransformOptions;
 import org.eclipse.transformer.Transformer;
@@ -26,12 +31,6 @@ import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.bnd.analyzer.action.AnalyzerAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import aQute.bnd.header.Parameters;
-import aQute.bnd.osgi.Analyzer;
-import aQute.bnd.osgi.Constants;
-import aQute.bnd.service.Plugin;
-import aQute.service.reporter.Reporter;
 
 /**
  * Base Bnd Plugin for Transformer.

@@ -14,6 +14,9 @@ package org.eclipse.transformer.maven;
 import java.io.File;
 import java.util.Set;
 
+import aQute.bnd.osgi.Jar;
+import aQute.bnd.osgi.Resource;
+import aQute.lib.io.IO;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -22,10 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.eclipse.transformer.maven.action.TransformerJarChanges;
-
-import aQute.bnd.osgi.Jar;
-import aQute.bnd.osgi.Resource;
-import aQute.lib.io.IO;
 
 /**
  * Transforms the specified directory. This is normally the build output

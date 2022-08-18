@@ -23,11 +23,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.AppOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-
-import aQute.lib.io.IO;
 import transformer.test.TestUtils.ErrorAccumulator;
 import transformer.test.TestUtils.InputMapping;
 

@@ -23,11 +23,10 @@ import java.util.Set;
 import java.util.Spliterator;
 import java.util.stream.Stream;
 
+import aQute.bnd.unmodifiable.Sets;
 import org.eclipse.transformer.util.SignatureUtils;
 import org.eclipse.transformer.util.SignatureUtils.RenameKeyComparator;
 import org.junit.jupiter.api.Test;
-
-import aQute.bnd.unmodifiable.Sets;
 
 /**
  *

@@ -26,12 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.eclipse.transformer.action.BundleData;
-import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.util.FileUtils;
-import org.eclipse.transformer.util.SignatureUtils.RenameKeyComparator;
-import org.slf4j.Logger;
-
 import aQute.bnd.signatures.ArrayTypeSignature;
 import aQute.bnd.signatures.BaseType;
 import aQute.bnd.signatures.ClassSignature;
@@ -48,6 +42,11 @@ import aQute.bnd.signatures.TypeParameter;
 import aQute.bnd.signatures.TypeVariableSignature;
 import aQute.bnd.stream.MapStream;
 import aQute.libg.glob.Glob;
+import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.SignatureRule;
+import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.SignatureUtils.RenameKeyComparator;
+import org.slf4j.Logger;
 
 public class SignatureRuleImpl implements SignatureRule {
 

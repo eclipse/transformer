@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import aQute.bnd.maven.PomPropertiesResource;
+import aQute.bnd.osgi.FileResource;
+import aQute.bnd.osgi.Jar;
+import aQute.lib.io.IO;
+import aQute.libg.glob.PathSet;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.handler.ArtifactHandler;
 import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager;
@@ -43,12 +48,6 @@ import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolverException;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.transformer.maven.configuration.TransformerArtifact;
-
-import aQute.bnd.maven.PomPropertiesResource;
-import aQute.bnd.osgi.FileResource;
-import aQute.bnd.osgi.Jar;
-import aQute.lib.io.IO;
-import aQute.libg.glob.PathSet;
 
 /**
  * Transforms a specified artifact into a new artifact.

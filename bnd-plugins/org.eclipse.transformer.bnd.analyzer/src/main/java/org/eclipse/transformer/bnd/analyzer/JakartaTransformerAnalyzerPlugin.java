@@ -15,10 +15,9 @@ import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.eclipse.transformer.jakarta.JakartaTransform;
-
 import aQute.bnd.service.AnalyzerPlugin;
 import aQute.bnd.service.externalplugin.ExternalPlugin;
+import org.eclipse.transformer.jakarta.JakartaTransform;
 
 /**
  * Bnd Analyzer Plugin for Transformer configured with Jakarta rules.

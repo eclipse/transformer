@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import aQute.lib.io.ByteBufferInputStream;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
@@ -28,8 +29,6 @@ import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
 import org.eclipse.transformer.action.impl.ZipActionImpl;
 import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.SignatureUtils;
-
-import aQute.lib.io.ByteBufferInputStream;
 
 public class TransformClassLoader extends ClassLoader {
 

@@ -20,13 +20,12 @@ import java.net.URLStreamHandler;
 import java.nio.ByteBuffer;
 import java.util.Properties;
 
+import aQute.lib.io.ByteBufferInputStream;
 import org.assertj.core.api.Assertions;
 import org.eclipse.transformer.util.FileUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import aQute.lib.io.ByteBufferInputStream;
 
 public class TestURL {
 	private Properties prior;

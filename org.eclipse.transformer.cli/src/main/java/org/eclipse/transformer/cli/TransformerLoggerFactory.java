@@ -17,6 +17,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
+import aQute.lib.io.IO;
+import aQute.libg.uri.URIUtil;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.util.PropertiesUtils;
@@ -24,9 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
-
-import aQute.lib.io.IO;
-import aQute.libg.uri.URIUtil;
 
 /*
  * Simple logging properties, per org.slf4j.impl.SimpleLogger.

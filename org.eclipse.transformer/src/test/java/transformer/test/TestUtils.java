@@ -43,14 +43,13 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import aQute.bnd.exceptions.Exceptions;
+import aQute.lib.io.IO;
 import org.junit.jupiter.api.Assertions;
 import org.opentest4j.AssertionFailedError;
 import org.slf4j.event.LoggingEvent;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
-
-import aQute.bnd.exceptions.Exceptions;
-import aQute.lib.io.IO;
 
 public class TestUtils {
 
