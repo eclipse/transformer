@@ -21,10 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import aQute.lib.io.IO;
 import org.eclipse.transformer.AppOption;
 import org.junit.jupiter.api.Test;
-
-import aQute.lib.io.IO;
 
 // Initial:
 // The quick brown fox jumps over the lazy dog.

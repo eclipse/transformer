@@ -14,6 +14,7 @@ package org.eclipse.transformer.maven;
 import java.net.URI;
 import java.util.Set;
 
+import aQute.bnd.osgi.Jar;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -30,8 +31,6 @@ import org.eclipse.transformer.maven.configuration.TransformerRules;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.sonatype.plexus.build.incremental.BuildContext;
-
-import aQute.bnd.osgi.Jar;
 
 /**
  * Base Mojo class.

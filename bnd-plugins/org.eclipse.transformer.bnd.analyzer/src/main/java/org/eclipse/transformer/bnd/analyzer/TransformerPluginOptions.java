@@ -22,12 +22,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.eclipse.transformer.AppOption;
-import org.eclipse.transformer.TransformOptions;
-
 import aQute.bnd.header.Parameters;
 import aQute.bnd.osgi.Processor;
 import aQute.lib.strings.Strings;
+import org.eclipse.transformer.AppOption;
+import org.eclipse.transformer.TransformOptions;
 
 public class TransformerPluginOptions implements TransformOptions {
 	private final Parameters parameters;

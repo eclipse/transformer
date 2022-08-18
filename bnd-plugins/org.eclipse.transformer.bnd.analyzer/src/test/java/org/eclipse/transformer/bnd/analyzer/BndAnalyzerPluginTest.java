@@ -22,14 +22,6 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
-import org.eclipse.transformer.AppOption;
-import org.eclipse.transformer.TransformOptions;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.xmlunit.assertj.XmlAssert;
-
 import aQute.bnd.classfile.ClassFile;
 import aQute.bnd.classfile.RuntimeInvisibleAnnotationsAttribute;
 import aQute.bnd.header.Parameters;
@@ -38,6 +30,13 @@ import aQute.bnd.osgi.Jar;
 import aQute.bnd.osgi.Processor;
 import aQute.bnd.unmodifiable.Maps;
 import aQute.lib.io.IO;
+import org.eclipse.transformer.AppOption;
+import org.eclipse.transformer.TransformOptions;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.xmlunit.assertj.XmlAssert;
 
 class BndAnalyzerPluginTest {
 	static final Map<String, String> ds13 = Maps.of("scr", "http://www.osgi.org/xmlns/scr/v1.3.0");
