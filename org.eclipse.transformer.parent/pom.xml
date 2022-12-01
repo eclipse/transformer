@@ -29,7 +29,7 @@
 		<java.release>8</java.release>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<bnd.version>6.3.1</bnd.version>
+		<bnd.version>6.4.0</bnd.version>
 		<junit-jupiter.version>5.9.1</junit-jupiter.version>
 		<assertj.version>3.23.1</assertj.version>
 		<xmlunit.version>2.9.0</xmlunit.version>
@@ -633,7 +633,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>6.4.0-SNAPSHOT</bnd.version>
+				<bnd.version>7.0.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>
