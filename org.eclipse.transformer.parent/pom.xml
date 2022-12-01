@@ -633,7 +633,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>6.4.0-SNAPSHOT</bnd.version>
+				<bnd.version>7.0.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>
