@@ -57,6 +57,7 @@ class BndAnalyzerPluginTest {
 		try (Builder builder = new Builder()) {
 			builder.setBase(IO.getFile("target/test-classes"));
 			builder.addClasspath(builder.getBase());
+			builder.setProperty("-noimportjava", "true");
 			builder.setProperty("-plugin.transformer",
 				"org.eclipse.transformer.bnd.analyzer.JakartaTransformerAnalyzerPlugin;command:=-transformer");
 			builder.setProperty("-includepackage", "org.eclipse.transformer.test.*");
@@ -142,6 +143,7 @@ class BndAnalyzerPluginTest {
 		try (Builder builder = new Builder()) {
 			builder.setBase(IO.getFile("target/test-classes"));
 			builder.addClasspath(builder.getBase());
+			builder.setProperty("-noimportjava", "true");
 			builder.setProperty("-plugin.transformer",
 				"org.eclipse.transformer.bnd.analyzer.JakartaTransformerVerifierPlugin;command:=-transformer");
 			builder.setProperty("-includepackage", "org.eclipse.transformer.test.*");
