@@ -20,6 +20,7 @@ public class LoggerSettings {
 	public final boolean		isQuiet;
 	public final boolean		isDebug;
 	public final boolean		isTrace;
+	public final boolean		isShowDateTime;
 
 	public final List<String>	properties;
 	public final String			propertyFileName;
@@ -32,6 +33,8 @@ public class LoggerSettings {
 		this.isQuiet = options.hasOption(AppOption.LOG_QUIET);
 		this.isDebug = options.hasOption(AppOption.LOG_DEBUG);
 		this.isTrace = options.hasOption(AppOption.LOG_TRACE);
+
+		this.isShowDateTime = options.hasOption(AppOption.LOG_SHOW_DATE_TIME);
 
 		this.properties = options.getOptionValues(AppOption.LOG_PROPERTY);
 		this.propertyFileName = options.normalize(options.getOptionValue(AppOption.LOG_PROPERTY_FILE));
