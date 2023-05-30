@@ -411,8 +411,8 @@ public class ContainerChangesImpl extends ChangesImpl implements ContainerChange
 
 	private static final String	DATA_LINE		= "[ %14s ] [ %6s ] %10s [ %6s ] %10s [ %6s ]%s";
 
-	private String formatData(Object... parms) {
-		return String.format(DATA_LINE, parms);
+	private String formatData(Object... params) {
+		return String.format(DATA_LINE, params);
 	}
 
 	@Override
