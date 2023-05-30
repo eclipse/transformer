@@ -29,6 +29,7 @@ import aQute.lib.io.IO;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
+import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.Changes;
@@ -220,8 +221,22 @@ public abstract class ActionImpl implements Action {
 		Changes useActiveChanges = activeChanges;
 		Logger useLogger = getLogger();
 		if (useLogger.isDebugEnabled()) {
-			useLogger.debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getName(),
-				useActiveChanges.getChangeText());
+			useLogger.debug("Stop processing [ {} ] using [ {} ] took [ {}ms ]: {}", inputName, getName(),
+				useActiveChanges.getElapsedMillis(), useActiveChanges.getChangeText());
+
+		// let's try to provide a bit more information to the user for high level ActionTypes
+		} else if (useLogger.isInfoEnabled()
+			&& (getActionType() == ActionType.JAR || getActionType() == ActionType.WAR)) {
+			useLogger.info("Stop processing [ {} ] using [ {} ] took [ {}ms ]: {}", inputName, getName(),
+						   useActiveChanges.getElapsedMillis(), useActiveChanges.getChangeText());
+
+			// we could at least test all ZipActionImpl, but if we do it
+			// accurately for JAR, WAR, EAR, it will dramatically speed up the conversion
+			// kinda compromise
+			if (!useActiveChanges.isChanged()) {
+				useLogger.warn("[ {} ] has been processed without changes. Consider adding an exclude for it " +
+							   "to speed up next iterations.", inputName);
+			}
 		}
 		lastActiveChanges = useActiveChanges;
 		activeChanges = changes.pollLast();
