@@ -16,6 +16,7 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 import org.eclipse.transformer.action.Changes;
 import org.slf4j.Logger;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ChangesImpl implements Changes {
@@ -105,10 +106,10 @@ public abstract class ChangesImpl implements Changes {
 				logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 			}
 			if (useOutputName.equals(outputPath)) {
-				logger.info(consoleMarker, "Output [ {} ] took [ {} ] ms", outputPath,
+				logger.info(consoleMarker, "Output [ {} ] took [ {} ]", outputPath,
 							toHoursMinutesSeconds(getElapsedMillis()));
 			} else {
-				logger.info(consoleMarker, "Output [ {} ] as [ {} ] took [ {} ] ms", getOutputResourceName(), outputPath,
+				logger.info(consoleMarker, "Output [ {} ] as [ {} ] took [ {} ]", getOutputResourceName(), outputPath,
 							toHoursMinutesSeconds(getElapsedMillis()));
 			}
 
@@ -116,11 +117,11 @@ public abstract class ChangesImpl implements Changes {
 		}
 	}
 
-	public static String toHoursMinutesSeconds(final long ms) {
-		final long seconds = ms / 1000;
-		final long HH = seconds / 3600;
-		final long MM = (seconds % 3600) / 60;
-		final long SS = seconds % 60;
+	public static String toHoursMinutesSeconds(final long millis) {
+		final Duration duration = Duration.ofMillis(millis);
+		final long HH = duration.toHours();
+		final long MM = duration.toMinutesPart();
+		final long SS = duration.toSecondsPart();
 		return String.format("%02d:%02d:%02d", HH, MM, SS);
 	}
 

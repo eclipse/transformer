@@ -86,6 +86,10 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		try {
 			setResourceNames(inputPath, outputPath);
 			applyFile(inputPath, inputFile, outputPath, outputFile);
+
+			// print the timings for the current archive and a tip for user if archive hasn't been updated
+			printZipActionDuration(inputPath);
+			printAdviseOnUnchanged(inputPath);
 		} finally {
 			stopRecording(inputPath);
 		}
@@ -111,6 +115,12 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 				? outputStream.toByteBuffer()
 				: inputData.buffer();
 			ByteData outputData = new ByteDataImpl(outputPath, outputBuffer, inputData.charset());
+
+
+			// print the timings for the current archive and a tip for user if archive hasn't been updated
+			printZipActionDuration(inputPath);
+			printAdviseOnUnchanged(inputPath);
+
 			return outputData;
 		} finally {
 			stopRecording(inputPath);
@@ -130,6 +140,11 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		try {
 			setResourceNames(inputPath, outputPath);
 			applyStream(inputPath, inputStream, outputPath, outputStream);
+
+			// print the timings for the current archive and a tip for user if archive hasn't been updated
+			printZipActionDuration(inputPath);
+			printAdviseOnUnchanged(inputPath);
+
 		} finally {
 			stopRecording(inputPath);
 		}
@@ -415,6 +430,25 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 				message = "Failed to process first entry of [ " + inputPath + " ]";
 			}
 			throw new TransformException(message, e);
+		}
+	}
+
+	private void printZipActionDuration(final String inputName) {
+		if (getLogger().isInfoEnabled()) {
+			getLogger().info("Stop processing [ {} ] using [ {} ] took [ {}ms ]: {}",
+							 inputName, getName(),
+							 getActiveChanges().getElapsedMillis(), getActiveChanges().getChangeText());
+		}
+	}
+
+	private void printAdviseOnUnchanged(final String inputName) {
+		if (getLogger().isInfoEnabled() && !getActiveChanges().isChanged()) {
+			// we could at least test all ZipActionImpl, but if we do it
+			// accurately for archive actions (JAR, WAR, EAR, ...), it will dramatically speed up the conversion
+			// kinda compromise
+			getLogger().warn("[ {} ] has been processed without changes. Consider adding an exclude for it " +
+							 "to speed up next iterations using [ {}=! ] in the selection configuration file.",
+							 inputName, inputName);
 		}
 	}
 
