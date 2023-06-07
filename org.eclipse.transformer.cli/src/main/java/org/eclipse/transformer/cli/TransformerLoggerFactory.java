@@ -65,7 +65,7 @@ import org.slf4j.helpers.MessageFormatter;
  * The format to use for date and time values which are included in log messages.
  * Formats are specified according to:
  * <a href="http://docs.oracle.com/javase/1.5.0/docs/api/java/text/SimpleDateFormat.html">SimpleDateFormat</a>.
- * Defaults to display the the number of milliseconds since the logger was
+ * Defaults to display the number of milliseconds since the logger was
  * initialized.  The default is used if a non-valid format is specified.
  *
  * org.slf4j.simpleLogger.showThreadName
@@ -163,6 +163,12 @@ public class TransformerLoggerFactory {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "debug");
 		} else if (settings.isQuiet) {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "error");
+		}
+
+		// this is a shortcut to avoid below properties
+		if (settings.isShowDateTime) {
+			setLoggingProperty(LoggerProperty.LOG_SHOW_DATE_TIME.toString(), "true");
+			setLoggingProperty(LoggerProperty.LOG_DATE_TIME_FORMAT.toString(), "yyyy.MM.dd 'at' HH:mm:ss z");
 		}
 
 		if (settings.properties != null) {
