@@ -27,7 +27,7 @@ public enum AppOption {
 		new Settings("x", "trace", "Display trace output: trace level logging", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, "LOG_GROUP")),
 	LOG_SHOW_DATE_TIME(
-		new Settings("ldt", "logShowDateTime", "Show date and time in log statements. Shortcut for -lp bellow with showDateTime and dateTimeFormat.",
+		new Settings("ldt", "logShowDateTime", "Show date and time in log statements. Shortcut for -lp with showDateTime and dateTimeFormat.",
 					 !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 	LOG_PROPERTY(new Settings("lp", "logProperty", "Logging property", !Settings.HAS_ARG, Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
