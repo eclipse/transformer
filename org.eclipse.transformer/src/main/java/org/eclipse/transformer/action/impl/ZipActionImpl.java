@@ -446,8 +446,8 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 			// we could at least test all ZipActionImpl, but if we do it
 			// accurately for archive actions (JAR, WAR, EAR, ...), it will dramatically speed up the conversion
 			// kinda compromise
-			getLogger().warn("[ {} ] has been processed without changes. Consider adding an exclude for it " +
-							 "to speed up next iterations using [ {}=! ] in the selection configuration file.",
+			getLogger().warn("[ {} ] has been processed without changes. If you don't alter the rules, you can exclude " +
+							 "it to speed up next iterations using [ {}=! ] in the selection configuration file.",
 							 inputName, inputName);
 		}
 	}

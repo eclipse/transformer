@@ -16,7 +16,6 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 import org.eclipse.transformer.action.Changes;
 import org.slf4j.Logger;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 public abstract class ChangesImpl implements Changes {
@@ -118,10 +117,10 @@ public abstract class ChangesImpl implements Changes {
 	}
 
 	public static String toHoursMinutesSeconds(final long millis) {
-		final Duration duration = Duration.ofMillis(millis);
-		final long HH = duration.toHours();
-		final long MM = duration.toMinutesPart();
-		final long SS = duration.toSecondsPart();
+		final long seconds = millis / 1000;
+		final long HH = seconds / 3600;
+		final long MM = (seconds % 3600) / 60;
+		final long SS = seconds % 60;
 		return String.format("%02d:%02d:%02d", HH, MM, SS);
 	}
 
