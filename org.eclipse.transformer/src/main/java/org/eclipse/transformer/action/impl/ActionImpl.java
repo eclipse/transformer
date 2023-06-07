@@ -220,8 +220,8 @@ public abstract class ActionImpl implements Action {
 		Changes useActiveChanges = activeChanges;
 		Logger useLogger = getLogger();
 		if (useLogger.isDebugEnabled()) {
-			useLogger.debug("Stop processing [ {} ] using [ {} ]: {}", inputName, getName(),
-				useActiveChanges.getChangeText());
+			useLogger.debug("Stop processing [ {} ] using [ {} ] took [ {}ms ]: {}", inputName, getName(),
+				useActiveChanges.getElapsedMillis(), useActiveChanges.getChangeText());
 		}
 		lastActiveChanges = useActiveChanges;
 		activeChanges = changes.pollLast();

@@ -24,6 +24,7 @@ public interface Changes {
 	boolean isRenamed();
 	boolean isContentChanged();
 	String getChangeText();
+	long getElapsedMillis();
 
 	void log(Logger logger, String inputPath, String outputPath);
 }

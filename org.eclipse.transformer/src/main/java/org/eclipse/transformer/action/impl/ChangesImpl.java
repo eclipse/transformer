@@ -16,7 +16,11 @@ import static org.eclipse.transformer.Transformer.consoleMarker;
 import org.eclipse.transformer.action.Changes;
 import org.slf4j.Logger;
 
+import java.util.concurrent.TimeUnit;
+
 public abstract class ChangesImpl implements Changes {
+
+	private final long start = System.nanoTime();
 
 	public ChangesImpl() {
 		// Empty
@@ -101,13 +105,28 @@ public abstract class ChangesImpl implements Changes {
 				logger.info(consoleMarker, "Input  [ {} ] as [ {} ]", getInputResourceName(), inputPath);
 			}
 			if (useOutputName.equals(outputPath)) {
-				logger.info(consoleMarker, "Output [ {} ]", outputPath);
+				logger.info(consoleMarker, "Output [ {} ] took [ {} ]", outputPath,
+							toHoursMinutesSeconds(getElapsedMillis()));
 			} else {
-				logger.info(consoleMarker, "Output [ {} ] as [ {} ]", getOutputResourceName(), outputPath);
+				logger.info(consoleMarker, "Output [ {} ] as [ {} ] took [ {} ]", getOutputResourceName(), outputPath,
+							toHoursMinutesSeconds(getElapsedMillis()));
 			}
 
 			logChanges(logger);
 		}
+	}
+
+	public static String toHoursMinutesSeconds(final long millis) {
+		final long seconds = millis / 1000;
+		final long HH = seconds / 3600;
+		final long MM = (seconds % 3600) / 60;
+		final long SS = seconds % 60;
+		return String.format("%02d:%02d:%02d", HH, MM, SS);
+	}
+
+	@Override
+	public long getElapsedMillis() {
+		return TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 	}
 
 	protected void logChanges(Logger logger) {
