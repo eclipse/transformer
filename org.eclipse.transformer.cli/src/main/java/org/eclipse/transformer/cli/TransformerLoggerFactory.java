@@ -165,7 +165,7 @@ public class TransformerLoggerFactory {
 			setLoggingProperty(LoggerProperty.LOG_LEVEL_PREFIX + loggerName, "error");
 		}
 
-		// this is a shortcut to avoid bellow properties
+		// this is a shortcut to avoid below properties
 		if (settings.isShowDateTime) {
 			setLoggingProperty(LoggerProperty.LOG_SHOW_DATE_TIME.toString(), "true");
 			setLoggingProperty(LoggerProperty.LOG_DATE_TIME_FORMAT.toString(), "yyyy.MM.dd 'at' HH:mm:ss z");
