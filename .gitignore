@@ -5,7 +5,7 @@
 bin/
 
 # IntelliJ Idea
-.idea
+/.idea/
 
 # OS
 .DS_Store
