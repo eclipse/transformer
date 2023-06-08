@@ -4,6 +4,9 @@
 .classpath
 bin/
 
+# IntelliJ Idea
+/.idea/
+
 # OS
 .DS_Store
 .*.swp

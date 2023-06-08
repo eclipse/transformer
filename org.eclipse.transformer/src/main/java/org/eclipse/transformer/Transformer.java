@@ -691,8 +691,7 @@ public class Transformer {
 		}
 	}
 
-	private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef)
-		throws IOException, URISyntaxException {
+	private Map<String, String> loadSubstitutions(String masterRef, String selector, String substitutionsRef) {
 		String referenceName = "Substitutions matching [ " + selector + " ]";
 		List<String> substitutionsRefs = Strings.split(substitutionsRef);
 
@@ -700,7 +699,7 @@ public class Transformer {
 			.reduce(new HashMap<>(), asBiFunction((props, ref) -> {
 				String relativeSubstitutionsRef = (masterRef != null) ? relativize(ref, masterRef) : ref;
 				if (!relativeSubstitutionsRef.equals(ref)) {
-					getLogger().debug(consoleMarker, "Adjusted substition reference from [ {} ] to [ {} ]", ref,
+					getLogger().debug(consoleMarker, "Adjusted substitution reference from [ {} ] to [ {} ]", ref,
 						relativeSubstitutionsRef);
 				}
 				Properties p = loadProperties0(referenceName, relativeSubstitutionsRef);
