@@ -56,6 +56,9 @@ public class TransformerRunMojo extends AbstractMojo {
 	@Parameter(defaultValue = "false", property = "transformer-plugin.invert", required = true)
 	private boolean				invert;
 
+	@Parameter(defaultValue = "false", property = "transformer-plugin.use-regexp-rules", required = false)
+	private boolean				useRegexpRules;
+
 	@Parameter(defaultValue = "true", property = "transformer-plugin.overwrite", required = true)
 	private boolean				overwrite;
 
@@ -131,6 +134,8 @@ public class TransformerRunMojo extends AbstractMojo {
 						return overwrite;
 					case INVERT :
 						return invert;
+					case RULES_USE_REGEXP:
+						return useRegexpRules;
 					default :
 						return TransformOptions.super.hasOption(option);
 				}
@@ -247,6 +252,10 @@ public class TransformerRunMojo extends AbstractMojo {
 
 	void setOverwrite(boolean overwrite) {
 		this.overwrite = overwrite;
+	}
+
+	public void setUseRegexpRules(final boolean useRegexpRules) {
+		this.useRegexpRules = useRegexpRules;
 	}
 
 	void setOutputDirectory(File outputDirectory) {

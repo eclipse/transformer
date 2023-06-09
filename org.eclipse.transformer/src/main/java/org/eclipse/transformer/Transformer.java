@@ -56,6 +56,7 @@ import org.eclipse.transformer.action.impl.JSPActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
+import org.eclipse.transformer.action.impl.RegexpSignatureRuleImpl;
 import org.eclipse.transformer.action.impl.RenameActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
@@ -123,6 +124,7 @@ public class Transformer {
 
 	public Map<String, String>				directStrings;
 
+	public boolean							useRegexpRules;
 	public boolean							widenArchiveNesting;
 	private ActionSelector					actionSelector;
 	public Action							acceptedAction;
@@ -322,6 +324,7 @@ public class Transformer {
 			null);
 
 		invert = options.hasOption(AppOption.INVERT);
+		useRegexpRules = options.hasOption(AppOption.RULES_USE_REGEXP);
 
 		if ( !selectionProperties.isEmpty() ) {
 			includes = new HashMap<>();
@@ -958,11 +961,20 @@ public class Transformer {
 
 	public SignatureRule getSignatureRule() {
 		if (signatureRules == null) {
-			signatureRules = new SignatureRuleImpl(
-				getLogger(),
-				packageRenames, packageVersions, specificPackageVersions,
-				bundleUpdates,
-				masterTextUpdates, directStrings, perClassConstantStrings);
+			if (options.hasOption(AppOption.RULES_USE_REGEXP)) {
+				signatureRules = new RegexpSignatureRuleImpl(
+					getLogger(),
+					packageRenames, packageVersions, specificPackageVersions,
+					bundleUpdates,
+					masterTextUpdates, directStrings, perClassConstantStrings);
+
+			} else {
+				signatureRules = new SignatureRuleImpl(
+					getLogger(),
+					packageRenames, packageVersions, specificPackageVersions,
+					bundleUpdates,
+					masterTextUpdates, directStrings, perClassConstantStrings);
+			}
 		}
 		return signatureRules;
 	}

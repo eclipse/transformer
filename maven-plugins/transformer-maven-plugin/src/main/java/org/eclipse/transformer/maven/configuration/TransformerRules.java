@@ -28,6 +28,7 @@ public class TransformerRules {
 	private boolean			invert;
 	private boolean			overwrite;
 	private boolean			widen;
+	private boolean			regexpRules;
 	private boolean			jakartaDefaults;
 
 	public TransformerRules() {}
@@ -132,6 +133,14 @@ public class TransformerRules {
 	 */
 	public void setWiden(boolean widen) {
 		this.widen = widen;
+	}
+
+	public boolean isRegexpRules() {
+		return regexpRules;
+	}
+
+	public void setRegexpRules(final boolean regexpRules) {
+		this.regexpRules = regexpRules;
 	}
 
 	@Override

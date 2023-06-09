@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.transformer.action.BundleData;
+import org.eclipse.transformer.action.SignatureRule;
+import org.eclipse.transformer.action.impl.RegexpSignatureRuleImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.slf4j.Logger;
@@ -61,11 +63,20 @@ public class CaptureTest {
 		return new SelectionRuleImpl(useLogger, useIncludes, useExcludes);
 	}
 
-	public SignatureRuleImpl createSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
-		Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings,
-		Map<String, Map<String, String>> perClass) {
+
+	public SignatureRule createSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
+												 Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings,
+												 Map<String, Map<String, String>> perClass) {
 
 		return new SignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, null,
-					bundleData, null, directStrings, perClass);
+									 bundleData, null, directStrings, perClass);
+	}
+
+	public SignatureRule createRegexpSignatureRule(Logger useLogger, Map<String, String> usePackageRenames,
+												   Map<String, String> usePackageVersions, Map<String, BundleData> bundleData, Map<String, String> directStrings,
+												   Map<String, Map<String, String>> perClass) {
+
+		return new RegexpSignatureRuleImpl(useLogger, usePackageRenames, usePackageVersions, null,
+										   bundleData, null, directStrings, perClass);
 	}
 }

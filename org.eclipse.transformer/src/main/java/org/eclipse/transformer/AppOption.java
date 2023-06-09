@@ -57,6 +57,9 @@ public enum AppOption {
 	RULES_IMMEDIATE_DATA(new Settings("ti", "immediate", "Immediate rule data", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		Settings.HAS_ARG_COUNT, 3, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
+	RULES_USE_REGEXP(new Settings("te", "regexp", "Use regexp rules", !Settings.HAS_ARG,
+	   !Settings.HAS_ARGS, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
+
 	// Issue #154: Enable processing of JARs within JARs. See:
 	// https://github.com/eclipse/transformer/issues/154
 	//
