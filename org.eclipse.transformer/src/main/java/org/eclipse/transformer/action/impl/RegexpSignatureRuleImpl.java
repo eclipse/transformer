@@ -29,15 +29,20 @@ import aQute.libg.glob.Glob;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.SignatureRule;
 import org.eclipse.transformer.util.FileUtils;
+import org.eclipse.transformer.util.HeaderParser;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class RegexpSignatureRuleImpl implements SignatureRule {
 
@@ -307,6 +312,77 @@ public class RegexpSignatureRuleImpl implements SignatureRule {
 				attributeName, packageName, oldVersion, specificVersion, genericVersion);
 			return specificVersion;
 		}
+	}
+
+	@Override
+	public String replaceAttributePackages(final String attributeName, final String text) {
+		final HeaderParser.Clause[] clauses = HeaderParser.parseHeader(text);
+		final List<HeaderParser.Clause> outputClauses = new ArrayList<>();
+		boolean globalUpdated = false;
+		for (HeaderParser.Clause clause : clauses) {
+			boolean updated = false;
+
+			// the name of the clause can have things to rename
+			final String clauseName = replacePackage(clause.getName());
+
+			// same for most of the directives (uses, include, exclude for instance)
+			final List<String> interestingDirectives = Arrays.asList("uses", "include", "exclude");
+			final List<HeaderParser.Directive> outputDirectives = new ArrayList<>();
+			for (HeaderParser.Directive directive: clause.getDirectives()) {
+				if (!interestingDirectives.contains(directive.getName())) {
+					outputDirectives.add(directive);
+					continue;
+				}
+				final String value = replacePackage(directive.getValue());
+				if (value != null) {
+					outputDirectives.add(new HeaderParser.Directive(directive.getName(), value));
+					updated = true;
+				} else {
+					outputDirectives.add(directive);
+				}
+			}
+
+			// for attributes, we only care about the version for the moment at least
+			final List<String> interestingAttributes = Collections.singletonList("version");
+			final List<HeaderParser.Attribute> outputAttributes = new ArrayList<>();
+			for (HeaderParser.Attribute attribute : clause.getAttributes()) {
+				if (!interestingAttributes.contains(attribute.getName())) {
+					outputAttributes.add(attribute);
+					continue;
+				}
+				final String value = replacePackageVersion(
+					attribute.getName(),
+					clauseName == null ? clause.getName() : clauseName,
+					attribute.getValue());
+
+				if (value != null) {
+					outputAttributes.add(new HeaderParser.Attribute(attribute.getName(), value));
+					updated = true;
+				} else {
+					outputAttributes.add(attribute);
+				}
+			}
+
+			if (clauseName != null || updated) {
+				globalUpdated = true;
+				outputClauses.add(new HeaderParser.Clause(clauseName == null ? clause.getName() : clauseName,
+														  outputDirectives.toArray(new HeaderParser.Directive[0]),
+														  outputAttributes.toArray(new HeaderParser.Attribute[0])));
+			} else {
+				outputClauses.add(clause);
+			}
+
+		}
+
+		if (globalUpdated) {
+			return toStringAttribute(outputClauses);
+		} else {
+			return null;
+		}
+	}
+
+	private static String toStringAttribute(final List<HeaderParser.Clause> clauses) {
+		return clauses.stream().map(HeaderParser.Clause::toString).collect(Collectors.joining(","));
 	}
 
 	// Category 3: Bundle updates
