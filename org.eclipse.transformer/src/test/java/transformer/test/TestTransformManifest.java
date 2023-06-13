@@ -35,6 +35,7 @@ import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
+import org.eclipse.transformer.util.BundleUtils;
 import org.eclipse.transformer.util.PropertiesUtils;
 import org.eclipse.transformer.util.SignatureUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -624,15 +625,15 @@ public class TestTransformManifest extends CaptureTest {
 		}
 
 		public String callReplacePackages(String attributeName, String text) {
-			return replacePackages(attributeName, text);
+			return getSignatureRule().replaceAttributePackages(attributeName, text);
 		}
 
 		public String callReplacePackageVersion(String embeddingText, String newPackageVersion) {
-			return replacePackageVersion(embeddingText, newPackageVersion);
+			return BundleUtils.replacePackageVersion(getCaptureLogger(), embeddingText, newPackageVersion);
 		}
 
 		public String callGetPackageAttributeText(String embeddingText) {
-			return getPackageAttributeText(embeddingText);
+			return BundleUtils.getPackageAttributeText(getCaptureLogger(), embeddingText);
 		}
 	}
 

@@ -44,6 +44,7 @@ import aQute.bnd.stream.MapStream;
 import aQute.libg.glob.Glob;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.SignatureRule;
+import org.eclipse.transformer.util.BundleUtils;
 import org.eclipse.transformer.util.FileUtils;
 import org.eclipse.transformer.util.SignatureUtils.RenameKeyComparator;
 import org.slf4j.Logger;
@@ -351,6 +352,71 @@ public class SignatureRuleImpl implements SignatureRule {
 				"Manifest attribute {}: Specific update of package {} version {} to {} overrides generic version update {}",
 				attributeName, packageName, oldVersion, specificVersion, genericVersion);
 			return specificVersion;
+		}
+	}
+
+	/**
+	 * Replace all embedded packages of specified text with replacement
+	 * packages. Use the attribute name to select attribute specific version
+	 * text.
+	 *
+	 * @param attributeName The attribute which is being processed.
+	 * @param text Text embedding zero, one, or more package names.
+	 *
+	 * @return The text with all embedded package names replaced. Null if no
+	 *         replacements were performed.
+	 */
+	@Override
+	public String replaceAttributePackages(String attributeName, String text) {
+		String initialText = text;
+
+		for ( Map.Entry<String, String> renameEntry : getPackageRenames().entrySet() ) {
+			String key = renameEntry.getKey(); // Package name match data.
+
+			boolean matchPackageStem = containsWildcard(key);
+			if (matchPackageStem) {
+				key = stripWildcard(key);
+			}
+
+			final int keyLen = key.length();
+			int textLimit = text.length() - keyLen;
+
+			for (int matchEnd = 0; matchEnd <= textLimit;) {
+				final int matchStart = text.indexOf(key, matchEnd);
+				if ( matchStart == -1 ) {
+					break;
+				}
+
+				matchEnd = matchStart + keyLen;
+				int packageEnd = packageMatch(text, matchStart, matchEnd, matchPackageStem);
+				if (packageEnd == -1) {
+					continue;
+				}
+
+				String value = renameEntry.getValue();
+				if (matchEnd < packageEnd) {
+					value = value.concat(text.substring(matchEnd, packageEnd));
+				}
+
+				String head = text.substring(0, matchStart);
+				String tail = text.substring(packageEnd);
+
+				String newVersion = replacePackageVersion(attributeName, value, tail);
+				if (newVersion != null) {
+					tail = BundleUtils.replacePackageVersion(getLogger(), tail, newVersion);
+				}
+
+				text = head + value + tail;
+
+				matchEnd = matchStart + value.length();
+				textLimit = text.length() - keyLen;
+			}
+		}
+
+		if (initialText == text) {
+			return null;
+		} else {
+			return text;
 		}
 	}
 

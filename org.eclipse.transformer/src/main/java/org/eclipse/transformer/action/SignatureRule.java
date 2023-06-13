@@ -87,8 +87,8 @@ public interface SignatureRule {
 
 	Map<String, String> getPackageVersions();
 	Map<String, Map<String, String>> getSpecificPackageVersions();
-	String replacePackageVersion(String attributeName, String packageName, String initialVersion);
-
+	String replacePackageVersion(String attributeName, String packageName, String oldVersion);
+	String replaceAttributePackages(String attributeName, String text);
 	// Category 3: Bundle updates
 
 	BundleData getBundleUpdate(String symbolicName);
