@@ -143,19 +143,9 @@ public class TransformerCLI implements TransformOptions {
 
 	private static final String		SHORT_VERSION_PROPERTY_NAME		= "version";
 
-	// TODO: Usual command line usage puts SysOut and SysErr together, which
-	// results in the properties writing out twice.
-	//
-	// See issue #297.
-
 	private void preInitDisplay(String message) {
 		PrintStream useSysOut = getSystemOut();
-		// PrintStream useSysErr = getSystemErr();
-
 		useSysOut.println(message);
-		// if ( useSysErr != useSysOut ) {
-		// useSysErr.println(message);
-		// }
 	}
 
 	private void displayHeader() {
