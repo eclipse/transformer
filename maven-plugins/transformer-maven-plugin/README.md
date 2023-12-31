@@ -255,14 +255,14 @@ Call `mvn transformer:help -Ddetail=true -Dgoal=<goal-name>` to display configur
 
 ## Java 21 or later
 
-If you are using Java 21 or later you will need to configure the Maven plugin to use a specific version of the `biz.aQute.bnd` dependency.
+If you are using Java 21 or later you will need to configure the Maven plugin to use a specific version of the `biz.aQute.bndlib` dependency.
 
-E.g.
+For example:
 
 ```xml
   <dependency>
     <groupId>biz.aQute.bnd</groupId>
-    <artifactId>biz.aQute.bnd</artifactId>
+    <artifactId>biz.aQute.bndlib</artifactId>
     <version>7.0.0</version>
   </dependency>
 ```
