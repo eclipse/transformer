@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -236,11 +237,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 	@Test
 	public void testInputLength() throws Exception {
 		final String inputName = "sample.jar";
-		final File inputJarFile = File.createTempFile("sample", ".jar");
+		final File inputJarFile = Files.createTempFile("sample", ".jar").toFile();
 		inputJarFile.deleteOnExit();
 
 		final String outputName = "sample_output.jar";
-		final File outputJarFile = File.createTempFile("sample_output", ".jar");
+		final File outputJarFile = Files.createTempFile("sample_output", ".jar").toFile();
 		outputJarFile.delete();
 		outputJarFile.deleteOnExit();
 

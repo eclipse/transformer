@@ -18,6 +18,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -210,7 +211,7 @@ public class TransformerRunMojoTest {
 	}
 
 	public File createService() throws IOException {
-		final File tempFile = File.createTempFile("service", ".war");
+		final File tempFile = Files.createTempFile("service", ".war").toFile();
 		tempFile.delete();
 
 		final WebArchive webArchive = ShrinkWrap.create(WebArchive.class, "service.war")
