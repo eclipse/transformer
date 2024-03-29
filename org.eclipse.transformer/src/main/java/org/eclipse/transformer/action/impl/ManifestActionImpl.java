@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
@@ -215,46 +216,50 @@ public class ManifestActionImpl extends ElementActionImpl {
 				writer.append(value);
 
 			} else {
-				Parameters parms = OSGiHeader.parseHeader(value);
-
-				boolean continuedLine = false;
-				for (Map.Entry<String, Attrs> parmEntry : parms.entrySet()) {
-					if (continuedLine) {
-						writer.append(",\r ");
-					}
-
-					// bnd might have added ~ characters if there are duplicates
-					// in
-					// the source, so we should remove them before we output it
-					// so we
-					// get back to the original intended content.
-
-					String parmName = parmEntry.getKey();
-					int index = parmName.indexOf('~');
-					if (index != -1) {
-						parmName = parmName.substring(0, index);
-					}
-					writer.append(parmName);
-
-					Attrs parmAttrs = parmEntry.getValue();
-					for (Map.Entry<String, String> parmAttrEntry : parmAttrs.entrySet()) {
-						String parmAttrName = parmAttrEntry.getKey();
-						String parmAttrValue = quote(builder, parmAttrEntry.getValue());
-
-						writer.append("; ");
-						writer.append(parmAttrName);
-						writer.append('=');
-						writer.append(parmAttrValue);
-					}
-
-					continuedLine = true;
-				}
+				doWriteAsFeature(value, writer, builder);
 			}
 
 			writer.append("\r");
 		}
 
 		writer.flush();
+	}
+
+	private void doWriteAsFeature(String value, PrintWriter writer, StringBuilder builder) {
+		Parameters parms = OSGiHeader.parseHeader(value);
+
+		boolean continuedLine = false;
+		for (Map.Entry<String, Attrs> parmEntry : parms.entrySet()) {
+			if (continuedLine) {
+				writer.append(",\r ");
+			}
+
+			// bnd might have added ~ characters if there are duplicates
+			// in
+			// the source, so we should remove them before we output it
+			// so we
+			// get back to the original intended content.
+
+			String parmName = parmEntry.getKey();
+			int index = parmName.indexOf('~');
+			if (index != -1) {
+				parmName = parmName.substring(0, index);
+			}
+			writer.append(parmName);
+
+			Attrs parmAttrs = parmEntry.getValue();
+			for (Map.Entry<String, String> parmAttrEntry : parmAttrs.entrySet()) {
+				String parmAttrName = parmAttrEntry.getKey();
+				String parmAttrValue = quote(builder, parmAttrEntry.getValue());
+
+				writer.append("; ");
+				writer.append(parmAttrName);
+				writer.append('=');
+				writer.append(parmAttrValue);
+			}
+
+			continuedLine = true;
+		}
 	}
 
 	public String quote(StringBuilder sb, String value) {
@@ -290,36 +295,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 			final int keyLen = key.length();
 			int textLimit = text.length() - keyLen;
 
-			for (int matchEnd = 0; matchEnd <= textLimit;) {
-				final int matchStart = text.indexOf(key, matchEnd);
-				if ( matchStart == -1 ) {
-					break;
-				}
-
-				matchEnd = matchStart + keyLen;
-				int packageEnd = packageMatch(text, matchStart, matchEnd, matchPackageStem);
-				if (packageEnd == -1) {
-					continue;
-				}
-
-				String value = renameEntry.getValue();
-				if (matchEnd < packageEnd) {
-					value = value.concat(text.substring(matchEnd, packageEnd));
-				}
-
-				String head = text.substring(0, matchStart);
-				String tail = text.substring(packageEnd);
-
-				String newVersion = replacePackageVersion(attributeName, value, tail);
-				if (newVersion != null) {
-					tail = replacePackageVersion(tail, newVersion);
-				}
-
-				text = head + value + tail;
-
-				matchEnd = matchStart + value.length();
-				textLimit = text.length() - keyLen;
-			}
+			text = getText(attributeName, text, renameEntry, textLimit, key, keyLen, matchPackageStem);
 		}
 
 		if (initialText == text) {
@@ -327,6 +303,40 @@ public class ManifestActionImpl extends ElementActionImpl {
 		} else {
 			return text;
 		}
+	}
+
+	private String getText(String attributeName, String text, Map.Entry<String, String> renameEntry, int textLimit, String key, int keyLen, boolean matchPackageStem) {
+		for (int matchEnd = 0; matchEnd <= textLimit;) {
+			final int matchStart = text.indexOf(key, matchEnd);
+			if ( matchStart == -1 ) {
+				break;
+			}
+
+			matchEnd = matchStart + keyLen;
+			int packageEnd = packageMatch(text, matchStart, matchEnd, matchPackageStem);
+			if (packageEnd == -1) {
+				continue;
+			}
+
+			String value = renameEntry.getValue();
+			if (matchEnd < packageEnd) {
+				value = value.concat(text.substring(matchEnd, packageEnd));
+			}
+
+			String head = text.substring(0, matchStart);
+			String tail = text.substring(packageEnd);
+
+			String newVersion = replacePackageVersion(attributeName, value, tail);
+			if (newVersion != null) {
+				tail = replacePackageVersion(tail, newVersion);
+			}
+
+			text = head + value + tail;
+
+			matchEnd = matchStart + value.length();
+			textLimit = text.length() - keyLen;
+		}
+		return text;
 	}
 
 	// DynamicImport-Package: com.ibm.websphere.monitor.meters;version="1.0.0
@@ -373,9 +383,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 
 		// System.out.println("Package text [ " + packageText + " ]");
 
-		if (packageText == null) {
-			return text;
-		} else if (packageText.isEmpty()) {
+		if (packageText == null || packageText.isEmpty()) {
 			return text;
 		}
 
@@ -688,11 +696,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 		String finalSymbolicName = bundleUpdate.getSymbolicName();
 
 		if (isWildcard) {
-			int wildcardOffset = finalSymbolicName.indexOf('*');
-			if (wildcardOffset != -1) {
-				finalSymbolicName = finalSymbolicName.substring(0, wildcardOffset) + initialSymbolicName
-					+ finalSymbolicName.substring(wildcardOffset + 1);
-			}
+			finalSymbolicName = wilcardSymbolicName(finalSymbolicName, initialSymbolicName);
 		}
 
 		if (symbolicNamesAttributes != null) {
@@ -703,34 +707,55 @@ public class ManifestActionImpl extends ElementActionImpl {
 		getLogger().debug("Bundle symbolic name: {} --> {}", initialSymbolicName, finalSymbolicName);
 
 		if (!isWildcard) {
-			String initialVersion = initialMainAttributes.getValue(VERSION_PROPERTY_NAME);
-			if (initialVersion != null) {
-				String finalVersion = bundleUpdate.getVersion();
-				if ((finalVersion != null) && !finalVersion.isEmpty()) {
-					finalMainAttributes.putValue(VERSION_PROPERTY_NAME, finalVersion);
-					getLogger().debug("Bundle version: {} --> {}", initialVersion, finalVersion);
-				}
-			}
+			setManinAttributeIfNonWildcard(initialMainAttributes, finalMainAttributes, bundleUpdate);
 		}
 
 		String initialName = initialMainAttributes.getValue(NAME_PROPERTY_NAME);
 		if (initialName != null) {
-			String finalName = bundleUpdate.updateName(initialName);
-			if ((finalName != null) && !finalName.isEmpty()) {
-				finalMainAttributes.putValue(NAME_PROPERTY_NAME, finalName);
-				getLogger().debug("Bundle name: {} --> {}", initialName, finalName);
-			}
+			setMainAttributeIfInitalNameNotNull(finalMainAttributes, bundleUpdate, initialName);
 		}
 
 		String initialDescription = initialMainAttributes.getValue(DESCRIPTION_PROPERTY_NAME);
 		if (initialDescription != null) {
 			String finalDescription = bundleUpdate.updateDescription(initialDescription);
-			if ((finalDescription != null) && !finalDescription.isEmpty()) {
-				finalMainAttributes.putValue(DESCRIPTION_PROPERTY_NAME, finalDescription);
-				getLogger().debug("Bundle description: {} --> {}", initialDescription, finalDescription);
-			}
+			setMainAttributeIfDescNotNull(finalMainAttributes, finalDescription, initialDescription);
 		}
 
 		return true;
+	}
+
+	private void setMainAttributeIfDescNotNull(Attributes finalMainAttributes, String finalDescription, String initialDescription) {
+		if ((finalDescription != null) && !finalDescription.isEmpty()) {
+			finalMainAttributes.putValue(DESCRIPTION_PROPERTY_NAME, finalDescription);
+			getLogger().debug("Bundle description: {} --> {}", initialDescription, finalDescription);
+		}
+	}
+
+	private void setMainAttributeIfInitalNameNotNull(Attributes finalMainAttributes, BundleData bundleUpdate, String initialName) {
+		String finalName = bundleUpdate.updateName(initialName);
+		if ((finalName != null) && !finalName.isEmpty()) {
+			finalMainAttributes.putValue(NAME_PROPERTY_NAME, finalName);
+			getLogger().debug("Bundle name: {} --> {}", initialName, finalName);
+		}
+	}
+
+	private void setManinAttributeIfNonWildcard(Attributes initialMainAttributes, Attributes finalMainAttributes, BundleData bundleUpdate) {
+		String initialVersion = initialMainAttributes.getValue(VERSION_PROPERTY_NAME);
+		if (initialVersion != null) {
+			String finalVersion = bundleUpdate.getVersion();
+			if ((finalVersion != null) && !finalVersion.isEmpty()) {
+				finalMainAttributes.putValue(VERSION_PROPERTY_NAME, finalVersion);
+				getLogger().debug("Bundle version: {} --> {}", initialVersion, finalVersion);
+			}
+		}
+	}
+
+	private static String wilcardSymbolicName(String finalSymbolicName, String initialSymbolicName) {
+		int wildcardOffset = finalSymbolicName.indexOf('*');
+		if (wildcardOffset != -1) {
+			finalSymbolicName = finalSymbolicName.substring(0, wildcardOffset) + initialSymbolicName
+				+ finalSymbolicName.substring(wildcardOffset + 1);
+		}
+		return finalSymbolicName;
 	}
 }
