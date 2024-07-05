@@ -18,6 +18,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.FileTime;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,7 +30,6 @@ import java.util.zip.ZipOutputStream;
 
 import aQute.lib.io.ByteBufferOutputStream;
 import aQute.lib.io.IO;
-import aQute.libg.tuple.Pair;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
@@ -260,7 +260,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		String prevName = null;
 		String inputName = null;
 
-		final Map<String, Pair<ZipEntry, ByteData>> signatureFilesMap = new HashMap<>();
+		final Map<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> signatureFilesMap = new HashMap();
 
 		try {
 			for ( ZipEntry inputEntry;
@@ -276,7 +276,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 						 * in which case the signature files will have been invalidated and must be discarded.
 						 * Otherwise, they must be added back to the output zip file.
 						 */
-						signatureFilesMap.put(inputName, Pair.newInstance(inputEntry, collect(inputName, zipInputStream)));
+						signatureFilesMap.put(inputName, new AbstractMap.SimpleEntry(inputEntry, collect(inputName, zipInputStream)));
 						continue;
 					}
 					int inputLength = Math.toIntExact(inputEntry.getSize());
@@ -628,16 +628,16 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 	 * @param zipOutputStream Output zip file
 	 * @param inputPath Path to the input zip file (used for logging purposes only)
 	 */
-	private void handleSignatureFiles(Map<String, Pair<ZipEntry, ByteData>> signatureFilesMap,
+	private void handleSignatureFiles(Map<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> signatureFilesMap,
 									  ZipOutputStream zipOutputStream,
 									  String inputPath) throws IOException {
 		if (!signatureFilesMap.isEmpty()) {
 			if (!getActiveChanges().isContentChanged()) {
-				for (Map.Entry<String, Pair<ZipEntry, ByteData>> entry : signatureFilesMap.entrySet()) {
+				for (Map.Entry<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> entry : signatureFilesMap.entrySet()) {
 					if (getLogger().isInfoEnabled()) {
 						getLogger().info("Restoring signature file [ {} ] from unmodified [ {} ]", entry.getKey(), inputPath);
 					}
-					writeUnmodified(entry.getValue().getFirst(), entry.getValue().getSecond(), entry.getKey(), zipOutputStream);
+					writeUnmodified(entry.getValue().getKey(), entry.getValue().getValue(), entry.getKey(), zipOutputStream);
 				}
 			} else {
 				if (getLogger().isInfoEnabled()) {
