@@ -13,7 +13,12 @@ package org.eclipse.transformer.action;
 
 import org.eclipse.transformer.TransformException;
 
+import java.util.regex.Pattern;
+
 public interface ElementAction extends Action {
+
+	Pattern SIGNATURE_FILE_PATTERN = Pattern.compile("META-INF/[A-Za-z0-9_-]+\\.(SF|RSA|DSA|EC)");
+
 	@Override
 	default boolean isElementAction() {
 		return true;

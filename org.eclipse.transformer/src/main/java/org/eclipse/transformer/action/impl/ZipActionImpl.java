@@ -18,7 +18,9 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.FileTime;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -27,6 +29,7 @@ import java.util.zip.ZipOutputStream;
 
 import aQute.lib.io.ByteBufferOutputStream;
 import aQute.lib.io.IO;
+import aQute.libg.tuple.Pair;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.Action;
 import org.eclipse.transformer.action.ActionContext;
@@ -257,6 +260,8 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		String prevName = null;
 		String inputName = null;
 
+		final Map<String, Pair<ZipEntry, ByteData>> signatureFilesMap = new HashMap<>();
+
 		try {
 			for ( ZipEntry inputEntry;
 				  (inputEntry = zipInputStream.getNextEntry()) != null;
@@ -264,6 +269,16 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 
 				try {
 					inputName = FileUtils.sanitize(inputEntry.getName()); // Avoid ZipSlip
+					if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(inputName).matches()) {
+						/*
+						 * Signature file resource: Store its contents in memory until we have finished processing
+						 * the input zip file. Only at that point will we know if any of its resources were modified,
+						 * in which case the signature files will have been invalidated and must be discarded.
+						 * Otherwise, they must be added back to the output zip file.
+						 */
+						signatureFilesMap.put(inputName, Pair.newInstance(inputEntry, collect(inputName, zipInputStream)));
+						continue;
+					}
 					int inputLength = Math.toIntExact(inputEntry.getSize());
 
 					useLogger.debug("[ {}.{} ] Entry [ {} ] Size [ {} ]", className, methodName, inputName, inputLength);
@@ -416,7 +431,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 					useLogger.error("Transform failure [ {} ] of [ {} ]", inputName, inputPath, t);
 				}
 			}
-
+			handleSignatureFiles(signatureFilesMap, zipOutputStream, inputPath);
 		} catch (IOException e) {
 			String message;
 			if (inputName != null) {
@@ -430,6 +445,10 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 				message = "Failed to process first entry of [ " + inputPath + " ]";
 			}
 			throw new TransformException(message, e);
+		} finally {
+			if (!signatureFilesMap.isEmpty()) {
+				signatureFilesMap.clear();
+			}
 		}
 	}
 
@@ -594,6 +613,37 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 			populator.run(); // throws TransformException
 		} finally {
 			zipOutputStream.closeEntry(); // throws IOException
+		}
+	}
+
+	/*
+	 * Adds any signature (*.SF) and signature block (*.[RSA|DSA|EC]) files extracted from the input zip file
+	 * to the output zip file.
+	 *
+	 * If any of the resources of the input zip file have been transformed, then the signature files are no longer valid
+	 * and will be discarded.
+	 *
+	 * @param signatureFilesMap Map of signature files extracted from the input zip file, will be empty if the
+	 * input zip file is unsigned
+	 * @param zipOutputStream Output zip file
+	 * @param inputPath Path to the input zip file (used for logging purposes only)
+	 */
+	private void handleSignatureFiles(Map<String, Pair<ZipEntry, ByteData>> signatureFilesMap,
+									  ZipOutputStream zipOutputStream,
+									  String inputPath) throws IOException {
+		if (!signatureFilesMap.isEmpty()) {
+			if (!getActiveChanges().isContentChanged()) {
+				for (Map.Entry<String, Pair<ZipEntry, ByteData>> entry : signatureFilesMap.entrySet()) {
+					if (getLogger().isInfoEnabled()) {
+						getLogger().info("Restoring signature file [ {} ] from unmodified [ {} ]", entry.getKey(), inputPath);
+					}
+					writeUnmodified(entry.getValue().getFirst(), entry.getValue().getSecond(), entry.getKey(), zipOutputStream);
+				}
+			} else {
+				if (getLogger().isInfoEnabled()) {
+					getLogger().info("Discarding all signature files from transformed [ {} ]", inputPath);
+				}
+			}
 		}
 	}
 }
