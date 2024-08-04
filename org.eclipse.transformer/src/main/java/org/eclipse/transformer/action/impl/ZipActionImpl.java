@@ -11,6 +11,8 @@
 
 package org.eclipse.transformer.action.impl;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,10 +20,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.attribute.FileTime;
-import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
@@ -39,6 +38,8 @@ import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.RenameAction;
 import org.eclipse.transformer.util.FileUtils;
 import org.slf4j.Logger;
+
+import static org.eclipse.transformer.action.ActionType.*;
 
 /**
  * Top level ZIP action. A ZIP action is a container action which iterates
@@ -188,20 +189,48 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		Charset charset = resourceCharset(inputPath);
 		getLogger().debug("Zip Charset [ {} ]: {}", inputPath, charset);
 
-		try {
-			ZipInputStream zipInputStream = new ZipInputStream(inputStream, charset);
-
-			ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream, charset);
+		if (actionType == JAR) {
 			try {
-				applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream);
-			} finally {
-				zipOutputStream.finish();
+				// "Clone" inputStream because we are going to consume it twice: in Round One and Two
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				inputStream.transferTo(baos);
+				byte[] inputBytes = baos.toByteArray();
+
+				// Round One: Determine if the jar file is signed and has transformation changes.
+				// Does not output any transformation changes: this will be done in the Round Two
+				boolean discardSignatureFiles;
+				try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(inputBytes), charset)) {
+					discardSignatureFiles = applyZipStream(inputPath, zipInputStream, outputPath, new NoopZipOutputStreamWrapper(), false);
+				} finally {
+					stopRecording(inputPath);
+				}
+				// Round Two: Use the information obtained in Round One: If the jar file is signed and has
+				// transformation changes, its signature files must be discarded because they are no longer invalid
+				startRecording(inputPath);
+				setResourceNames(inputPath, outputPath);
+				ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream, charset);
+				try (ZipInputStream zipInputStream = new ZipInputStream(new ByteArrayInputStream(inputBytes), charset)) {
+					applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream, discardSignatureFiles);
+				} finally {
+					zipOutputStream.finish();
+					// stopRecording (for this second recording session) will be called inside the finally block of the caller
+				}
+			} catch (IOException e) {
+				throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
 			}
-
-		} catch (IOException e) {
-			throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
+		} else {
+			try {
+				ZipInputStream zipInputStream = new ZipInputStream(inputStream, charset);
+				ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream, charset);
+				try {
+					applyZipStream(inputPath, zipInputStream, outputPath, zipOutputStream, false);
+				} finally {
+					zipOutputStream.finish();
+				}
+			} catch (IOException e) {
+				throw new TransformException("Failed to complete output [ " + inputPath + " ]", e);
+			}
 		}
-
 	}
 
 	protected boolean isDuplicate(
@@ -233,12 +262,15 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 	 * @param zipInputStream An input stream for the input archive.
 	 * @param outputPath A name associated with the output stream.
 	 * @param zipOutputStream An output stream for the output archive.
+	 * @param discardSignatureFiles True if any signature files found need to be discarded, false otherwise
+	 * @return true if the zip-type archive is signed and has transformation changes, false otherwise
 	 * @throws TransformException Thrown if reading or writing the archives
 	 *             fails, or if transformation of an entry fails.
 	 */
-	private void applyZipStream(
+	private boolean applyZipStream(
 		String inputPath, ZipInputStream zipInputStream,
-		String outputPath, ZipOutputStream zipOutputStream) throws TransformException {
+		String outputPath, ZipOutputStream zipOutputStream,
+		boolean discardSignatureFiles) throws TransformException {
 
 		String className = getClass().getSimpleName();
 		String methodName = "apply";
@@ -260,7 +292,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		String prevName = null;
 		String inputName = null;
 
-		final Map<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> signatureFilesMap = new HashMap();
+		boolean isSigned = false;
 
 		try {
 			for ( ZipEntry inputEntry;
@@ -270,14 +302,11 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 				try {
 					inputName = FileUtils.sanitize(inputEntry.getName()); // Avoid ZipSlip
 					if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(inputName).matches()) {
-						/*
-						 * Signature file resource: Store its contents in memory until we have finished processing
-						 * the input zip file. Only at that point will we know if any of its resources were modified,
-						 * in which case the signature files will have been invalidated and must be discarded.
-						 * Otherwise, they must be added back to the output zip file.
-						 */
-						signatureFilesMap.put(inputName, new AbstractMap.SimpleEntry(inputEntry, collect(inputName, zipInputStream)));
-						continue;
+						if (discardSignatureFiles) {
+							continue;
+						} else {
+							isSigned = true;
+						}
 					}
 					int inputLength = Math.toIntExact(inputEntry.getSize());
 
@@ -431,7 +460,9 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 					useLogger.error("Transform failure [ {} ] of [ {} ]", inputName, inputPath, t);
 				}
 			}
-			handleSignatureFiles(signatureFilesMap, zipOutputStream, inputPath);
+
+			return isSigned && getActiveChanges().isContentChanged();
+
 		} catch (IOException e) {
 			String message;
 			if (inputName != null) {
@@ -445,10 +476,6 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 				message = "Failed to process first entry of [ " + inputPath + " ]";
 			}
 			throw new TransformException(message, e);
-		} finally {
-			if (!signatureFilesMap.isEmpty()) {
-				signatureFilesMap.clear();
-			}
 		}
 	}
 
@@ -617,33 +644,72 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 	}
 
 	/*
-	 * Adds any signature (*.SF) and signature block (*.[RSA|DSA|EC]) files extracted from the input zip file
-	 * to the output zip file.
-	 *
-	 * If any of the resources of the input zip file have been transformed, then the signature files are no longer valid
-	 * and will be discarded.
-	 *
-	 * @param signatureFilesMap Map of signature files extracted from the input zip file, will be empty if the
-	 * input zip file is unsigned
-	 * @param zipOutputStream Output zip file
-	 * @param inputPath Path to the input zip file (used for logging purposes only)
+	 * ZipOutputStream which does nothing
 	 */
-	private void handleSignatureFiles(Map<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> signatureFilesMap,
-									  ZipOutputStream zipOutputStream,
-									  String inputPath) throws IOException {
-		if (!signatureFilesMap.isEmpty()) {
-			if (!getActiveChanges().isContentChanged()) {
-				for (Map.Entry<String, AbstractMap.SimpleEntry<ZipEntry, ByteData>> entry : signatureFilesMap.entrySet()) {
-					if (getLogger().isInfoEnabled()) {
-						getLogger().info("Restoring signature file [ {} ] from unmodified [ {} ]", entry.getKey(), inputPath);
-					}
-					writeUnmodified(entry.getValue().getKey(), entry.getValue().getValue(), entry.getKey(), zipOutputStream);
-				}
-			} else {
-				if (getLogger().isInfoEnabled()) {
-					getLogger().info("Discarding all signature files from transformed [ {} ]", inputPath);
-				}
-			}
+	private static class NoopZipOutputStreamWrapper extends ZipOutputStream {
+
+		public NoopZipOutputStreamWrapper() {
+			super(new ByteArrayOutputStream());
+		}
+
+		@Override
+		public void setComment(String comment) {
+			// Do nothing
+		}
+
+		@Override
+		public void setMethod(int method) {
+			// Do nothing
+		}
+
+		@Override
+		public void setLevel(int level) {
+			// Do nothing
+		}
+
+		@Override
+		public void putNextEntry(ZipEntry e) {
+			// Do nothing
+		}
+
+		@Override
+		public void closeEntry() {
+			// Do nothing
+		}
+
+		@Override
+		public synchronized void write(byte[] b, int off, int len) {
+			// Do nothing
+		}
+
+		@Override
+		public void finish() {
+			// Do nothing
+		}
+
+		@Override
+		public void close() {
+			// Do nothing
+		}
+
+		@Override
+		public void write(int b) {
+			// Do nothing
+		}
+
+		@Override
+		protected void deflate() {
+			// Do nothing
+		}
+
+		@Override
+		public void flush() {
+			// Do nothing
+		}
+
+		@Override
+		public void write(byte[] b) {
+			// Do nothing
 		}
 	}
 }

@@ -136,11 +136,16 @@ class TestCommandLine {
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 	}
 
-	// Tests that signature files have been discarded from transformed jar file
+	/*
+	 * Tests that signature files have been discarded from signed jar file that was mutated by transformation.
+	 *
+	 * signed-jar-with-javax.jar contains a single class file which references javax.servlet.Servlet.
+	 * The Java source code is included with the jar file.
+	 */
 	@Test
 	void testSignatureFilesStrippedFromTransformedJarFile() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-hello-servlet-1.0-SNAPSHOT.jar";
-		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-hello-servlet-1.0-SNAPSHOT.jar";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-with-javax.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-with-javax.jar";
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
 		Map<String, ZipEntry> sigFilesMap = extractSignatureFileEntries(inputFileName);
 		assertThat(sigFilesMap.size()).isEqualTo(2);
@@ -151,11 +156,16 @@ class TestCommandLine {
 		assertThat(extractSignatureFileEntries(outputFileName).size()).isEqualTo(0);
 	}
 
-	// Tests that signature files have been preserved in unmodified jar file
+	/*
+	 * Tests that signature files have been preserved in signed jar file that was left unmodified by transformation.
+	 *
+	 * signed-jar-without-javax.jar contains a single class file without any javax references.
+	 * The Java source code is included with the jar file.
+	 */
 	@Test
 	void testSignatureFilesPreservedInUnmodifiedJarFile() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-hello-world-1.0-SNAPSHOT.jar";
-		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-hello-world-1.0-SNAPSHOT.jar";
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-without-javax.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-without-javax.jar";
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
 		Map<String, ZipEntry> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
 		assertThat(inputJarSigFilesMap.size()).isEqualTo(2);
