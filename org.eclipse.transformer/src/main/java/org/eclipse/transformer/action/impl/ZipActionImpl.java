@@ -192,9 +192,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		if (actionType == JAR) {
 			try {
 				// "Clone" inputStream because we are going to consume it twice: in Round One and Two
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				inputStream.transferTo(baos);
-				byte[] inputBytes = baos.toByteArray();
+				byte[] inputBytes = toByteArray(inputStream);
 
 				// Round One: Determine if the jar file is signed and has transformation changes.
 				// Does not output any transformation changes: this will be done in the Round Two
@@ -640,6 +638,17 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 			populator.run(); // throws TransformException
 		} finally {
 			zipOutputStream.closeEntry(); // throws IOException
+		}
+	}
+
+	private static byte[] toByteArray(final InputStream is) throws IOException {
+		final byte[] tmp = new byte[8192];
+		int n;
+		try (final ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+			while ((n = is.read(tmp)) != -1) {
+				output.write(tmp, 0, n);
+			}
+			return output.toByteArray();
 		}
 	}
 

@@ -25,9 +25,6 @@
 	<description>Eclipse Transformer Library</description>
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://projects.eclipse.org/projects/technology.transformer</url>
-	<properties>
-		<maven.compiler.release>9</maven.compiler.release>
-	</properties>
 	<scm>
 		<url>https://github.com/eclipse/transformer</url>
 		<connection>scm:git:https://github.com/eclipse/transformer.git</connection>
