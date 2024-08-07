@@ -15,14 +15,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import aQute.lib.io.IO;
 import org.assertj.core.api.SoftAssertions;
 import org.eclipse.transformer.Transformer;
 import org.eclipse.transformer.action.Changes;
 import org.eclipse.transformer.action.ContainerChanges;
+import org.eclipse.transformer.action.ElementAction;
 import org.eclipse.transformer.action.impl.DirectoryActionImpl;
 import org.eclipse.transformer.action.impl.JavaActionImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
@@ -127,6 +134,51 @@ class TestCommandLine {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/sac-1.3.jar";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/sac-1.3.jar";
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+	}
+
+	/*
+	 * Tests that signature files have been discarded from signed jar file that was mutated by transformation.
+	 *
+	 * signed-jar-with-javax.jar contains a single class file which references javax.servlet.Servlet.
+	 * The Java source code is included with the jar file.
+	 */
+	@Test
+	void testSignatureFilesStrippedFromTransformedJarFile() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-with-javax.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-with-javax.jar";
+		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
+		Map<String, ZipEntry> sigFilesMap = extractSignatureFileEntries(inputFileName);
+		assertThat(sigFilesMap.size()).isEqualTo(2);
+		assertThat(sigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
+		assertThat(sigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		// Assert that signature files have been removed from output jar file
+		assertThat(extractSignatureFileEntries(outputFileName).size()).isEqualTo(0);
+	}
+
+	/*
+	 * Tests that signature files have been preserved in signed jar file that was left unmodified by transformation.
+	 *
+	 * signed-jar-without-javax.jar contains a single class file without any javax references.
+	 * The Java source code is included with the jar file.
+	 */
+	@Test
+	void testSignatureFilesPreservedInUnmodifiedJarFile() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-without-javax.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-without-javax.jar";
+		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
+		Map<String, ZipEntry> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
+		assertThat(inputJarSigFilesMap.size()).isEqualTo(2);
+		assertThat(inputJarSigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
+		assertThat(inputJarSigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		// Assert that signature files have been preserved in output jar file
+		Map<String, ZipEntry> outputJarSigFilesMap = extractSignatureFileEntries(outputFileName);
+		assertThat(outputJarSigFilesMap.size()).isEqualTo(2);
+		assertThat(outputJarSigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
+		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.SF").getSize()).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.SF").getSize());
+		assertThat(outputJarSigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
+		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.DSA").getSize()).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.DSA").getSize());
 	}
 
 	// Test zip with STORED archive to make sure ZipEntries are properly created.
@@ -367,5 +419,18 @@ class TestCommandLine {
 
 		assertThat(transformer.setOutput()).as("transformer.setOutput() unexpectedly succeeded")
 			.isFalse();
+	}
+
+	private static Map<String, ZipEntry> extractSignatureFileEntries(String zipFilePath) throws IOException {
+		final ZipFile zipFile = new ZipFile(zipFilePath);
+		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
+		final Map<String, ZipEntry> signatureFilesMap = new HashMap();
+		while (entries.hasMoreElements()) {
+			final ZipEntry zipEntry = entries.nextElement();
+			if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(zipEntry.getName()).matches()) {
+				signatureFilesMap.put(zipEntry.getName(), zipEntry);
+			}
+		}
+		return signatureFilesMap;
 	}
 }
