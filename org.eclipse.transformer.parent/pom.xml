@@ -190,7 +190,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-gpg-plugin</artifactId>
-					<version>3.2.4</version>
+					<version>3.2.5</version>
 					<executions>
 						<execution>
 							<id>sign-artifacts</id>
