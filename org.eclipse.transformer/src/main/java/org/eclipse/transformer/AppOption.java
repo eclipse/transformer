@@ -77,6 +77,9 @@ public enum AppOption {
 	INVERT(new Settings("i", "invert", "Invert transformation rules", !Settings.HAS_ARG, !Settings.HAS_ARGS,
 		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
+	STRIP_SIGNATURES(new Settings("s", "strip-signatures", "Strips signatures from signed jar files", !Settings.HAS_ARG, !Settings.HAS_ARGS,
+		!Settings.IS_REQUIRED, Settings.NO_GROUP)),
+
 	FILE_TYPE(new Settings("t", "type", "Input file type", Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,
 		Settings.NO_GROUP)),
 	OVERWRITE(new Settings("o", "overwrite", "Overwrite", !Settings.HAS_ARG, !Settings.HAS_ARGS, !Settings.IS_REQUIRED,

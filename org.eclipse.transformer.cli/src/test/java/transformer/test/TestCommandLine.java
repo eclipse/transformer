@@ -137,48 +137,43 @@ class TestCommandLine {
 	}
 
 	/*
-	 * Tests that signature files have been discarded from signed jar file that was mutated by transformation.
+	 * Tests that signature files have been discarded from signed jar file (regardless of whether it was mutated)
+	 * when <code>-s</code> command-line option has been specified.
 	 *
 	 * signed-jar-with-javax.jar contains a single class file which references javax.servlet.Servlet.
 	 * The Java source code is included with the jar file.
 	 */
 	@Test
-	void testSignatureFilesStrippedFromTransformedJarFile() throws Exception {
+	void testSignatureFilesStripped() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-with-javax.jar";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-with-javax.jar";
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
-		Map<String, ZipEntry> sigFilesMap = extractSignatureFileEntries(inputFileName);
-		assertThat(sigFilesMap.size()).isEqualTo(2);
-		assertThat(sigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
-		assertThat(sigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
-		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		Map<String, byte[]> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
+		assertThat(inputJarSigFilesMap).containsOnlyKeys("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, true);
 		// Assert that signature files have been removed from output jar file
-		assertThat(extractSignatureFileEntries(outputFileName).size()).isEqualTo(0);
+		assertThat(extractSignatureFileEntries(outputFileName)).isEmpty();
 	}
 
 	/*
-	 * Tests that signature files have been preserved in signed jar file that was left unmodified by transformation.
+	 * Tests that signature files are preserved in signed jar file by default.
 	 *
-	 * signed-jar-without-javax.jar contains a single class file without any javax references.
+	 * signed-jar-with-javax.jar contains a single class file which references javax.servlet.Servlet.
 	 * The Java source code is included with the jar file.
 	 */
 	@Test
-	void testSignatureFilesPreservedInUnmodifiedJarFile() throws Exception {
-		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-without-javax.jar";
-		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-without-javax.jar";
+	void testSignatureFilesPreservedByDefault() throws Exception {
+		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-with-javax.jar";
+		String outputFileName = DYNAMIC_CONTENT_DIR + "/unsigned-jar-with-javax.jar";
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
-		Map<String, ZipEntry> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
-		assertThat(inputJarSigFilesMap.size()).isEqualTo(2);
-		assertThat(inputJarSigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
-		assertThat(inputJarSigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
+		Map<String, byte[]> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
+		assertThat(inputJarSigFilesMap).containsOnlyKeys("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
 		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
 		// Assert that signature files have been preserved in output jar file
-		Map<String, ZipEntry> outputJarSigFilesMap = extractSignatureFileEntries(outputFileName);
-		assertThat(outputJarSigFilesMap.size()).isEqualTo(2);
-		assertThat(outputJarSigFilesMap.containsKey("META-INF/MYKEY.SF")).isTrue();
-		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.SF").getSize()).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.SF").getSize());
-		assertThat(outputJarSigFilesMap.containsKey("META-INF/MYKEY.DSA")).isTrue();
-		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.DSA").getSize()).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.DSA").getSize());
+		Map<String, byte[]> outputJarSigFilesMap = extractSignatureFileEntries(outputFileName);
+		assertThat(outputJarSigFilesMap).containsOnlyKeys("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
+		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.SF")).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.SF"));
+		assertThat(outputJarSigFilesMap.get("META-INF/MYKEY.DSA")).isEqualTo(inputJarSigFilesMap.get("META-INF/MYKEY.DSA"));
 	}
 
 	// Test zip with STORED archive to make sure ZipEntries are properly created.
@@ -347,16 +342,33 @@ class TestCommandLine {
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName) throws Exception {
-		verifyAction(actionClassName, inputFileName, outputFileName, expectedOutputFileName, 0);
+		verifyAction(actionClassName, inputFileName, outputFileName, expectedOutputFileName, false);
+	}
+
+	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName,
+							  boolean stripSignatures) throws Exception {
+		verifyAction(actionClassName, inputFileName, outputFileName, expectedOutputFileName, 0, stripSignatures);
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName, int duplicates) throws Exception {
+		verifyAction(actionClassName, inputFileName, outputFileName, expectedOutputFileName, duplicates, false);
+	}
+
+	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName,
+							  int duplicates, boolean stripSignatures) throws Exception {
 		System.out.printf("verifyAction: Input is: [%s] Output is: [%s]\n", inputFileName, outputFileName);
 		String[] args = outputFileName != null ? new String[] {
 			inputFileName, outputFileName, "-o"
 		} : new String[] {
 			inputFileName, "-o"
 		};
+
+		if (stripSignatures) {
+			String[] moreArgs = new String[args.length + 1];
+			System.arraycopy(args, 0, moreArgs, 0, args.length);
+			moreArgs[args.length] = "-s";
+			args = moreArgs;
+		}
 
 		TransformerCLI cli = new JakartaTransformerCLI(System.out, System.err, args);
 
@@ -421,16 +433,17 @@ class TestCommandLine {
 			.isFalse();
 	}
 
-	private static Map<String, ZipEntry> extractSignatureFileEntries(String zipFilePath) throws IOException {
-		final ZipFile zipFile = new ZipFile(zipFilePath);
-		final Enumeration<? extends ZipEntry> entries = zipFile.entries();
-		final Map<String, ZipEntry> signatureFilesMap = new HashMap();
-		while (entries.hasMoreElements()) {
-			final ZipEntry zipEntry = entries.nextElement();
-			if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(zipEntry.getName()).matches()) {
-				signatureFilesMap.put(zipEntry.getName(), zipEntry);
+	private static Map<String, byte[]> extractSignatureFileEntries(String zipFilePath) throws IOException {
+		try (ZipFile zipFile = new ZipFile(zipFilePath)) {
+			final Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			final Map<String, byte[]> signatureFilesMap = new HashMap();
+			while (entries.hasMoreElements()) {
+				final ZipEntry zipEntry = entries.nextElement();
+				if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(zipEntry.getName()).matches()) {
+					signatureFilesMap.put(zipEntry.getName(), IO.read(zipFile.getInputStream(zipEntry)));
+				}
 			}
+			return signatureFilesMap;
 		}
-		return signatureFilesMap;
 	}
 }
