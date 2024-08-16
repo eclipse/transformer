@@ -230,6 +230,7 @@ class BndAnalyzerPluginTest {
 		try (Processor processor = new Processor()) {
 			processor.setProperty("-transformer", "tb;arg=value1");
 			processor.setProperty("-transformer.overwrite", "overwrite");
+			processor.setProperty("-transformer.stripSignatures", "strip-signatures");
 			processor.setProperty("-transformer.morebundles", "bundles;arg=value2");
 			processor.setProperty("-transformer.immediate",
 				"immediate;option=tv;package=org.eclipse.transformer.test.api;version=\"[2.0\\,3.0);Export-Package=2.0.0\"");
@@ -252,6 +253,11 @@ class BndAnalyzerPluginTest {
 			assertThat(options.hasOption(AppOption.WIDEN_ARCHIVE_NESTING)).isFalse();
 			assertThat(options.getOptionValues(AppOption.WIDEN_ARCHIVE_NESTING)).isNull();
 			assertThat(options.getOptionValue(AppOption.WIDEN_ARCHIVE_NESTING)).isNull();
+
+			assertThat(options.getDefaultValue(AppOption.STRIP_SIGNATURES)).isNull();
+			assertThat(options.hasOption(AppOption.STRIP_SIGNATURES)).isTrue();
+			assertThat(options.getOptionValues(AppOption.STRIP_SIGNATURES)).isEmpty();
+			assertThat(options.getOptionValue(AppOption.STRIP_SIGNATURES)).isNull();
 
 			assertThat(options.getOptionValues(AppOption.RULES_IMMEDIATE_DATA)).containsExactly("tv",
 				"org.eclipse.transformer.test.api", "[2.0\\,3.0);Export-Package=2.0.0");

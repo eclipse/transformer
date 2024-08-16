@@ -109,6 +109,9 @@ public class TransformerMojoOptions implements TransformOptions {
 			case WIDEN_ARCHIVE_NESTING :
 				has = rules.isWiden();
 				break;
+			case STRIP_SIGNATURES :
+				has = rules.isStripSignatures();
+				break;
 			default :
 				has = TransformOptions.super.hasOption(option);
 				break;

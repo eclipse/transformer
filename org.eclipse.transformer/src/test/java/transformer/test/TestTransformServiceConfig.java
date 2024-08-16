@@ -193,7 +193,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = new ZipActionImpl(context, ActionType.JAR);
+			jarJavaxServiceAction = new ZipActionImpl(context, ActionType.JAR, false);
 			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
 			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}

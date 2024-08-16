@@ -58,7 +58,7 @@ public abstract class AbstractTransformerMojo extends AbstractMojo {
 	 * <p>
 	 * The rules configuration includes: selections, renames, versions, bundles,
 	 * directs, texts, perClassConstants, immediates, invert, overwrite, widen,
-	 * and jakartaDefaults.
+	 * jakartaDefaults, and stripSignatures.
 	 */
 	@Parameter
 	private TransformerRules		rules	= new TransformerRules();

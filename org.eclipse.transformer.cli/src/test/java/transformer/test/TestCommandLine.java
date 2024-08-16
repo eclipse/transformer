@@ -83,14 +83,14 @@ class TestCommandLine {
 	void testManifestActionAccepted() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/MANIFEST.MF";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/MANIFEST.MF";
-		verifyAction(ManifestActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		verifyAction(ManifestActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, false);
 	}
 
 	@Test
 	void testJavaActionAccepted() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/A.java";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/A.java";
-		verifyAction(JavaActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		verifyAction(JavaActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, false);
 	}
 
 	@Test
@@ -117,7 +117,7 @@ class TestCommandLine {
 		String inputFileName = inputFile.getCanonicalPath().replace(File.separatorChar, '/');
 		String expectedOutputFileName = new File(inputFile.getParentFile(), Transformer.OUTPUT_PREFIX + inputFile.getName()).getCanonicalPath()
 			.replace(File.separatorChar, '/');
-		verifyAction(JavaActionImpl.class.getName(), inputFileName, null, expectedOutputFileName);
+		verifyAction(JavaActionImpl.class.getName(), inputFileName, null, expectedOutputFileName, false);
 	}
 
 	@Test
@@ -133,7 +133,7 @@ class TestCommandLine {
 	void zip_entry_creation() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/sac-1.3.jar";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/sac-1.3.jar";
-		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, false);
 	}
 
 	/*
@@ -168,7 +168,7 @@ class TestCommandLine {
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA
 		Map<String, byte[]> inputJarSigFilesMap = extractSignatureFileEntries(inputFileName);
 		assertThat(inputJarSigFilesMap).containsOnlyKeys("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
-		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, false);
 		// Assert that signature files have been preserved in output jar file
 		Map<String, byte[]> outputJarSigFilesMap = extractSignatureFileEntries(outputFileName);
 		assertThat(outputJarSigFilesMap).containsOnlyKeys("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
@@ -181,7 +181,7 @@ class TestCommandLine {
 	void zip_nested_stored_archive() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR +  "/command-line/nested_stored_archive.war";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/nested_stored_archive.war";
-		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName);
+		verifyAction(ZipActionImpl.class.getName(), inputFileName, outputFileName, outputFileName, false);
 	}
 
 	// Test zip with entry names encoded with a charset other than UTF-8.
@@ -339,10 +339,6 @@ class TestCommandLine {
 				.doesNotContain("Test log other marker");
 		});
 
-	}
-
-	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName) throws Exception {
-		verifyAction(actionClassName, inputFileName, outputFileName, expectedOutputFileName, false);
 	}
 
 	private void verifyAction(String actionClassName, String inputFileName, String outputFileName, String expectedOutputFileName,

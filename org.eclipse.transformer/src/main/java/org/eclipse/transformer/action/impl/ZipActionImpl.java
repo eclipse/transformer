@@ -52,10 +52,6 @@ import org.slf4j.Logger;
  */
 public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
-	public ZipActionImpl(ActionContext context, ActionType actionType) {
-		this(context, actionType, false);
-	}
-
 	public ZipActionImpl(ActionContext context, ActionType actionType, boolean stripSignatures) {
 		super(context);
 		this.actionType = actionType;
