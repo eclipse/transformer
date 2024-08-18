@@ -144,7 +144,7 @@ class TestCommandLine {
 	 * The Java source code is included with the jar file.
 	 */
 	@Test
-	void testSignatureFilesStripped() throws Exception {
+	void testStripSignatureFiles() throws Exception {
 		String inputFileName = STATIC_CONTENT_DIR + "/command-line/signed-jar-with-javax.jar";
 		String outputFileName = DYNAMIC_CONTENT_DIR + "/signed-jar-with-javax.jar";
 		// Assert that signed input jar file contains 2 signature files: META-INF/MYKEY.SF and META-INF/MYKEY.DSA

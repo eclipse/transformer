@@ -11,6 +11,7 @@
 
 package org.eclipse.transformer.maven;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -18,8 +19,12 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.DefaultArtifact;
@@ -28,8 +33,12 @@ import org.apache.maven.plugin.testing.resources.TestResources;
 import org.apache.maven.plugin.testing.stubs.DefaultArtifactHandlerStub;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.eclipse.transformer.action.ElementAction;
+import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.FileAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Rule;
 import org.junit.Test;
@@ -66,7 +75,7 @@ public class TransformerRunMojoTest {
 
 		final MavenProject mavenProject = createMavenProject(modelDirectory, pom, "war", "rest-sample");
 		mavenProject.getArtifact()
-			.setFile(createService());
+			.setFile(createService("war", targetDirectory));
 
 		mojo.setProject(mavenProject);
 		mojo.setClassifier("transformed");
@@ -113,11 +122,11 @@ public class TransformerRunMojoTest {
 		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 
 		mojo.getProjectHelper()
-			.attachArtifact(mavenProject, "zip", "test1", createService());
+			.attachArtifact(mavenProject, "zip", "test1", createService("war", targetDirectory));
 		mojo.getProjectHelper()
-			.attachArtifact(mavenProject, "zip", "test2", createService());
+			.attachArtifact(mavenProject, "zip", "test2", createService("war", targetDirectory));
 		mojo.getProjectHelper()
-			.attachArtifact(mavenProject, "zip", "test3", createService());
+			.attachArtifact(mavenProject, "zip", "test3", createService("war", targetDirectory));
 
 		final Artifact[] sourceArtifacts = mojo.getSourceArtifacts();
 		assertEquals(3, sourceArtifacts.length);
@@ -171,7 +180,7 @@ public class TransformerRunMojoTest {
 
 		final MavenProject mavenProject = createMavenProject(modelDirectory, pom, "war", "rest-sample");
 		mavenProject.getArtifact()
-			.setFile(createService());
+			.setFile(createService("war", targetDirectory));
 
 		mojo.setProject(mavenProject);
 		mojo.setClassifier("transformed");
@@ -190,6 +199,53 @@ public class TransformerRunMojoTest {
 			.size());
 	}
 
+	@Test
+	public void testProjectArtifactTransformerPluginStripSignatureFiles() throws Exception {
+		final TransformerRunMojo mojo = new TransformerRunMojo();
+		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
+		mojo.setOverwrite(true);
+		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
+		mojo.setAttach(true);
+		mojo.setStripSignatures(true);
+
+		assertNotNull(mojo);
+
+		final File targetDirectory = this.resources.getBasedir("transform-build-jar-artifact");
+		final File modelDirectory = new File(targetDirectory, "target/model");
+		final File pom = new File(targetDirectory, "pom.xml");
+
+		final MavenProject mavenProject = createMavenProject(modelDirectory, pom, "jar", "rest-sample");
+		mavenProject.getArtifact()
+			.setFile(createService("jar", targetDirectory));
+
+		mojo.setProject(mavenProject);
+		mojo.setClassifier("transformed");
+
+		final Artifact[] sourceArtifacts = mojo.getSourceArtifacts();
+		assertEquals(1, sourceArtifacts.length);
+		final Artifact sourceArtifact = sourceArtifacts[0];
+		assertEquals("org.superbiz.rest", sourceArtifact.getGroupId());
+		assertEquals("rest-sample", sourceArtifact.getArtifactId());
+		assertEquals("1.0-SNAPSHOT", sourceArtifact.getVersion());
+		assertEquals("jar", sourceArtifact.getType());
+		assertNull(sourceArtifact.getClassifier());
+		assertThat(getSignatureFileEntries(sourceArtifact.getFile())).containsExactly("META-INF/MYKEY.SF", "META-INF/MYKEY.DSA");
+
+		mojo.transform(sourceArtifacts[0]);
+
+		assertEquals(1, mavenProject.getAttachedArtifacts()
+			.size());
+		final Artifact transformedArtifact = mavenProject.getAttachedArtifacts()
+			.get(0);
+
+		assertEquals("org.superbiz.rest", transformedArtifact.getGroupId());
+		assertEquals("rest-sample", transformedArtifact.getArtifactId());
+		assertEquals("1.0-SNAPSHOT", transformedArtifact.getVersion());
+		assertEquals("jar", transformedArtifact.getType());
+		assertEquals("transformed", transformedArtifact.getClassifier());
+		assertThat(getSignatureFileEntries(transformedArtifact.getFile())).isEmpty();
+	}
+
 	public MavenProject createMavenProject(final File modelDirectory, final File pom, final String packaging,
 		final String artfifactId) {
 		final MavenProject mavenProject = new MavenProject();
@@ -205,19 +261,44 @@ public class TransformerRunMojoTest {
 			.setOutputDirectory(modelDirectory.getAbsolutePath());
 		mavenProject.setArtifact(
 			new DefaultArtifact(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion(),
-				(String) null, "war", (String) null, new DefaultArtifactHandlerStub(packaging, null)));
+				null, packaging, null, new DefaultArtifactHandlerStub(packaging, null)));
 		return mavenProject;
 	}
 
-	public File createService() throws IOException {
-		final File tempFile = File.createTempFile("service", ".war");
+	private static File createService(String packaging, File targetDirectory) throws IOException {
+		final File tempFile = File.createTempFile("service", "." + packaging);
 		tempFile.delete();
 
-		final WebArchive webArchive = ShrinkWrap.create(WebArchive.class, "service.war")
-			.addClass(EchoService.class);
+		final Archive archive;
+		if (packaging.equals("jar")) {
+			archive = ShrinkWrap.create(JavaArchive.class, "service." + packaging)
+				.addClass(EchoService.class);
+		} else {
+			archive = ShrinkWrap.create(WebArchive.class, "service." + packaging)
+				.addClass(EchoService.class);
+		}
 
-		webArchive.as(ZipExporter.class)
+		if (packaging.equals("jar")) {
+			archive.add(new FileAsset(new File(targetDirectory, "META-INF/MYKEY.SF")), "META-INF/MYKEY.SF");
+			archive.add(new FileAsset(new File(targetDirectory, "META-INF/MYKEY.DSA")), "META-INF/MYKEY.DSA");
+		}
+
+		archive.as(ZipExporter.class)
 			.exportTo(tempFile, true);
 		return tempFile;
+	}
+
+	private static Set<String> getSignatureFileEntries(File file) throws IOException {
+		try (ZipFile zipFile = new ZipFile(file)) {
+			final Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			final Set<String> signatureFiles = new HashSet<>();
+			while (entries.hasMoreElements()) {
+				final ZipEntry zipEntry = entries.nextElement();
+				if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(zipEntry.getName()).matches()) {
+					signatureFiles.add(zipEntry.getName());
+				}
+			}
+			return signatureFiles;
+		}
 	}
 }
