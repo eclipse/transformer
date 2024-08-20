@@ -59,6 +59,9 @@ public class TransformerRunMojo extends AbstractMojo {
 	@Parameter(defaultValue = "true", property = "transformer-plugin.overwrite", required = true)
 	private boolean				overwrite;
 
+	@Parameter(defaultValue = "false", property = "transformer-plugin.stripSignatures", required = false)
+	private boolean				stripSignatures;
+
 	@Parameter(defaultValue = "true", property = "transformer-plugin.attach", required = true)
 	private boolean				attach;
 
@@ -131,6 +134,8 @@ public class TransformerRunMojo extends AbstractMojo {
 						return overwrite;
 					case INVERT :
 						return invert;
+					case STRIP_SIGNATURES:
+						return stripSignatures;
 					default :
 						return TransformOptions.super.hasOption(option);
 				}
@@ -257,4 +262,7 @@ public class TransformerRunMojo extends AbstractMojo {
 		this.attach = attach;
 	}
 
+	void setStripSignatures(boolean stripSignatures) {
+		this.stripSignatures = stripSignatures;
+	}
 }

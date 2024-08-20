@@ -30,7 +30,6 @@ import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
 import org.eclipse.transformer.action.impl.ActionContextImpl;
-import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
@@ -190,13 +189,11 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			ActionSelectorImpl actionSelector = new ActionSelectorImpl();
-
 			ActionContext context = new ActionContextImpl(useLogger,
 				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
-			jarJavaxServiceAction = new ZipActionImpl(context, ActionType.JAR);
+			jarJavaxServiceAction = new ZipActionImpl(context, ActionType.JAR, false);
 			jarJavaxServiceAction.addUsing(PropertiesActionImpl::new);
 			jarJavaxServiceAction.addUsing(ServiceLoaderConfigActionImpl::new);
 		}

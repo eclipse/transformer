@@ -29,6 +29,7 @@ public class TransformerRules {
 	private boolean			overwrite;
 	private boolean			widen;
 	private boolean			jakartaDefaults;
+	private boolean			stripSignatures;
 
 	public TransformerRules() {}
 
@@ -134,12 +135,26 @@ public class TransformerRules {
 		this.widen = widen;
 	}
 
+	/**
+	 * @return the stripSignatures
+	 */
+	public boolean isStripSignatures() {
+		return stripSignatures;
+	}
+
+	/**
+	 * @param stripSignatures the stripSignatures to set
+	 */
+	public void setStripSignatures(boolean stripSignatures) {
+		this.stripSignatures = stripSignatures;
+	}
+
 	@Override
 	public String toString() {
 		return String.format(
-			"selections=%s, renames=%s, versions=%s, bundles=%s, directs=%s, texts=%s, perClassConstants=%s, immediates=%s, invert=%s, overwrite=%s, widen=%s, jakartaDefaults=%s",
+			"selections=%s, renames=%s, versions=%s, bundles=%s, directs=%s, texts=%s, perClassConstants=%s, immediates=%s, invert=%s, overwrite=%s, widen=%s, jakartaDefaults=%s, stripSignatures=%s",
 			getSelections(), getRenames(), getVersions(), getBundles(), getDirects(), getTexts(),
-			getPerClassConstants(), getImmediates(), isInvert(), isOverwrite(), isWiden(), isJakartaDefaults());
+			getPerClassConstants(), getImmediates(), isInvert(), isOverwrite(), isWiden(), isJakartaDefaults(), isStripSignatures());
 	}
 
 }

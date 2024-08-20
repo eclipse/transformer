@@ -345,7 +345,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
-			toJakartaJarAction = new ZipActionImpl(context, ActionType.JAR);
+			toJakartaJarAction = new ZipActionImpl(context, ActionType.JAR, false);
 		}
 
 		return toJakartaJarAction;
@@ -363,7 +363,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, toJavaxRenames, null, null, null, Collections.emptyMap()));
 
-			toJavaxJarAction = new ZipActionImpl(context, ActionType.JAR);
+			toJavaxJarAction = new ZipActionImpl(context, ActionType.JAR, false);
 		}
 
 		return toJavaxJarAction;
@@ -379,7 +379,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(), null));
 
-			toJakartaJarAction_DirectOverride = new ZipActionImpl(context, ActionType.JAR);
+			toJakartaJarAction_DirectOverride = new ZipActionImpl(context, ActionType.JAR, false);
 		}
 
 		return toJakartaJarAction_DirectOverride;
@@ -396,7 +396,7 @@ public class TestTransformClass extends CaptureTest {
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(),
 					toJakartaPerClassDirectStrings()));
 
-			toJakartaJarAction_PerClassDirectOverride = new ZipActionImpl(context, ActionType.JAR);
+			toJakartaJarAction_PerClassDirectOverride = new ZipActionImpl(context, ActionType.JAR, false);
 		}
 
 		return toJakartaJarAction_PerClassDirectOverride;
@@ -412,7 +412,7 @@ public class TestTransformClass extends CaptureTest {
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, null));
 
-			toJakartaJarAction_PackageRenamesOnly = new ZipActionImpl(context, ActionType.JAR);
+			toJakartaJarAction_PackageRenamesOnly = new ZipActionImpl(context, ActionType.JAR, false);
 		}
 
 		return toJakartaJarAction_PackageRenamesOnly;

@@ -1,0 +1,297 @@
+Signature-Version: 1.0
+Created-By: 11.0.14 (Azul Systems, Inc.)
+SHA-256-Digest-Manifest: rpUqmWWrqQlA1TEvbLXR7NuESr1lNFXm2oReB7V7DTA=
+SHA-256-Digest-Manifest-Main-Attributes: SlnRbD8M/TqLiKOgyjX0QrtvBleQgdR
+ N5WQCUXbqpUQ=
+
+Name: javax/servlet/http/Cookie.class
+SHA-256-Digest: 82Y2PIZIZpUi6Z/1qoQBfsfa/5Y3pApX3XaxBdSfoAc=
+
+Name: META-INF/maven/org.example/signed-jar-with-javax/pom.xml
+SHA-256-Digest: ng7kCODAS7H2YJ3eHeN+hSjgu+QMQCzTt5a/LJNwTvc=
+
+Name: javax/servlet/http/HttpSessionContext.class
+SHA-256-Digest: Li0vj2pDAdwIowMKd/vVOZBCaLlL37I2SVZbJHeg5qg=
+
+Name: javax/servlet/http/HttpSessionListener.class
+SHA-256-Digest: zMTgy+vjih50fRtjRw1zhJqaxffBNONvQVb/02yptmA=
+
+Name: javax/servlet/http/WebConnection.class
+SHA-256-Digest: 0B74ZovspVotuv7IKXBm6xKG1jXQ3TszaV+7eNCr9pU=
+
+Name: javax/servlet/http/HttpSessionAttributeListener.class
+SHA-256-Digest: ySXsEuI3L1MqyWLdtgrfRCnFUBVoCkvrXxIafprlu9o=
+
+Name: javax/servlet/http/LocalStrings_fr.properties
+SHA-256-Digest: 6xpR/jN16EhPwAvxcgIu6LT2MUdycfpWAGbNWgxAyAw=
+
+Name: javax/servlet/LocalStrings_ja.properties
+SHA-256-Digest: JLjZwyjfN8KQT9nHAvJTZxc8RWTserWYgUq5Dv90VKA=
+
+Name: javax/servlet/ServletRequestAttributeListener.class
+SHA-256-Digest: xg93xi/RQIrRgYAgiAq8jCmHVWMW6klHupi09xZRiaI=
+
+Name: javax/servlet/ServletContainerInitializer.class
+SHA-256-Digest: DxIzr8cpB7qFek6wbAPYRO8qmlop+pkvcwAT+YHti2I=
+
+Name: javax/servlet/ReadListener.class
+SHA-256-Digest: zZnn2Cnwsl06h6A8yeCvIH9BFOZJ06KyJxrJP8xM8cY=
+
+Name: javax/servlet/ServletRequest.class
+SHA-256-Digest: eQ4A2AMb90b/7hEblRG+M5H9dYsYEoD2FO9UhKsdEQQ=
+
+Name: javax/servlet/MultipartConfigElement.class
+SHA-256-Digest: TTAYSZe6g7G/oxjuQlVyLevg0dtqwip/49vxNy08q4k=
+
+Name: javax/servlet/http/HttpUtils.class
+SHA-256-Digest: 3WfV09iVtviyUnt00bn1wd2we1owF0bV1a96jJcHrgc=
+
+Name: javax/servlet/AsyncContext.class
+SHA-256-Digest: jSs0vFJ251Nor5UB5DnR3APHXRWNYXSbDFPWtAZvmKA=
+
+Name: javax/servlet/FilterConfig.class
+SHA-256-Digest: x5U3KtPAq8HnsAQJ9JXeeqjh4337EDjVaIaETYIoewA=
+
+Name: javax/servlet/ServletResponseWrapper.class
+SHA-256-Digest: 97fKrsxzgjQauSPl/ldbJUcCiWPPyr/uVJbMphEMs6k=
+
+Name: javax/servlet/Registration$Dynamic.class
+SHA-256-Digest: sJBFs0S3T1F0hWuyAV8KuHfiVgk7PbLikSJBDZa5xbM=
+
+Name: javax/servlet/descriptor/JspConfigDescriptor.class
+SHA-256-Digest: woTO02dn+N7donL32vmlyGxp2SymMXVcKhHlTwOhGfg=
+
+Name: javax/servlet/ServletResponse.class
+SHA-256-Digest: 8qHcYmuRvUsA/Ks6mqm53L6s+6E94u+G417St1e4Fkg=
+
+Name: javax/servlet/annotation/WebFilter.class
+SHA-256-Digest: shpjmXFa/priZyD+zuQ1j2K2jk1AkS68fdc87OZaq08=
+
+Name: javax/servlet/annotation/HttpMethodConstraint.class
+SHA-256-Digest: hxj37VtjmXOXwfjVJE5fKKkc03o4zFwPf59JdGLPSDs=
+
+Name: javax/servlet/SingleThreadModel.class
+SHA-256-Digest: KnlDoFsIEv3aDkRf9S3kksjszr/kMSna2x9TAnQUVnM=
+
+Name: javax/servlet/ServletConfig.class
+SHA-256-Digest: tx6KBryAT7Yrf2gXrE1nf5ioEemPbMoEngeg0Bwi7lw=
+
+Name: org/example/Main.java
+SHA-256-Digest: ZeG4NCcEVdey6WhE2Kcmt8yYMCASU+1LULevLGGDoOc=
+
+Name: javax/servlet/annotation/HttpConstraint.class
+SHA-256-Digest: 7a6ZlhZWhFEeY7+ISXOfCVqSP8NaWUf0aR8yEmvAxQQ=
+
+Name: javax/servlet/http/HttpSessionBindingEvent.class
+SHA-256-Digest: rERLe8uNkbbXSTvyPS6ZVrn9wp6I1m5kUL/AcLEyaHw=
+
+Name: javax/servlet/DispatcherType.class
+SHA-256-Digest: vBqD4yz8rebyAJGQZ4jabdsFAuI7/dG0vwo4Z4BbDJg=
+
+Name: javax/servlet/ServletOutputStream.class
+SHA-256-Digest: XgeVe6BeMBJlcxqwVkbfDfzc9lBJDpc1WKtcGz/6jdw=
+
+Name: javax/servlet/descriptor/JspPropertyGroupDescriptor.class
+SHA-256-Digest: CkpfWH4ABCemtS5sfU/yzabjYjzZthZHjE4M7WWfMFs=
+
+Name: javax/servlet/SessionTrackingMode.class
+SHA-256-Digest: vPdjsyvIYiu88XqVbpA+6zaDHA4xJ5qL/NNSYaABavM=
+
+Name: javax/servlet/annotation/ServletSecurity$EmptyRoleSemantic.class
+SHA-256-Digest: 8cAjpVvLSwQkhz72k+9E6sJF2MYuPhZi7jcGf6Tt3/w=
+
+Name: javax/servlet/ServletContextListener.class
+SHA-256-Digest: eVo64hIxahqWyZdU05KCuZvmyL0DeYSlfr9mls5smds=
+
+Name: javax/servlet/Filter.class
+SHA-256-Digest: JAf3kDjh5C8okRUHRy9dgDwDWbQeZeL/cYBte+9Bg6k=
+
+Name: javax/servlet/http/HttpUpgradeHandler.class
+SHA-256-Digest: FSQ02EJarsAfuOc9BsvuLKpHTpq5JvXIdPnj/N7EhCI=
+
+Name: javax/servlet/FilterRegistration.class
+SHA-256-Digest: j5X7LWDYfyCHXaw1a1QU0ZWdiQXGhLCa3eLfcmGxllE=
+
+Name: javax/servlet/Servlet.class
+SHA-256-Digest: EGk0jFklwDAKG/yVYigKJLitbf2WWqwGa8ae6Za5TuQ=
+
+Name: javax/servlet/http/LocalStrings_es.properties
+SHA-256-Digest: INs55tD8i2YSokcZvu+On4erTJvNEmeP+mBlSISpY94=
+
+Name: javax/servlet/annotation/WebInitParam.class
+SHA-256-Digest: 6Js7lQ+lofEQ/XFO7B5FKKFGjm6ns2SkUZMBNJauJas=
+
+Name: javax/servlet/descriptor/TaglibDescriptor.class
+SHA-256-Digest: ifsKXM/fDdZQSfTDY0hgjs+fhKiBPhPMa9hXwzznYJQ=
+
+Name: javax/servlet/ServletContextEvent.class
+SHA-256-Digest: mgIk2gDh6Ib5ykOs7JMg6OMGNJ06u5l9YtmPbJD/5Js=
+
+Name: javax/servlet/http/NoBodyOutputStream.class
+SHA-256-Digest: WO4YA1kqjSL/sxRszHCu8gW0NjpvuJGtfLwz2c+pcHE=
+
+Name: javax/servlet/ServletRegistration$Dynamic.class
+SHA-256-Digest: aiiZyMvYqK99kWr5d845NqyLgOWLNxZbBWIXLBFsWmU=
+
+Name: javax/servlet/UnavailableException.class
+SHA-256-Digest: xcZUP2YFWzYKqVy74Rd0FDBE4T31H15WkK5m/uNBVlA=
+
+Name: javax/servlet/ServletRequestListener.class
+SHA-256-Digest: x3xl26ZpZeYHVhSWoUcHbORfI3vbznn02dYlnXH3dfg=
+
+Name: javax/servlet/package.html
+SHA-256-Digest: NPQhFHnAGi1yarOwlm864usFMmlNnkocTbF15I0Gs1I=
+
+Name: javax/servlet/http/HttpServletRequest.class
+SHA-256-Digest: 4uHhhhqVAW06loe4w5pf8UYDSaT86Cn07SimS4ufoJ4=
+
+Name: javax/servlet/ServletContext.class
+SHA-256-Digest: jRBO4ZQMDmubphGp0P1TGtn520ma5yiwnGIFlXjrpfU=
+
+Name: javax/servlet/Registration.class
+SHA-256-Digest: Aw3HPUeP4Xh8jEORQQIGl6NdyWcrOuPZCIeGACXyooE=
+
+Name: javax/servlet/FilterChain.class
+SHA-256-Digest: mwKCSXXxRffLPz++bXJD5B7rgZ01ONvuu45r+fTUAoA=
+
+Name: javax/servlet/http/HttpServletRequestWrapper.class
+SHA-256-Digest: jd7TR6/i/WGas8MnsGlGr1Ei8mufXrSlBkO1dxk7veI=
+
+Name: javax/servlet/annotation/HandlesTypes.class
+SHA-256-Digest: 5W4WlpmJZG1JAgLn60QhOImk41gY1ykjAZYDllbFtwA=
+
+Name: javax/servlet/http/HttpSessionBindingListener.class
+SHA-256-Digest: QGhM8czlA18u9Y9cSaMIha4luI9HF7i2MdP6g3JiQSw=
+
+Name: javax/servlet/annotation/ServletSecurity.class
+SHA-256-Digest: 2JSCRnTNlxedodflTEzpzv7Vsd0o8dGZu3VUSJjRPVo=
+
+Name: javax/servlet/ServletRequestAttributeEvent.class
+SHA-256-Digest: 9Vv6M/sFd0m4FHqciN4LRUTugYe7NgeC/yYpD46dZAw=
+
+Name: javax/servlet/ServletRequestWrapper.class
+SHA-256-Digest: AjZm9ZHL1Qwud/L0XDrXxeDOs3nnDB5Wz3EuOOrZDSk=
+
+Name: javax/servlet/annotation/MultipartConfig.class
+SHA-256-Digest: QutcTcaFochjJimstYEGxjBuq+m5Y5MTt2dESpr3YVM=
+
+Name: javax/servlet/ServletRequestEvent.class
+SHA-256-Digest: av0TTDJtcOeGaHPVX/qNgi3ATwjDKgnN3WNrr7SuVHc=
+
+Name: javax/servlet/http/HttpServlet.class
+SHA-256-Digest: KtJ+P1TGullJrO6PbX3U/uDlp4a0X5BRyoQw1Ui1m/w=
+
+Name: javax/servlet/LocalStrings_fr.properties
+SHA-256-Digest: d2jbgmW48aj3CErfe7FmdfipYLyH5M4CvYNa0TRxiAU=
+
+Name: javax/servlet/LocalStrings.properties
+SHA-256-Digest: AYhzGsJHWLT6ymgA2ybsWyT2ogbPbjndrqu28IoCF0U=
+
+Name: javax/servlet/annotation/package.html
+SHA-256-Digest: O4NXfLNZHJa+v6PuCweBedX3ALdrXqgwdyMX/CVoYHU=
+
+Name: javax/servlet/http/LocalStrings_ja.properties
+SHA-256-Digest: /x7zSiBDCQTh3gryrqH9LpFDgkPlsG/oxJmZ+FEauqA=
+
+Name: javax/servlet/SessionCookieConfig.class
+SHA-256-Digest: 1uWMECVljGxWzMrtm2RjSx4qIroh1ubcHp9KqDf3aTU=
+
+Name: META-INF/maven/org.example/signed-jar-with-javax/pom.properties
+SHA-256-Digest: HTInLkbuwl9EwiK0IfSlUsT1NBae7CMp6YYsjI8ZnmE=
+
+Name: javax/servlet/http/Part.class
+SHA-256-Digest: qS8JPwEQBpHEcQJ07GCg+TzSpt5+Q+EhZXg2/RfsIJ8=
+
+Name: javax/servlet/http/HttpServletResponseWrapper.class
+SHA-256-Digest: AANn3d328uvstVjj8F6/1DmTQGnH1EA+gMtZKAq75fo=
+
+Name: javax/servlet/AsyncListener.class
+SHA-256-Digest: BDdxeUXdructVe20bYMNHAxDaLjzzvCgsEFpDkpA4mE=
+
+Name: javax/servlet/descriptor/package.html
+SHA-256-Digest: hXpMG7jKEBmAN3pDFJ50ovBJRQ1af8fZlZaiTRbSYo8=
+
+Name: META-INF/maven/javax.servlet/javax.servlet-api/pom.properties
+SHA-256-Digest: 0Yhfe4l5cV/yX/0pRB1ArkXv1BPNOTeus2TmX5G+jTs=
+
+Name: javax/servlet/HttpConstraintElement.class
+SHA-256-Digest: pTp3RBntJeSVr+NvWvngLd9BbwhU2TBk7xcO+7w/YW8=
+
+Name: META-INF/maven/javax.servlet/javax.servlet-api/pom.xml
+SHA-256-Digest: DKKCitUwl3nN/uVIG6M6caadog5ZqWs3rb9Ci1BDDhI=
+
+Name: javax/servlet/annotation/WebServlet.class
+SHA-256-Digest: YAtD65tbtJDFVSv1udeRBTtDrSyTpOD4nZspDT5R7EE=
+
+Name: javax/servlet/http/HttpSessionActivationListener.class
+SHA-256-Digest: bVBk5lW/6YlCC36Jc7RWqdvxFkCUnUfe7bLv2WysQXQ=
+
+Name: javax/servlet/HttpMethodConstraintElement.class
+SHA-256-Digest: rpyHGd6kuGctASZKU3wJ5rRjiMl+cM+frAPeH3dVcGE=
+
+Name: javax/servlet/WriteListener.class
+SHA-256-Digest: uczY24xrI+Um4pQek1ls7QGU1DHBul9TDP/YBVdkmv0=
+
+Name: javax/servlet/http/NoBodyResponse.class
+SHA-256-Digest: 2xo1OU/b/K7JrOIraisYYYfJGjlizlQhE9+dqkfHlDs=
+
+Name: org/example/Main.class
+SHA-256-Digest: mgxR2BQuWiqlV0LtYIOzaKVZB7HcFa/Ovq1OkF76GGM=
+
+Name: javax/servlet/GenericServlet.class
+SHA-256-Digest: jemlA5/Uu+/AzaXdCQU1BSEEn8QvaczHvjaDArU9MRw=
+
+Name: javax/servlet/http/HttpSessionIdListener.class
+SHA-256-Digest: kphVrWbBPN7oYz5GfLO+D9zy48S15TDfcL5ExNdZK0o=
+
+Name: javax/servlet/ServletException.class
+SHA-256-Digest: 2A96F0if2wZ4735Y/11MIFEW2rVgWQnXDlmG6Hx1Uxc=
+
+Name: javax/servlet/ServletRegistration.class
+SHA-256-Digest: CXM/0mAAT9qJ9ell2/3QgxJLEojuTeSzBIowJASY09E=
+
+Name: javax/servlet/ServletContextAttributeEvent.class
+SHA-256-Digest: pRYtbRz9z+n82A5MsDlzzOhUvYnxhbyJr2J3VKkducg=
+
+Name: javax/servlet/http/LocalStrings.properties
+SHA-256-Digest: 8YW/cRY5ZNp4piwxqyPgYvbM2Q/Y4sGV/6+IK2Ap7Uk=
+
+Name: javax/servlet/AsyncEvent.class
+SHA-256-Digest: vf0KvIhvwQxjqZBQ/6g1x8re8dL3GwYwG7gZyMvU7Ss=
+
+Name: javax/servlet/http/HttpServletResponse.class
+SHA-256-Digest: lmqNHTRSSZuYEcFiAnsavKJHcWymA+wd9plAWRb15q4=
+
+Name: javax/servlet/http/package.html
+SHA-256-Digest: 0/yGDdAITN1l2lDm3IDRAfUufbh8DKlVl3V3S+zBflA=
+
+Name: javax/servlet/annotation/ServletSecurity$TransportGuarantee.class
+SHA-256-Digest: o+kYKk2fCzYi+tSmNTecA5sdgFBceIkJ0fXsG94m4Kk=
+
+Name: javax/servlet/ServletSecurityElement.class
+SHA-256-Digest: Fpb2Mcnv/H3lYx9teQSidT98uiDbzWR0IMFJ4+8lF6A=
+
+Name: javax/servlet/ServletContextAttributeListener.class
+SHA-256-Digest: R7IWmc5ouL0PMpfItKX4cWszy6wE9MOXJzmf5TVurpI=
+
+Name: META-INF/LICENSE.txt
+SHA-256-Digest: +SnfA26jz/POzd3XyCfraXybcdU55pa9j8QFS8yHg/M=
+
+Name: javax/servlet/http/HttpSession.class
+SHA-256-Digest: apPkO8o3kT8EDNnKmQPBTqxsRuuuexYUnn8j7kCwgHE=
+
+Name: javax/servlet/http/HttpSessionEvent.class
+SHA-256-Digest: aM9Zg0cD5+QtSV+4FM2T2XHoSXeBNgm/Bk8FrxHzrkA=
+
+Name: javax/servlet/RequestDispatcher.class
+SHA-256-Digest: aoOyBeOetaLV7Mfx2dJJGLTHQsUMQQfJyszR/YQ9gLo=
+
+Name: javax/servlet/annotation/WebListener.class
+SHA-256-Digest: ROxLGTdJNNBVYUB2/vxdoqyPvzhk/MdlXJFtL1CBH7I=
+
+Name: javax/servlet/ServletInputStream.class
+SHA-256-Digest: u3alWBPjFkpnKH/4Fw5dJb48DNUEKKgTCakr0iGX9hs=
+
+Name: javax/servlet/FilterRegistration$Dynamic.class
+SHA-256-Digest: NJB/fL60z9uf+rQPrYIWe255zDXO5MfV4S8sGs3oKng=
+

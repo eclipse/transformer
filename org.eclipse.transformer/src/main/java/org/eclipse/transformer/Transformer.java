@@ -1135,11 +1135,16 @@ public class Transformer {
 			standardActions.add(propertiesAction); // after text so text can supersede
 			standardActions.add(xmlAction); // after text so text can supersede
 
-			ContainerAction jarAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.JAR), context);
-			ContainerAction warAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.WAR), context);
-			ContainerAction rarAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.RAR), context);
-			ContainerAction earAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.EAR), context);
-			ContainerAction zipAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.ZIP), context);
+			ContainerAction jarAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.JAR,
+				options.hasOption(AppOption.STRIP_SIGNATURES)), context);
+			ContainerAction warAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.WAR,
+				options.hasOption(AppOption.STRIP_SIGNATURES)), context);
+			ContainerAction rarAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.RAR,
+				options.hasOption(AppOption.STRIP_SIGNATURES)), context);
+			ContainerAction earAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.EAR,
+				options.hasOption(AppOption.STRIP_SIGNATURES)), context);
+			ContainerAction zipAction = useSelector.addUsing(c -> new ZipActionImpl(c, ActionType.ZIP,
+				options.hasOption(AppOption.STRIP_SIGNATURES)), context);
 
 			Action renameAction = useSelector.addUsing(RenameActionImpl::new, context);
 

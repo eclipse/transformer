@@ -52,12 +52,14 @@ import org.slf4j.Logger;
  */
 public class ZipActionImpl extends ContainerActionImpl implements ElementAction {
 
-	public ZipActionImpl(ActionContext context, ActionType actionType) {
+	public ZipActionImpl(ActionContext context, ActionType actionType, boolean stripSignatures) {
 		super(context);
 		this.actionType = actionType;
+		this.stripSignatures = stripSignatures;
 	}
 
 	private final ActionType	actionType;
+	private final boolean stripSignatures;
 
 	@Override
 	public ActionType getActionType() {
@@ -264,6 +266,9 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 
 				try {
 					inputName = FileUtils.sanitize(inputEntry.getName()); // Avoid ZipSlip
+					if (stripSignatures && ElementAction.SIGNATURE_FILE_PATTERN.matcher(inputName).matches()) {
+						continue;
+					}
 					int inputLength = Math.toIntExact(inputEntry.getSize());
 
 					useLogger.debug("[ {}.{} ] Entry [ {} ] Size [ {} ]", className, methodName, inputName, inputLength);
