@@ -100,6 +100,7 @@
 							<goal>jar</goal>
 						</goals>
 						<configuration>
+							<!--suppress MavenModelInspection -->
 							<bnd><![CDATA[
 Class-Path: ${replace;${findfile;${project.build.directory}/libs;*.jar};.+;libs/$0; }
 ]]></bnd>
