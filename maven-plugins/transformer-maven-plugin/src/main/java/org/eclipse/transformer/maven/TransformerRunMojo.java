@@ -59,7 +59,7 @@ public class TransformerRunMojo extends AbstractMojo {
 	@Parameter(defaultValue = "true", property = "transformer-plugin.overwrite", required = true)
 	private boolean				overwrite;
 
-	@Parameter(defaultValue = "false", property = "transformer-plugin.strip-signatures", required = false)
+	@Parameter(defaultValue = "false", property = "transformer-plugin.stripSignatures", required = false)
 	private boolean				stripSignatures;
 
 	@Parameter(defaultValue = "true", property = "transformer-plugin.attach", required = true)

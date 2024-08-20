@@ -13,7 +13,6 @@ package org.eclipse.transformer.maven;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -67,8 +66,6 @@ public class TransformerRunMojoTest {
 		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 		mojo.setAttach(true);
 
-		assertNotNull(mojo);
-
 		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");
 		final File pom = new File(targetDirectory, "pom.xml");
@@ -108,8 +105,6 @@ public class TransformerRunMojoTest {
 		mojo.setOverwrite(true);
 		mojo.setProjectHelper(this.rule.lookup(MavenProjectHelper.class));
 		mojo.setAttach(true);
-
-		assertNotNull(mojo);
 
 		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");
@@ -172,8 +167,6 @@ public class TransformerRunMojoTest {
 		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 		mojo.setAttach(false);
 
-		assertNotNull(mojo);
-
 		final File targetDirectory = this.resources.getBasedir("transform-build-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");
 		final File pom = new File(targetDirectory, "pom.xml");
@@ -207,8 +200,6 @@ public class TransformerRunMojoTest {
 		mojo.setOutputDirectory(tmp.newFolder(name.getMethodName()));
 		mojo.setAttach(true);
 		mojo.setStripSignatures(true);
-
-		assertNotNull(mojo);
 
 		final File targetDirectory = this.resources.getBasedir("transform-build-jar-artifact");
 		final File modelDirectory = new File(targetDirectory, "target/model");

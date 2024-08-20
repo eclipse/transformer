@@ -53,7 +53,7 @@ A list value of `-` (Hyphen-minus) is ignored. This can be used to configure an 
 |`overwrite` | If `true`, the items which transform to the same path as an existing item overwrite the existing item. _Defaults to `false`_. |
 |`widen` | If `true`, by default, archive nesting is restricted to JavaEE active locations. This may be relaxed to enable JAR and ZIP within JAR, ZIP within ZIP, and ZIP within EAR, WAR, and RAR. _Defaults to `false`_. |
 |`jakartaDefaults` | If `true`, the Jakarta rule defaults are included. _Defaults to `false`_. |
-|`strip-signatures` | If `true`, signature files will be removed from signed JAR files. _Defaults to `false`_. |
+|`stripSignatures` | If `true`, signature files will be removed from signed JAR files. _Defaults to `false`_. |
 
 ```xml
 <rules>

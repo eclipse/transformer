@@ -230,7 +230,7 @@ class BndAnalyzerPluginTest {
 		try (Processor processor = new Processor()) {
 			processor.setProperty("-transformer", "tb;arg=value1");
 			processor.setProperty("-transformer.overwrite", "overwrite");
-			processor.setProperty("-transformer.stripSignatures", "strip-signatures");
+			processor.setProperty("-transformer.stripSignatures", "stripSignatures");
 			processor.setProperty("-transformer.morebundles", "bundles;arg=value2");
 			processor.setProperty("-transformer.immediate",
 				"immediate;option=tv;package=org.eclipse.transformer.test.api;version=\"[2.0\\,3.0);Export-Package=2.0.0\"");
