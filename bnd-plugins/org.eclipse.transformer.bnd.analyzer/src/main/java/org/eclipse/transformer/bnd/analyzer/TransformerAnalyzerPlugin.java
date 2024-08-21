@@ -21,9 +21,9 @@ import aQute.bnd.service.externalplugin.ExternalPlugin;
 @ExternalPlugin(name = "Transformer", objectClass = AnalyzerPlugin.class)
 public class TransformerAnalyzerPlugin extends BaseTransformerPlugin implements AnalyzerPlugin {
 	public TransformerAnalyzerPlugin() {
-		/**
-		 * We want to run before other AnalyzerPlugins so they will operate on
-		 * the transformed classes and resources.
+		/*
+		  We want to run before other AnalyzerPlugins so they will operate on
+		  the transformed classes and resources.
 		 */
 		super(-10_000);
 	}

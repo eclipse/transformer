@@ -29,7 +29,6 @@ import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
@@ -159,7 +158,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 		if (jakartaServiceAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), null, null, null));
 
@@ -174,7 +173,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 
@@ -189,7 +188,7 @@ public class TestTransformServiceConfig extends CaptureTest {
 
 			Map<String, String> invertedRenames = TransformProperties.invert(getPackageRenames());
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, Collections.emptyMap(), getExcludes()),
 				createSignatureRule(useLogger, invertedRenames, null, null, null));
 

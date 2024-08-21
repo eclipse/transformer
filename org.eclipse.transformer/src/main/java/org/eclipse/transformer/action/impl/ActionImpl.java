@@ -100,21 +100,21 @@ public abstract class ActionImpl implements Action {
 	}
 
 	protected Logger getLogger() {
-		return getContext().getLogger();
+		return getContext().logger();
 	}
 
 	//
 
 	@Override
 	public SelectionRule getResourceSelectionRule() {
-		return getContext().getSelectionRule();
+		return getContext().selectionRule();
 	}
 
 	//
 
 	@Override
 	public SignatureRule getSignatureRule() {
-		return getContext().getSignatureRule();
+		return getContext().signatureRule();
 	}
 
 	public Map<String, String> getPackageRenames() {

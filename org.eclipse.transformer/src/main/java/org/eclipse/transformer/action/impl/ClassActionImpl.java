@@ -240,7 +240,7 @@ public class ClassActionImpl extends ElementActionImpl {
 	public ClassActionImpl(ActionContext context) {
 		super(context);
 
-		List<StringReplacement> useReplacements = createActiveReplacements(context.getSignatureRule());
+		List<StringReplacement> useReplacements = createActiveReplacements(context.signatureRule());
 
 		this.activeReplacements = useReplacements.isEmpty() ? NO_ACTIVE_REPLACEMENTS : useReplacements;
 	}
@@ -1174,8 +1174,7 @@ public class ClassActionImpl extends ElementActionImpl {
 
 	private Object transformElementValue(Object inputValue, String inputName, String annotationType,
 		String elementName) {
-		if (inputValue instanceof EnumConst) {
-			EnumConst enumValue = (EnumConst) inputValue;
+		if (inputValue instanceof EnumConst enumValue) {
 			String inputType = enumValue.type;
 			String outputType = transformDescriptor(inputType);
 			if (outputType == null) {
@@ -1184,8 +1183,7 @@ public class ClassActionImpl extends ElementActionImpl {
 				return new EnumConst(outputType, enumValue.name);
 			}
 
-		} else if (inputValue instanceof ResultConst) {
-			ResultConst resultValue = (ResultConst) inputValue;
+		} else if (inputValue instanceof ResultConst resultValue) {
 			String inputDescriptor = resultValue.descriptor;
 			String outputDescriptor = transformDescriptor(inputDescriptor);
 			if (outputDescriptor == null) {
@@ -1194,12 +1192,10 @@ public class ClassActionImpl extends ElementActionImpl {
 				return new ResultConst(outputDescriptor);
 			}
 
-		} else if (inputValue instanceof AnnotationInfo) {
-			AnnotationInfo annotationValue = (AnnotationInfo) inputValue;
+		} else if (inputValue instanceof AnnotationInfo annotationValue) {
 			return transform(annotationValue, AnnotationInfo::new, inputName);
 
-		} else if (inputValue instanceof String) {
-			String stringValue = (String) inputValue;
+		} else if (inputValue instanceof String stringValue) {
 			String result = transformString(inputName, "AnnotationValue", stringValue);
 			// Replace package version in OSGi Version annotation.
 			if (inputName.endsWith("/package-info.class")
@@ -1213,8 +1209,7 @@ public class ClassActionImpl extends ElementActionImpl {
 				}
 			}
 			return result;
-		} else if (inputValue instanceof Object[]) {
-			Object[] inputElementValues = ((Object[]) inputValue);
+		} else if (inputValue instanceof Object[] inputElementValues) {
 			Object[] outputElementValues = null;
 
 			for (int valueNo = 0; valueNo < inputElementValues.length; valueNo++) {
@@ -1255,10 +1250,9 @@ public class ClassActionImpl extends ElementActionImpl {
 	}
 
 	private VerificationTypeInfo transform(VerificationTypeInfo vti) {
-		if (!(vti instanceof ObjectVariableInfo)) {
+		if (!(vti instanceof ObjectVariableInfo inputOvi)) {
 			return null;
 		}
-		ObjectVariableInfo inputOvi = (ObjectVariableInfo) vti;
 
 		String inputType = inputOvi.type;
 		if (inputType == null) {
@@ -1287,6 +1281,7 @@ public class ClassActionImpl extends ElementActionImpl {
 		int numConstants = constants.size();
 		for (int constantNo = 1; constantNo < numConstants; constantNo++) {
 			if (useLogger.isTraceEnabled()) {
+				//noinspection StringConcatenationArgumentToLogCall
 				useLogger
 					.trace(String.format("Constant [ %3s ] [ %16s ] [ %s ]", constantNo, constants.tag(constantNo),
 					constants.entry(constantNo)));

@@ -63,59 +63,29 @@ public class TransformerMojoOptions implements TransformOptions {
 
 	@Override
 	public List<String> getOptionValues(AppOption option) {
-		List<String> values;
-		switch (option) {
-			case RULES_BUNDLES :
-				values = rules.getBundles();
-				break;
-			case RULES_DIRECT :
-				values = rules.getDirects();
-				break;
-			case RULES_IMMEDIATE_DATA :
-				values = rules.getImmediates();
-				break;
-			case RULES_MASTER_TEXT :
-				values = rules.getTexts();
-				break;
-			case RULES_PER_CLASS_CONSTANT :
-				values = rules.getPerClassConstants();
-				break;
-			case RULES_RENAMES :
-				values = rules.getRenames();
-				break;
-			case RULES_SELECTIONS :
-				values = rules.getSelections();
-				break;
-			case RULES_VERSIONS :
-				values = rules.getVersions();
-				break;
-			default :
-				values = null;
-				break;
-		}
+		List<String> values = switch (option) {
+			case RULES_BUNDLES -> rules.getBundles();
+			case RULES_DIRECT -> rules.getDirects();
+			case RULES_IMMEDIATE_DATA -> rules.getImmediates();
+			case RULES_MASTER_TEXT -> rules.getTexts();
+			case RULES_PER_CLASS_CONSTANT -> rules.getPerClassConstants();
+			case RULES_RENAMES -> rules.getRenames();
+			case RULES_SELECTIONS -> rules.getSelections();
+			case RULES_VERSIONS -> rules.getVersions();
+			default -> null;
+		};
 		return condition(values);
 	}
 
 	@Override
 	public boolean hasOption(AppOption option) {
-		boolean has;
-		switch (option) {
-			case OVERWRITE :
-				has = rules.isOverwrite();
-				break;
-			case INVERT :
-				has = rules.isInvert();
-				break;
-			case WIDEN_ARCHIVE_NESTING :
-				has = rules.isWiden();
-				break;
-			case STRIP_SIGNATURES :
-				has = rules.isStripSignatures();
-				break;
-			default :
-				has = TransformOptions.super.hasOption(option);
-				break;
-		}
+		boolean has = switch (option) {
+			case OVERWRITE -> rules.isOverwrite();
+			case INVERT -> rules.isInvert();
+			case WIDEN_ARCHIVE_NESTING -> rules.isWiden();
+			case STRIP_SIGNATURES -> rules.isStripSignatures();
+			default -> TransformOptions.super.hasOption(option);
+		};
 		return has;
 	}
 

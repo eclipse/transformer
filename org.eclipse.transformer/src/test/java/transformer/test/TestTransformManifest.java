@@ -30,7 +30,6 @@ import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.BundleData;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ManifestActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -197,7 +196,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, getBundleUpdates(),
 					null, getDirectStrings(), Collections.emptyMap()));
@@ -213,7 +212,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaFeatureAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, getPackageRenames(), getPackageVersions(), null, null, null, null,
 					Collections.emptyMap()));
@@ -232,7 +231,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (jakartaManifestActionTx == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, getBundleUpdatesTx(), null, getDirectStrings(),
 					Collections.emptyMap()));
@@ -249,7 +248,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificJakartaManifestAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(), getBundleUpdatesTx(),
 					null, getDirectStrings(), Collections.emptyMap()));
@@ -262,55 +261,37 @@ public class TestTransformManifest extends CaptureTest {
 
 	//
 
-	protected static final class Occurrences {
-		public final String	initialTag;
-		public final int	initialTagInitialCount;
-		public final int	initialTagFinalCount;
-
-		public final String	finalTag;
-		public final int	finalTagInitialCount;
-		public final int	finalTagFinalCount;
-
-		public Occurrences(String initialTag, int initialTagInitialCount, int initialTagFinalCount, String finalTag,
-			int finalTagInitialCount, int finalTagFinalCount) {
-
-			this.initialTag = initialTag;
-			this.initialTagInitialCount = initialTagInitialCount;
-			this.initialTagFinalCount = initialTagFinalCount;
-
-			this.finalTag = finalTag;
-			this.finalTagInitialCount = finalTagInitialCount;
-			this.finalTagFinalCount = finalTagFinalCount;
-		}
+	public record Occurrences(String initialTag, int initialTagInitialCount, int initialTagFinalCount,
+								 String finalTag, int finalTagInitialCount, int finalTagFinalCount) {
 
 		public void verifyInitial(List<String> lines) {
-			int actualInitialTagInitial = TestUtils.occurrences(lines, initialTag);
-			System.out.println("Tag [ " + initialTag + " ]" +
-				" Expected [ " + initialTagInitialCount + " ]" +
-				" Actual [ " + actualInitialTagInitial + " ]");
-			Assertions.assertEquals(initialTagInitialCount, actualInitialTagInitial, initialTag);
+				int actualInitialTagInitial = TestUtils.occurrences(lines, initialTag());
+				System.out.println("Tag [ " + initialTag() + " ]" +
+					" Expected [ " + initialTagInitialCount() + " ]" +
+					" Actual [ " + actualInitialTagInitial + " ]");
+				Assertions.assertEquals(initialTagInitialCount(), actualInitialTagInitial, initialTag());
 
-			int actualFinalTagInitial = TestUtils.occurrences(lines, finalTag);
-			System.out.println("Tag [ " + finalTag + " ]" +
-				" Expected [ " + finalTagInitialCount + " ]" +
-				" Actual [ " + actualFinalTagInitial + " ]");
-			Assertions.assertEquals(finalTagInitialCount, actualFinalTagInitial, initialTag);
+				int actualFinalTagInitial = TestUtils.occurrences(lines, finalTag());
+				System.out.println("Tag [ " + finalTag() + " ]" +
+					" Expected [ " + finalTagInitialCount() + " ]" +
+					" Actual [ " + actualFinalTagInitial + " ]");
+				Assertions.assertEquals(finalTagInitialCount(), actualFinalTagInitial, initialTag());
+			}
+
+			public void verifyFinal(List<String> lines) {
+				int actualInitialTagFinal = TestUtils.occurrences(lines, initialTag());
+				System.out.println("Tag [ " + initialTag() + " ]" +
+					" Expected [ " + initialTagFinalCount() + " ]" +
+					" Actual [ " + actualInitialTagFinal + " ]");
+				Assertions.assertEquals(initialTagFinalCount(), actualInitialTagFinal, initialTag());
+
+				int actualFinalTagFinal = TestUtils.occurrences(lines, finalTag());
+				System.out.println("Tag [ " + finalTag() + " ]" +
+					" Expected [ " + finalTagFinalCount() + " ]" +
+					" Actual [ " + actualFinalTagFinal + " ]");
+				Assertions.assertEquals(finalTagFinalCount(), actualFinalTagFinal, initialTag());
+			}
 		}
-
-		public void verifyFinal(List<String> lines) {
-			int actualInitialTagFinal = TestUtils.occurrences(lines, initialTag);
-			System.out.println("Tag [ " + initialTag + " ]" +
-				" Expected [ " + initialTagFinalCount + " ]" +
-				" Actual [ " + actualInitialTagFinal + " ]");
-			Assertions.assertEquals(initialTagFinalCount, actualInitialTagFinal, initialTag);
-
-			int actualFinalTagFinal = TestUtils.occurrences(lines, finalTag);
-			System.out.println("Tag [ " + finalTag + " ]" +
-				" Expected [ " + finalTagFinalCount + " ]" +
-				" Actual [ " + actualFinalTagFinal + " ]");
-			Assertions.assertEquals(finalTagFinalCount, actualFinalTagFinal, initialTag);
-		}
-	}
 
 	//
 
@@ -614,7 +595,7 @@ public class TestTransformManifest extends CaptureTest {
 	/**
 	 * Subclass which allows us to call protected methods of ManifestActionImpl
 	 */
-	class ManifestActionImpl_Test extends ManifestActionImpl {
+	protected static class ManifestActionImpl_Test extends ManifestActionImpl {
 		public ManifestActionImpl_Test(ActionContext context) {
 			super(context, ActionType.MANIFEST);
 		}
@@ -642,7 +623,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (manifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()), new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), null, null, null, null, Collections.emptyMap()));
 			manifestAction_test = new ManifestActionImpl_Test(context);
@@ -657,7 +638,7 @@ public class TestTransformManifest extends CaptureTest {
 		if (specificManifestAction_test == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger,
 					getPackageRenames(), getPackageVersions(), getSpecificPackageVersions(),

@@ -146,7 +146,7 @@ public class TransformerRunMojoTest {
 				.equals("zip")
 				&& a.getArtifactId()
 					.equals("simple-service")))
-			.map(a -> a.getClassifier())
+			.map(Artifact::getClassifier)
 			.collect(Collectors.toSet());
 
 		assertEquals(6, mavenProject.getAttachedArtifacts()
@@ -260,7 +260,7 @@ public class TransformerRunMojoTest {
 		final File tempFile = File.createTempFile("service", "." + packaging);
 		tempFile.delete();
 
-		final Archive archive;
+		final Archive<?> archive;
 		if (packaging.equals("jar")) {
 			archive = ShrinkWrap.create(JavaArchive.class, "service." + packaging)
 				.addClass(EchoService.class);

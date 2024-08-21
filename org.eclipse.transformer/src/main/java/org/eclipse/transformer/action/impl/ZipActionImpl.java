@@ -346,9 +346,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 									ByteData inputData = collect(inputName, zipInputStream, inputLength);
 									ByteData outputData = zipAction.apply(inputData);
 									ZipEntry outputEntry = createEntry(inputEntry, outputName, outputData);
-									putEntry(zipOutputStream, outputEntry, () -> {
-										outputData.writeTo(zipOutputStream);
-									});
+									putEntry(zipOutputStream, outputEntry, () -> outputData.writeTo(zipOutputStream));
 								} else {
 									// For COMPRESSED, we use streaming.
 									// Loading entire archives into memory is to be avoided.
@@ -481,9 +479,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		getLogger().trace("Write unmodified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
 
 		ZipEntry outputEntry = copyEntry(inputEntry, outputName);
-		putEntry(zipOutputStream, outputEntry, () -> {
-			outputData.writeTo(zipOutputStream);
-		});
+		putEntry(zipOutputStream, outputEntry, () -> outputData.writeTo(zipOutputStream));
 	}
 
 	public void writeModified(
@@ -494,9 +490,7 @@ public class ZipActionImpl extends ContainerActionImpl implements ElementAction 
 		getLogger().trace("Write modified entry [ {} ] bytes [ {} ]", outputName, outputData.length());
 
 		ZipEntry outputEntry = createEntry(inputEntry, outputName, outputData);
-		putEntry(zipOutputStream, outputEntry, () -> {
-			outputData.writeTo(zipOutputStream);
-		});
+		putEntry(zipOutputStream, outputEntry, () -> outputData.writeTo(zipOutputStream));
 	}
 
 	private ZipEntry createEntry(ZipEntry inputEntry, String outputName) {

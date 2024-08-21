@@ -184,14 +184,14 @@ public class TestUtils {
 					outputBuilder.append(inputLine.charAt(charNo));
 				}
 			} else {
-				if (outputBuilder.length() > 0) {
+				if (!outputBuilder.isEmpty()) {
 					outputManifestLines.add(outputBuilder.toString());
 					outputBuilder.setLength(0);
 				}
 				outputBuilder.append(inputLine);
 			}
 		}
-		if (outputBuilder.length() > 0) {
+		if (!outputBuilder.isEmpty()) {
 			outputManifestLines.add(outputBuilder.toString());
 			outputBuilder.setLength(0);
 		}
@@ -224,7 +224,7 @@ public class TestUtils {
 			manifest.read(manifestStream);
 		}
 
-		Map<String, String> packageData = new HashMap<String, String>();
+		Map<String, String> packageData = new HashMap<>();
 
 		String targetAttribute = manifest.getMainAttributes().getValue(attributeName);
 		System.out.println(description + " [ " + manifestPath + " ]:");
@@ -263,7 +263,7 @@ public class TestUtils {
 	}
 
 	public static List<String> verifyPackageVersions(Map<String, String> actual, Map<String, String> expected) {
-		List<String> errors = new ArrayList<String>();
+		List<String> errors = new ArrayList<>();
 
 		for ( Map.Entry<String, String> actualEntry : actual.entrySet() ) {
 			String actualName = actualEntry.getKey();
@@ -332,7 +332,7 @@ public class TestUtils {
 	 */
 	public static List<String> verifyLog(List<String> expectedFragments, Collection<? extends LoggingEvent> logEvents)
 		throws IOException {
-		List<String> errors = new ArrayList<String>();
+		List<String> errors = new ArrayList<>();
 
 		int expectedMatches = expectedFragments.size();
 		boolean[] matches = new boolean[expectedMatches];
@@ -413,7 +413,7 @@ public class TestUtils {
 		Map<String, String> outputMap)
 		throws IOException {
 
-		List<String> errors = new ArrayList<String>();
+		List<String> errors = new ArrayList<>();
 
 		for ( int fileNo = 0; fileNo < numFiles; fileNo++ ) {
 			for ( int extNo = 0; extNo < numExts; extNo++ ) {
@@ -488,7 +488,7 @@ public class TestUtils {
 
 			this.capacity = maxCount;
 			this.size = 0;
-			this.errors = new ArrayList<String>(maxCount);
+			this.errors = new ArrayList<>(maxCount);
 		}
 
 		/**
@@ -556,14 +556,7 @@ public class TestUtils {
 
 	//
 
-	public static class InputMapping {
-		public final File	inputFile;
-		public final String	entryName;
-
-		public InputMapping(File inputFile, String entryName) {
-			this.inputFile = inputFile;
-			this.entryName = entryName;
-		}
+	public record InputMapping(File inputFile, String entryName) {
 	}
 
 	public static void zip(File sourceDir, File zipFile) throws IOException {
@@ -617,13 +610,13 @@ public class TestUtils {
 			if (inputMappings != null) {
 				inputMappings.forEach(inputMapping -> {
 					System.out.println(
-						"Zip entry [ " + inputMapping.inputFile.getPath() + " ] as [ " + inputMapping.entryName + " ]");
+						"Zip entry [ " + inputMapping.inputFile().getPath() + " ] as [ " + inputMapping.entryName() + " ]");
 
-					ZipEntry zipEntry = new ZipEntry(inputMapping.entryName);
+					ZipEntry zipEntry = new ZipEntry(inputMapping.entryName());
 					try {
 						zip.putNextEntry(zipEntry);
 						try {
-							IO.copy(inputMapping.inputFile, zip);
+							IO.copy(inputMapping.inputFile(), zip);
 						} finally {
 							zip.closeEntry();
 						}
@@ -838,11 +831,7 @@ public class TestUtils {
 			zipDirectories = listZipDirectories(zipFile);
 		} catch ( IOException e ) {
 			e.printStackTrace();
-			if ( !errors.add("IOException listing actual [ " + zipPath + " ]") ) {
-				return false;
-			} else {
-				return true;
-			}
+			return errors.add("IOException listing actual [ " + zipPath + " ]");
 		}
 
 		if ( (allowMissing != null) && !allowMissing.isEmpty() ) {
@@ -857,11 +846,7 @@ public class TestUtils {
 			expectedDirectories = listDirectories(expectedParent);
 		} catch ( IOException e ) {
 			e.printStackTrace();
-			if ( !errors.add("IOException listing expected [ " + expectedPath + " ]") ) {
-				return false;
-			} else {
-				return true;
-			}
+			return errors.add("IOException listing expected [ " + expectedPath + " ]");
 		}
 		expectedDirectories = convertSlashes(expectedDirectories);
 

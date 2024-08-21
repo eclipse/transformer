@@ -44,7 +44,6 @@ import org.eclipse.transformer.TransformProperties;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ActionType;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.ClassChangesImpl;
 import org.eclipse.transformer.action.impl.ServiceLoaderConfigActionImpl;
@@ -246,9 +245,7 @@ public class TestTransformClass extends CaptureTest {
 
 	public void displayJakartaPackageRenames() {
 		System.out.println("Package Renames [ javax -> jakarta ]");
-		getToJakartaRenames().forEach((key, value) -> {
-			System.out.println("  [ " + key + " ] --> [ " + value + " ]");
-		});
+		getToJakartaRenames().forEach((key, value) -> System.out.println("  [ " + key + " ] --> [ " + value + " ]"));
 	}
 
 	//
@@ -279,9 +276,7 @@ public class TestTransformClass extends CaptureTest {
 
 	public void displayJakartaGlobalDirectStrings() {
 		System.out.println("Global Direct Strings [ javax -> jakarta ]");
-		toJakartaDirectStrings().forEach((key, value) -> {
-			System.out.println("  [ " + key + " ] --> [ " + value + " ]");
-		});
+		toJakartaDirectStrings().forEach((key, value) -> System.out.println("  [ " + key + " ] --> [ " + value + " ]"));
 	}
 
 	protected static final String				PER_CLASS_OVERRIDE_PACKAGE_NAME	= "transformer.test.data2";
@@ -303,9 +298,7 @@ public class TestTransformClass extends CaptureTest {
 		System.out.println("Per Class Direct Strings [ javax -> jakarta ]");
 		toJakartaPerClassDirectStrings().forEach((className, directStrings) -> {
 			System.out.println("  [ " + className + " ]:");
-			directStrings.forEach((key, value) -> {
-				System.out.println("    [ " + key + " ] --> [ " + value + " ]");
-			});
+			directStrings.forEach((key, value) -> System.out.println("    [ " + key + " ] --> [ " + value + " ]"));
 		});
 	}
 
@@ -341,7 +334,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
@@ -359,7 +352,7 @@ public class TestTransformClass extends CaptureTest {
 
 			Map<String, String> toJavaxRenames = TransformProperties.invert(getToJakartaRenames());
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, toJavaxRenames, null, null, null, Collections.emptyMap()));
 
@@ -375,7 +368,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_DirectOverride == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(), null));
 
@@ -391,7 +384,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_PerClassDirectOverride == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, toJakartaDirectStrings(),
 					toJakartaPerClassDirectStrings()));
@@ -408,7 +401,7 @@ public class TestTransformClass extends CaptureTest {
 		if (toJakartaJarAction_PackageRenamesOnly == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getOverrideIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, null));
 
@@ -521,7 +514,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createToJakartaClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger,
+		ActionContext context = new ActionContext(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getToJakartaRenames(), null, null, null, Collections.emptyMap()));
 
@@ -584,7 +577,7 @@ public class TestTransformClass extends CaptureTest {
 		if (parms.length == 0) {
 			System.out.println(msg);
 		} else {
-			System.out.println(String.format(msg, parms));
+			System.out.printf((msg) + "%n", parms);
 		}
 	}
 
@@ -822,7 +815,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createDirectClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger,
+		ActionContext context = new ActionContext(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()), createSignatureRule(
 				useLogger, Collections.emptyMap(), null, null, getDirectStrings(), Collections.emptyMap()));
 
@@ -832,7 +825,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createPerClassConstantClassAction() {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger,
+		ActionContext context = new ActionContext(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, Collections.emptyMap(), null, null, null, PER_CLASS_CONSTANT_MASTER));
 
@@ -929,26 +922,8 @@ public class TestTransformClass extends CaptureTest {
 
 	public static final boolean IS_EXACT = false;
 
-	public static class ClassRelocation {
-		public final String		inputPath;
-		public final String		inputName;
-
-		public final String		outputName;
-		public final String		outputPath;
-
-		public final boolean	isApproximate;
-
-		public ClassRelocation(String inputPath, String inputName, String outputName, String outputPath,
-			boolean isApproximate) {
-
-			this.inputPath = inputPath;
-			this.inputName = inputName;
-
-			this.outputName = outputName;
-			this.outputPath = outputPath;
-
-			this.isApproximate = isApproximate;
-		}
+	public record ClassRelocation(String inputPath, String inputName, String outputName, String outputPath,
+								  boolean isApproximate) {
 	}
 
 	public static ClassRelocation[]	RELOCATION_CASES	= new ClassRelocation[] {
@@ -978,13 +953,16 @@ public class TestTransformClass extends CaptureTest {
 	public void testClassRelocation() {
 		ClassActionImpl classAction = createDirectClassAction();
 		for (ClassRelocation relocationCase : RELOCATION_CASES) {
-			String outputPath = classAction.relocateClass(relocationCase.inputPath,
-				relocationCase.inputName, relocationCase.outputName);
+			String outputPath = classAction.relocateClass(relocationCase.inputPath(),
+				relocationCase.inputName(), relocationCase.outputName());
 
 			List<CaptureLoggerImpl.LogEvent> capturedEvents = consumeCapturedEvents();
 
-			System.out.printf("Relocation [ %s ] as [ %s ]\n" + "        to [ %s ] as [ %s ]\n",
-				relocationCase.inputPath, relocationCase.inputName, relocationCase.outputName, outputPath);
+			System.out.printf("""
+					Relocation [ %s ] as [ %s ]
+					        to [ %s ] as [ %s ]
+					""",
+				relocationCase.inputPath(), relocationCase.inputName(), relocationCase.outputName(), outputPath);
 
 			boolean capturedApproximate = false;
 			for (CaptureLoggerImpl.LogEvent event : capturedEvents) {
@@ -994,9 +972,9 @@ public class TestTransformClass extends CaptureTest {
 				}
 			}
 
-			Assertions.assertEquals(relocationCase.outputPath, outputPath, "Incorrect output path");
+			Assertions.assertEquals(relocationCase.outputPath(), outputPath, "Incorrect output path");
 
-			Assertions.assertEquals(capturedApproximate, relocationCase.isApproximate, "Approximate error not logged");
+			Assertions.assertEquals(capturedApproximate, relocationCase.isApproximate(), "Approximate error not logged");
 		}
 	}
 
@@ -1197,7 +1175,7 @@ public class TestTransformClass extends CaptureTest {
 	public ClassActionImpl createStandardClassAction() throws IOException {
 		CaptureLoggerImpl useLogger = getCaptureLogger();
 
-		ActionContext context = new ActionContextImpl(useLogger,
+		ActionContext context = new ActionContext(useLogger,
 			createSelectionRule(useLogger, Collections.emptyMap(), Collections.emptyMap()),
 			createSignatureRule(useLogger, getStandardRenames(), null, null, null, Collections.emptyMap()));
 

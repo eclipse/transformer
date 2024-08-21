@@ -79,7 +79,7 @@ public abstract class AbstractTransformerMojo extends AbstractMojo {
 		// Exit without generating anything if this project is not a known
 		// packaging type. Probably it's just a parent project.
 		if (!getPackagingTypes().contains(getProject().getPackaging())) {
-			getLogger().debug("skip project with packaging=" + getProject().getPackaging());
+			getLogger().debug("skip project with packaging={}", getProject().getPackaging());
 			return true;
 		}
 

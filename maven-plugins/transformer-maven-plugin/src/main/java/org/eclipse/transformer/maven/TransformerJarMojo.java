@@ -290,16 +290,16 @@ public class TransformerJarMojo extends AbstractTransformerMojo {
 			List<Dependency> firstPass = dependencies.stream()
 				.filter(dependency -> Objects.equals(artifactDescription.getGroupId(), dependency.getGroupId())
 					&& Objects.equals(artifactDescription.getArtifactId(), dependency.getArtifactId()))
-				.collect(toList());
+				.toList();
 
 			Optional<Dependency> matchingDependency = firstPass.stream()
 				.filter(dependency -> Objects.equals(artifactDescription.getClassifier(), dependency.getClassifier())
 					&& Objects.equals(artifactDescription.getType(), dependency.getType()))
 				.findFirst();
-			if (!matchingDependency.isPresent()) {
+			if (matchingDependency.isEmpty()) {
 				matchingDependency = firstPass.stream()
 					.findFirst();
-				if (!matchingDependency.isPresent()) {
+				if (matchingDependency.isEmpty()) {
 					throw new MojoExecutionException(String.format(
 						"No version found for artifact %s:%s in project, dependencies, or dependency management",
 						artifactDescription.getGroupId(), artifactDescription.getArtifactId()));

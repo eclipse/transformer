@@ -77,7 +77,7 @@ public class SetDeltaImpl<E> implements Delta {
 	// protected final Set<E> still_i;
 
 	public Set<E> getAdded() {
-		return ((added_f == null) ? null : added_f);
+		return added_f;
 	}
 
 	public boolean isNullAdded() {
@@ -85,7 +85,7 @@ public class SetDeltaImpl<E> implements Delta {
 	}
 
 	public Set<E> getRemoved() {
-		return ((removed_i == null) ? null : removed_i);
+		return removed_i;
 	}
 
 	public boolean isNullRemoved() {
@@ -93,7 +93,7 @@ public class SetDeltaImpl<E> implements Delta {
 	}
 
 	public Set<E> getStill() {
-		return ((still_f == null) ? null : still_f);
+		return still_f;
 	}
 
 	public boolean isNullStill() {

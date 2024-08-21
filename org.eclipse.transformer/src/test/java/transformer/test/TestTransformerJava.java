@@ -18,7 +18,6 @@ import static transformer.test.TestUtils.zip;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,9 +117,9 @@ public class TestTransformerJava extends TestTransformerBase {
 		System.out.println("Renames [ " + renamesPath + " ]");
 
 		options = new HashMap<>();
-		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
-		options.put(AppOption.LOG_LEVEL, Arrays.asList("TRACE"));
-		options.put(AppOption.RULES_RENAMES, Arrays.asList(renamesPath));
+		options.put(AppOption.OVERWRITE, List.of("true"));
+		options.put(AppOption.LOG_LEVEL, List.of("TRACE"));
+		options.put(AppOption.RULES_RENAMES, List.of(renamesPath));
 
 		System.out.println("Overwrite is enabled");
 		System.out.println("Logging is set to debug");

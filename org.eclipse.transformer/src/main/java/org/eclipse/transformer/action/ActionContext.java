@@ -19,10 +19,13 @@ package org.eclipse.transformer.action;
 
 import org.slf4j.Logger;
 
-public interface ActionContext {
-	Logger getLogger();
+import static java.util.Objects.requireNonNull;
 
-	SelectionRule getSelectionRule();
-
-	SignatureRule getSignatureRule();
+public record ActionContext(Logger logger, SelectionRule selectionRule,
+								SignatureRule signatureRule) {
+	public ActionContext(Logger logger, SelectionRule selectionRule, SignatureRule signatureRule) {
+		this.logger = requireNonNull(logger);
+		this.selectionRule = requireNonNull(selectionRule);
+		this.signatureRule = requireNonNull(signatureRule);
+	}
 }

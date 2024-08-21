@@ -17,6 +17,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -242,7 +243,7 @@ public class ClassData {
 
 		writer.println(logPrefix + "Class name: " + className);
 		writer.println(logPrefix + "Superclass name: " + superclassName);
-		writer.println(logPrefix + "Interface names: " + interfaceNames);
+		writer.println(logPrefix + "Interface names: " + Arrays.toString(interfaceNames));
 
 		if (classAnnotationNames.isEmpty()) {
 			writer.println(logPrefix + "Class annotations: ** EMPTY **");

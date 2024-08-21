@@ -548,7 +548,7 @@ public class SignatureRuleImpl implements SignatureRule {
 	 * bytes. The service loader configuration and java actions do not have this
 	 * available.
 	 * </p>
-	 * See {@replacePackage}.
+	 * See {@link #replacePackage(String)}.
 	 *
 	 * @param inputName The input name which is to be renamed.
 	 * @return The updated name. Null if no change is to be made.

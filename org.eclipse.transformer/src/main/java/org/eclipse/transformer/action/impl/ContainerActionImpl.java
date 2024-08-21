@@ -104,7 +104,7 @@ public abstract class ContainerActionImpl extends ActionImpl implements Containe
 
 	protected void recordError(Action action, String resourceName, Throwable error) {
 		String actionName = ( (action == null) ? "null" : action.getName() );
-		getLogger().error("Resource [ " + resourceName + " ] Action [ " + actionName + " ]: Failed transform", error);
+		getLogger().error("Resource [ {} ] Action [ {} ]: Failed transform", resourceName, actionName, error);
 		getActiveChanges().recordFailed(action);
 	}
 

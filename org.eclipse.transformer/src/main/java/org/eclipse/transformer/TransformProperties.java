@@ -148,7 +148,7 @@ public class TransformProperties {
 
 			} else if ( nextChar == ';' ) {
 				// The length test guards against 'p=v;a1=v1;;a2=v2'
-				if ( versionBuilder.length() != 0 ) {
+				if (!versionBuilder.isEmpty()) {
 					setVersion(
 						newPackageName, newVersion,
 						nameBuilder, versionBuilder,
@@ -165,7 +165,7 @@ public class TransformProperties {
 					//
 					// See issue #300.
 
-					if ( nameBuilder.length() != 0 ) {
+					if (!nameBuilder.isEmpty()) {
 						throw new IllegalArgumentException("Package version syntax error: Version missing for package [ " + newPackageName + " ] and attribute [ " + nameBuilder.toString() + " ]");
 					}
 				}
@@ -184,7 +184,7 @@ public class TransformProperties {
 		// end with a ';', in which case the builders will be empty,
 		// and there is no update to be done.
 
-		if ( versionBuilder.length() != 0 ) {
+		if (!versionBuilder.isEmpty()) {
 			setVersion(
 				newPackageName, newVersion,
 				nameBuilder, versionBuilder,
@@ -206,7 +206,7 @@ public class TransformProperties {
 		Map<String, Map<String, String>> specificPackageVersions) {
 
 		String versionText;
-		if ( versionBuilder.length() == 0 ) {
+		if (versionBuilder.isEmpty()) {
 			throw new IllegalArgumentException("Package version syntax error: No version in [ " + newVersion + " ]");
 		} else {
 			versionText = versionBuilder.toString();
@@ -214,7 +214,7 @@ public class TransformProperties {
 		}
 
 		String propertyName;
-		if ( nameBuilder.length() == 0 ) {
+		if (nameBuilder.isEmpty()) {
 			propertyName = null;
 		} else {
 			propertyName = nameBuilder.toString();
@@ -224,10 +224,7 @@ public class TransformProperties {
 		if ( propertyName == null ) {
 			packageVersions.put(newPackageName, versionText);
 		} else {
-			Map<String, String> versionsForProperty = specificPackageVersions.get(propertyName);
-			if ( versionsForProperty == null ) {
-				specificPackageVersions.put( propertyName, (versionsForProperty = new HashMap<>()) );
-			}
+			Map<String, String> versionsForProperty = specificPackageVersions.computeIfAbsent(propertyName, k -> new HashMap<>());
 			versionsForProperty.put(newPackageName, versionText);
 		}
 	}
@@ -266,7 +263,6 @@ public class TransformProperties {
 	 *         file.
 	 * @throws TransformException Thrown if an error occurs processing the file.
 	 */
-	@SuppressWarnings("resource")
 	public static boolean isFeatureManifest(String manifestPath, File manifestFile) throws TransformException {
 		FileReader manifestReader;
 		try {

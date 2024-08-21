@@ -75,28 +75,21 @@ public class TestTransformerMultiText extends TestTransformerBase {
 
 	// Rules data ...
 
-	public static class TextRulesData {
-		public final String fileName;
-		public final String[] assignments;
-
-		public TextRulesData(String fileName, String... assignments) {
-			this.fileName = fileName;
-			this.assignments = assignments;
-		}
+	public record TextRulesData(String fileName, String... assignments) {
 
 		public void write(String propertiesDir) throws IOException {
-			try ( OutputStream outputStream = new FileOutputStream(propertiesDir + '/' + fileName, false) ) { // truncate
-				OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream);
+				try (OutputStream outputStream = new FileOutputStream(propertiesDir + '/' + fileName(), false)) { // truncate
+					OutputStreamWriter outputWriter = new OutputStreamWriter(outputStream);
 
-				for ( String assignment : assignments ) {
-					outputWriter.write(assignment);
-					outputWriter.write('\n');
+					for (String assignment : assignments()) {
+						outputWriter.write(assignment);
+						outputWriter.write('\n');
+					}
+
+					outputWriter.flush();
 				}
-
-				outputWriter.flush();
 			}
 		}
-	}
 
 	public static final String TIER0_MASTER_PROPERTIES = "tier0.master.properties";
 	public static final String TIER1_MASTER_PROPERTIES = "tier1.master.properties";
@@ -155,7 +148,7 @@ public class TestTransformerMultiText extends TestTransformerBase {
 	public static final Map<String, String> OUTPUT_TEXT_MAP;
 
 	static {
-		Map<String, String> outputMap = new HashMap<String, String>();
+		Map<String, String> outputMap = new HashMap<>();
 
 		outputMap.put(".ext0", "The slow brown fox jumps over the happy dog.");
 		outputMap.put(".ext3", INPUT_TEXT);

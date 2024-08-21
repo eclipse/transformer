@@ -218,8 +218,7 @@ class TestCommandLine {
 		transformer.transform();
 
 		Changes lastActiveChanges = transformer.getLastActiveChanges();
-		if (lastActiveChanges instanceof ContainerChanges) {
-			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+		if (lastActiveChanges instanceof ContainerChanges containerChanges) {
 			int numDuplicated = containerChanges.getAllDuplicated();
 			int numFailed = containerChanges.getAllFailed();
 
@@ -391,8 +390,7 @@ class TestCommandLine {
 		transformer.transform();
 
 		Changes lastActiveChanges = transformer.getLastActiveChanges();
-		if (lastActiveChanges instanceof ContainerChanges) {
-			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+		if (lastActiveChanges instanceof ContainerChanges containerChanges) {
 			int numDuplicated = containerChanges.getAllDuplicated();
 			int numFailed = containerChanges.getAllFailed();
 

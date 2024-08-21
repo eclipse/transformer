@@ -47,7 +47,6 @@ import org.eclipse.transformer.action.ContainerAction;
 import org.eclipse.transformer.action.ContainerChanges;
 import org.eclipse.transformer.action.SelectionRule;
 import org.eclipse.transformer.action.SignatureRule;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ActionSelectorImpl;
 import org.eclipse.transformer.action.impl.BundleDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
@@ -207,8 +206,7 @@ public class Transformer {
 		}
 
 		Changes lastActiveChanges = getLastActiveChanges();
-		if (lastActiveChanges instanceof ContainerChanges) {
-			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+		if (lastActiveChanges instanceof ContainerChanges containerChanges) {
 			int numDuplicated = containerChanges.getAllDuplicated();
 			int numFailed = containerChanges.getAllFailed();
 
@@ -458,28 +456,28 @@ public class Transformer {
 		throws IOException, URISyntaxException {
 
 		for ( ImmediateRuleData nextData : immediateData ) {
-			switch ( nextData.target ) {
+			switch ( nextData.target() ) {
 				case RULES_SELECTIONS:
-					addImmediateSelection(nextData.key, nextData.value);
+					addImmediateSelection(nextData.key(), nextData.value());
 					break;
 				case RULES_RENAMES:
-					addImmediateRename(nextData.key, nextData.value, orphanedFinalVersions);
+					addImmediateRename(nextData.key(), nextData.value(), orphanedFinalVersions);
 					break;
 				case RULES_VERSIONS:
-					addImmediateVersion(nextData.key, nextData.value);
+					addImmediateVersion(nextData.key(), nextData.value());
 					break;
 				case RULES_BUNDLES:
-					addImmediateBundleData(nextData.key, nextData.value);
+					addImmediateBundleData(nextData.key(), nextData.value());
 					break;
 				case RULES_DIRECT:
-					addImmediateDirect(nextData.key, nextData.value);
+					addImmediateDirect(nextData.key(), nextData.value());
 					break;
 				case RULES_MASTER_TEXT:
-					addImmediateMasterText(masterTextRef, nextData.key, nextData.value);
+					addImmediateMasterText(masterTextRef, nextData.key(), nextData.value());
 					break;
 
 				default:
-					getLogger().error(consoleMarker, "Unrecognized immediate data target [ {} ]", nextData.target);
+					getLogger().error(consoleMarker, "Unrecognized immediate data target [ {} ]", nextData.target());
 			}
 		}
 	}
@@ -1103,7 +1101,7 @@ public class Transformer {
 	// As a separate method to allow re-use.
 
 	public ActionContext getActionContext() {
-		return new ActionContextImpl(getLogger(), getSelectionRule(), getSignatureRule());
+		return new ActionContext(getLogger(), getSelectionRule(), getSignatureRule());
 	}
 
 	public ActionSelector getActionSelector() {
