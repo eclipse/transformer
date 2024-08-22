@@ -22,14 +22,12 @@
 	<version>${revision}</version>
 
 	<properties>
-		<revision>0.6.0-SNAPSHOT</revision>
+		<revision>1.0.0-SNAPSHOT</revision>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<java.version>1.8</java.version>
-		<java.release>8</java.release>
-		<maven.compiler.source>${java.version}</maven.compiler.source>
-		<maven.compiler.target>${java.version}</maven.compiler.target>
-		<bnd.version>6.4.0</bnd.version>
+		<java.release>17</java.release>
+		<maven.compiler.release>${java.release}</maven.compiler.release>
+		<bnd.version>7.0.0</bnd.version>
 		<junit-jupiter.version>5.11.0</junit-jupiter.version>
 		<assertj.version>3.26.3</assertj.version>
 		<xmlunit.version>2.10.0</xmlunit.version>
@@ -102,6 +100,7 @@
 								<goal>jar</goal>
 							</goals>
 							<configuration>
+								<!--suppress MavenModelInspection -->
 								<bnd><![CDATA[
 SPDX-License-Identifier: ${project.licenses[0].name}
 -includeresource.legal:\
@@ -215,18 +214,16 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 						<projectsDirectory>${basedir}/src/it</projectsDirectory>
 						<settingsFile>${basedir}/src/it/settings.xml</settingsFile>
 						<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
-						<useLocalRepository>true</useLocalRepository>
 						<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
 						<cloneClean>true</cloneClean>
 						<properties>
 							<project.build.sourceEncoding>${project.build.sourceEncoding}</project.build.sourceEncoding>
 							<project.reporting.outputEncoding>${project.reporting.outputEncoding}</project.reporting.outputEncoding>
-							<maven.compiler.source>${maven.compiler.source}</maven.compiler.source>
-							<maven.compiler.target>${maven.compiler.target}</maven.compiler.target>
 							<maven.compiler.release>${maven.compiler.release}</maven.compiler.release>
 							<transformer.version>${revision}</transformer.version>
 							<bnd.version>${bnd.version}</bnd.version>
 						</properties>
+						<!--suppress MavenModelInspection -->
 						<mavenOpts>${env.MAVEN_OPTS}</mavenOpts>
 						<pomIncludes>
 							<pomInclude>*/pom.xml</pomInclude>
@@ -575,15 +572,6 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 
 	<profiles>
 		<profile>
-			<id>java-release</id>
-			<activation>
-				<jdk>[9,)</jdk>
-			</activation>
-			<properties>
-				<maven.compiler.release>${java.release}</maven.compiler.release>
-			</properties>
-		</profile>
-		<profile>
 			<id>pinentrymode-loopback</id>
 			<activation>
 				<property>
@@ -609,6 +597,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 						<artifactId>maven-gpg-plugin</artifactId>
 						<configuration>
 							<gpgArguments>
+								<!--suppress MavenModelInspection -->
 								<arg>${gpg.pinentrymode}</arg>
 							</gpgArguments>
 						</configuration>
@@ -633,7 +622,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>7.0.0-SNAPSHOT</bnd.version>
+				<bnd.version>7.1.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>

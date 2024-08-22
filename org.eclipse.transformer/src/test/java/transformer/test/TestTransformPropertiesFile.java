@@ -21,7 +21,6 @@ import java.util.Properties;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.PropertiesActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
@@ -105,7 +104,7 @@ public class TestTransformPropertiesFile extends CaptureTest {
 		if (jakartaPropertiesAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				createSelectionRule(useLogger, getIncludes(), getExcludes()),
 				createSignatureRule(useLogger, getPackageRenames(), getDirectStrings()));
 

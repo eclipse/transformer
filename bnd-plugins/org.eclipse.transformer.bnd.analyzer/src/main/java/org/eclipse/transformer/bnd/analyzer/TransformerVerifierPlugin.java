@@ -21,9 +21,9 @@ import aQute.bnd.service.verifier.VerifierPlugin;
 @ExternalPlugin(name = "Transformer", objectClass = VerifierPlugin.class)
 public class TransformerVerifierPlugin extends BaseTransformerPlugin implements VerifierPlugin {
 	public TransformerVerifierPlugin() {
-		/**
-		 * We want to run after other VerifierPlugins so we will operate on the
-		 * final classes and resources.
+		/*
+		  We want to run after other VerifierPlugins so we will operate on the
+		  final classes and resources.
 		 */
 		super(10_000);
 	}

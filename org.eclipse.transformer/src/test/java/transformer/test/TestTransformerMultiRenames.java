@@ -96,8 +96,8 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 		TestUtils.verifyPackageVersions("initial package versions", inputFileName, initialPackageVersions, TARGET_ATTRIBUTE_NAME);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
-		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
-		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
+		options.put(AppOption.OVERWRITE, List.of("true"));
+		options.put(AppOption.LOG_LEVEL, List.of("debug"));
 		options.put(AppOption.RULES_RENAMES, Arrays.asList(inputDir + '/' + "tier0.renames.properties", //
 			inputDir + '/' + "tier1.renames.properties", //
 			inputDir + '/' + "tier2.renames.properties"));
@@ -124,7 +124,7 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 	public static final Map<String, String> finalPackageVersions;
 
 	static {
-		initialPackageVersions = new HashMap<String, String>(8);
+		initialPackageVersions = new HashMap<>(8);
 
 		initialPackageVersions.put("javax.package0", "0.0.0");
 		initialPackageVersions.put("javax.package1", "1.0.0");
@@ -135,7 +135,7 @@ public class TestTransformerMultiRenames extends TestTransformerBase {
 		initialPackageVersions.put("javax.package6", "6.0.0");
 		initialPackageVersions.put("javax.package7", "7.0.0");
 
-		finalPackageVersions = new HashMap<String, String>(8);
+		finalPackageVersions = new HashMap<>(8);
 
 		finalPackageVersions.put("jakarta.package0", "0.0.1");
 		finalPackageVersions.put("jakarta.package11", "1.1.1");

@@ -550,10 +550,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 			if (Character.isWhitespace(s.charAt(i))) {
 				continue;
 			}
-			if (s.charAt(i) == ';') {
-				return true;
-			}
-			return false;
+			return s.charAt(i) == ';';
 		}
 		return false;
 	}
@@ -581,10 +578,7 @@ public class ManifestActionImpl extends ElementActionImpl {
 		int indexOfNextNonWhiteSpaceCharAfterComma = indexOfNextNonWhiteSpaceChar(testString, indexOfComma + 1);
 		char characterAfterComma = testString.charAt(indexOfNextNonWhiteSpaceCharAfterComma);
 		if (Character.isAlphabetic(characterAfterComma)) {
-			if (!hasEvenNumberOfOccurrencesOfChar(packageText, '\"')) {
-				return false;
-			}
-			return true;
+			return hasEvenNumberOfOccurrencesOfChar(packageText, '\"');
 		}
 
 		return false;

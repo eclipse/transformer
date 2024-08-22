@@ -178,11 +178,11 @@ public class TransformerMavenLifecycleParticipant extends AbstractMavenLifecycle
 		Optional<Xpp3Dom> rootConfiguration = Optional.ofNullable((Xpp3Dom) execution.getConfiguration());
 		Optional<Xpp3Dom> classifierConfiguration = rootConfiguration
 			.map(configuration -> configuration.getChild("classifier"));
-		if (!classifierConfiguration.isPresent()) {
+		if (classifierConfiguration.isEmpty()) {
 			classifierConfiguration = rootConfiguration.map(configuration -> configuration.getChild("artifact"))
 				.map(configuration -> configuration.getChild("classifier"));
 		}
-		if (!classifierConfiguration.isPresent()) {
+		if (classifierConfiguration.isEmpty()) {
 			return defaultClassifier(execution);
 		}
 

@@ -22,7 +22,6 @@ import java.util.Properties;
 import org.eclipse.transformer.TransformException;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
 import org.eclipse.transformer.action.impl.TextActionImpl;
@@ -102,7 +101,7 @@ public class TestTransformXML extends CaptureTest {
 		if (textAction == null) {
 			CaptureLoggerImpl useLogger = getCaptureLogger();
 
-			ActionContext context = new ActionContextImpl(useLogger,
+			ActionContext context = new ActionContext(useLogger,
 				new SelectionRuleImpl(useLogger, getIncludes(), getExcludes()),
 				new SignatureRuleImpl(useLogger, null, null, null, null, getMasterXmlUpdates(), null,
 					Collections.emptyMap()));
@@ -114,14 +113,7 @@ public class TestTransformXML extends CaptureTest {
 
 	//
 
-	protected static final class Occurrences {
-		public final String	tag;
-		public final int	count;
-
-		public Occurrences(String tag, int count) {
-			this.tag = tag;
-			this.count = count;
-		}
+	public record Occurrences(String tag, int count) {
 	}
 
 	public static final Occurrences[]	UT_INITIAL_OCCURRENCES	= {
@@ -186,8 +178,8 @@ public class TestTransformXML extends CaptureTest {
 		System.out.println("Verify [ " + resourceRef + " ] [ " + caseTag + " ] ...");
 
 		for (Occurrences occurrence : occurrences) {
-			String occurrenceTag = occurrence.tag;
-			int expected = occurrence.count;
+			String occurrenceTag = occurrence.tag();
+			int expected = occurrence.count();
 
 			int actual = TestUtils.occurrences(lines, occurrenceTag);
 

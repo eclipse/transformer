@@ -35,17 +35,16 @@ class SelectionTests {
 	@Test
 	void selections() throws Exception {
 		UTF8Properties properties = new UTF8Properties();
-		properties.load("# comment\n" +
-						"*=UTF-8\n" +
-						"*.properties=ISO-8859-1\n" +
-						"*Abstract*=US-ASCII\n" +
-						"wide/*=UTF-16\n" +
-						"! comment\n" +
-						"*.proto=!", null, null);
+		properties.load("""
+			# comment
+			*=UTF-8
+			*.properties=ISO-8859-1
+			*Abstract*=US-ASCII
+			wide/*=UTF-16
+			! comment
+			*.proto=!""", null, null);
 		Map<String, String> selectionProperties = new HashMap<>();
-		properties.forEach((k,v) -> {
-			selectionProperties.put(k.toString(), v.toString());
-		});
+		properties.forEach((k,v) -> selectionProperties.put(k.toString(), v.toString()));
 		Map<String, String> includes = new HashMap<>();
 		Map<String, String> excludes = new HashMap<>();
 		TransformProperties.addSelections(includes, excludes, selectionProperties);

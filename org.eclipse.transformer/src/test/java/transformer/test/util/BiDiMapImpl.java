@@ -131,9 +131,9 @@ public class BiDiMapImpl<Holder, Held> implements BiDiMap<Holder, Held> {
 		boolean addedHolderToHeld = recordHeldToHolder(holder, held);
 
 		if (addedHeldToHolder != addedHolderToHeld) {
-			System.out.println(String.format(
-				"[ %s ] Holder [ %s ] Held [ %s ] Added to holder [ %s ] Added to held [ %s ]", getHashText(), holder,
-				held, Boolean.valueOf(addedHeldToHolder), Boolean.valueOf(addedHolderToHeld)));
+			System.out.printf(
+				"[ %s ] Holder [ %s ] Held [ %s ] Added to holder [ %s ] Added to held [ %s ]%n", getHashText(), holder,
+				held, Boolean.valueOf(addedHeldToHolder), Boolean.valueOf(addedHolderToHeld));
 		}
 
 		return addedHeldToHolder;
@@ -150,20 +150,12 @@ public class BiDiMapImpl<Holder, Held> implements BiDiMap<Holder, Held> {
 	}
 
 	protected Set<Held> recordHolder(Holder holder) {
-		Set<Held> heldBy = holderToHeldMap.get(holder);
-		if (heldBy == null) {
-			heldBy = new HashSet<>();
-			holderToHeldMap.put(holder, heldBy);
-		}
+		Set<Held> heldBy = holderToHeldMap.computeIfAbsent(holder, k -> new HashSet<>());
 		return heldBy;
 	}
 
 	protected Set<Holder> recordHeld(Held held) {
-		Set<Holder> holderOf = heldToHoldersMap.get(held);
-		if (holderOf == null) {
-			holderOf = new HashSet<>();
-			heldToHoldersMap.put(held, holderOf);
-		}
+		Set<Holder> holderOf = heldToHoldersMap.computeIfAbsent(held, k -> new HashSet<>());
 		return holderOf;
 	}
 

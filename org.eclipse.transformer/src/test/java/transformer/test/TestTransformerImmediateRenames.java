@@ -78,14 +78,14 @@ public class TestTransformerImmediateRenames extends TestTransformerBase {
 		TestUtils.verifyPackageVersions("initial package versions", inputFileName, initialPackageVersions, TARGET_ATTRIBUTE_NAME);
 
 		Map<AppOption, List<String>> options = new HashMap<>();
-		options.put(AppOption.OVERWRITE, Arrays.asList("true"));
-		options.put(AppOption.LOG_LEVEL, Arrays.asList("debug"));
+		options.put(AppOption.OVERWRITE, List.of("true"));
+		options.put(AppOption.LOG_LEVEL, List.of("debug"));
 		options.put(AppOption.RULES_IMMEDIATE_DATA, Arrays.asList("tr", "javax.package1", "jakarta.package11", //
 			"tr", "javax.package2", "jakarta.package22", //
 			"tv", "jakarta.package11", "1.1.1", //
 			"tv", "jakarta.package22", "2.1.1"));
-		options.put(AppOption.RULES_RENAMES, Arrays.asList(inputDir + '/' + "tier0.renames.properties"));
-		options.put(AppOption.RULES_VERSIONS, Arrays.asList(inputDir + '/' + "tier0.versions.properties"));
+		options.put(AppOption.RULES_RENAMES, List.of(inputDir + '/' + "tier0.renames.properties"));
+		options.put(AppOption.RULES_VERSIONS, List.of(inputDir + '/' + "tier0.versions.properties"));
 		runTransformer(inputFileName, outputFileName, options, getLogFragments());
 
 		TestUtils.verifyPackageVersions("final package versions", outputFileName, finalPackageVersions, TARGET_ATTRIBUTE_NAME);
@@ -106,14 +106,14 @@ public class TestTransformerImmediateRenames extends TestTransformerBase {
 	public static final Map<String, String> finalPackageVersions;
 
 	static {
-		initialPackageVersions = new HashMap<String, String>(8);
+		initialPackageVersions = new HashMap<>(8);
 
 		initialPackageVersions.put("javax.package0", "0.0.0");
 		initialPackageVersions.put("javax.package1", "1.0.0");
 		initialPackageVersions.put("javax.package2", "2.0.0");
 		initialPackageVersions.put("javax.package3", "3.0.0");
 
-		finalPackageVersions = new HashMap<String, String>(8);
+		finalPackageVersions = new HashMap<>(8);
 
 		finalPackageVersions.put("jakarta.package0", "0.0.1");
 		finalPackageVersions.put("jakarta.package11", "1.1.1");

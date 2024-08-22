@@ -40,7 +40,6 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
 import org.eclipse.transformer.action.ActionContext;
 import org.eclipse.transformer.action.ByteData;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.ByteDataImpl;
 import org.eclipse.transformer.action.impl.ClassActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
@@ -120,7 +119,7 @@ public class ClassActionTest {
 		renames.put("original.provides.impl", "transformed.provides.impl");
 		renames.put("original.main", "transformed.main");
 
-		ActionContext context = new ActionContextImpl(logger,
+		ActionContext context = new ActionContext(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		ClassActionImpl classAction = new ClassActionImpl(context);
@@ -216,7 +215,7 @@ public class ClassActionTest {
 		Map<String, String> renames = new HashMap<>();
 		renames.put("original.host", "transformed.host");
 		renames.put("original.member", "transformed.member");
-		ActionContext context = new ActionContextImpl(logger,
+		ActionContext context = new ActionContext(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 
@@ -260,7 +259,7 @@ public class ClassActionTest {
 		renames.put("original.enclosing", "transformed.enclosing");
 		renames.put("original.param", "transformed.param");
 		renames.put("original.result", "transformed.result");
-		ActionContext context = new ActionContextImpl(logger,
+		ActionContext context = new ActionContext(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()),
 			new SignatureRuleImpl(logger, renames, null, null, null, null, null, Collections.emptyMap()));
 		ClassActionImpl classAction = new ClassActionImpl(context);

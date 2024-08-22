@@ -218,8 +218,7 @@ class TestCommandLine {
 		transformer.transform();
 
 		Changes lastActiveChanges = transformer.getLastActiveChanges();
-		if (lastActiveChanges instanceof ContainerChanges) {
-			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+		if (lastActiveChanges instanceof ContainerChanges containerChanges) {
 			int numDuplicated = containerChanges.getAllDuplicated();
 			int numFailed = containerChanges.getAllFailed();
 
@@ -391,8 +390,7 @@ class TestCommandLine {
 		transformer.transform();
 
 		Changes lastActiveChanges = transformer.getLastActiveChanges();
-		if (lastActiveChanges instanceof ContainerChanges) {
-			ContainerChanges containerChanges = (ContainerChanges) lastActiveChanges;
+		if (lastActiveChanges instanceof ContainerChanges containerChanges) {
 			int numDuplicated = containerChanges.getAllDuplicated();
 			int numFailed = containerChanges.getAllFailed();
 
@@ -432,7 +430,7 @@ class TestCommandLine {
 	private static Map<String, byte[]> extractSignatureFileEntries(String zipFilePath) throws IOException {
 		try (ZipFile zipFile = new ZipFile(zipFilePath)) {
 			final Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			final Map<String, byte[]> signatureFilesMap = new HashMap();
+			final Map<String, byte[]> signatureFilesMap = new HashMap<>();
 			while (entries.hasMoreElements()) {
 				final ZipEntry zipEntry = entries.nextElement();
 				if (ElementAction.SIGNATURE_FILE_PATTERN.matcher(zipEntry.getName()).matches()) {

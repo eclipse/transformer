@@ -8,8 +8,6 @@ This plugin contains the following goals:
 - [`transform`](#transform-goal)
 - [`help`](#help-goal)
 
-__Note__: if you are using Java 21 or later see [Using Java 21 or later](#java-21-or-later).
-
 ## `jar` Goal
 
 The `jar` goal operates at the JAR file level and transforms the specified input artifact into a project artifact.
@@ -253,17 +251,3 @@ It is therefore necessary to configure the `maven-jar-plugin` as follows:
 
 The `help` goal displays help about the goals of the plugin.
 Call `mvn transformer:help -Ddetail=true -Dgoal=<goal-name>` to display configuration details for the specified goal.
-
-## Java 21 or later
-
-If you are using Java 21 or later you will need to configure the Maven plugin to use a specific version of the `biz.aQute.bndlib` dependency.
-
-For example:
-
-```xml
-  <dependency>
-    <groupId>biz.aQute.bnd</groupId>
-    <artifactId>biz.aQute.bndlib</artifactId>
-    <version>7.0.0</version>
-  </dependency>
-```

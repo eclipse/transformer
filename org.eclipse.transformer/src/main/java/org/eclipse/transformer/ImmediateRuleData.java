@@ -11,14 +11,5 @@
 
 package org.eclipse.transformer;
 
-public class ImmediateRuleData {
-	public final AppOption	target;
-	public final String		key;
-	public final String		value;
-
-	public ImmediateRuleData(AppOption target, String key, String value) {
-		this.target = target;
-		this.key = key;
-		this.value = value;
-	}
+public record ImmediateRuleData(AppOption target, String key, String value) {
 }

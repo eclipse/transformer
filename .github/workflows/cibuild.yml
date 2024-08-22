@@ -49,8 +49,7 @@ jobs:
         os:
         - 'ubuntu-latest'
         java:
-        - '8'
-        - '11'
+        - '21'
         include:
         - os: 'ubuntu-latest'
           java: '17'

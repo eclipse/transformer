@@ -119,7 +119,7 @@ public class TransformerRunMojo extends AbstractMojo {
 	 */
 	public void transform(final Artifact sourceArtifact) throws MojoFailureException, MojoExecutionException {
 		final String sourceClassifier = sourceArtifact.getClassifier();
-		final String targetClassifier = (sourceClassifier == null || sourceClassifier.length() == 0) ? this.classifier
+		final String targetClassifier = (sourceClassifier == null || sourceClassifier.isEmpty()) ? this.classifier
 			: sourceClassifier + "-" + this.classifier;
 
 		final File targetFile = new File(outputDirectory, sourceArtifact.getArtifactId() + "-" + targetClassifier + "-"
@@ -129,36 +129,25 @@ public class TransformerRunMojo extends AbstractMojo {
 			final Function<String, URL>		ruleLoader		= JakartaTransform.getRuleLoader();
 			@Override
 			public boolean hasOption(AppOption option) {
-				switch (option) {
-					case OVERWRITE :
-						return overwrite;
-					case INVERT :
-						return invert;
-					case STRIP_SIGNATURES:
-						return stripSignatures;
-					default :
-						return TransformOptions.super.hasOption(option);
-				}
+				return switch (option) {
+					case OVERWRITE -> overwrite;
+					case INVERT -> invert;
+					case STRIP_SIGNATURES -> stripSignatures;
+					default -> TransformOptions.super.hasOption(option);
+				};
 			}
 
 			@Override
 			public String getOptionValue(AppOption option) {
-				switch (option) {
-					case RULES_RENAMES :
-						return emptyAsNull(rulesRenamesUri);
-					case RULES_VERSIONS :
-						return emptyAsNull(rulesVersionUri);
-					case RULES_BUNDLES :
-						return emptyAsNull(rulesBundlesUri);
-					case RULES_DIRECT :
-						return emptyAsNull(rulesDirectUri);
-					case RULES_MASTER_TEXT :
-						return emptyAsNull(rulesXmlsUri);
-					case RULES_PER_CLASS_CONSTANT :
-						return emptyAsNull(rulesPerClassConstantUri);
-					default :
-						return null;
-				}
+				return switch (option) {
+					case RULES_RENAMES -> emptyAsNull(rulesRenamesUri);
+					case RULES_VERSIONS -> emptyAsNull(rulesVersionUri);
+					case RULES_BUNDLES -> emptyAsNull(rulesBundlesUri);
+					case RULES_DIRECT -> emptyAsNull(rulesDirectUri);
+					case RULES_MASTER_TEXT -> emptyAsNull(rulesXmlsUri);
+					case RULES_PER_CLASS_CONSTANT -> emptyAsNull(rulesPerClassConstantUri);
+					default -> null;
+				};
 			}
 
 			@Override

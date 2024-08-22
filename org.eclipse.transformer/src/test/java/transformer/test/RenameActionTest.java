@@ -18,7 +18,6 @@ import java.util.Collections;
 
 import aQute.bnd.unmodifiable.Maps;
 import org.eclipse.transformer.action.ActionContext;
-import org.eclipse.transformer.action.impl.ActionContextImpl;
 import org.eclipse.transformer.action.impl.RenameActionImpl;
 import org.eclipse.transformer.action.impl.SelectionRuleImpl;
 import org.eclipse.transformer.action.impl.SignatureRuleImpl;
@@ -48,7 +47,7 @@ class RenameActionTest {
 
 	@Test
 	void relocate_resource() {
-		ActionContext context = new ActionContextImpl(logger,
+		ActionContext context = new ActionContext(logger,
 			new SelectionRuleImpl(logger, Collections.emptyMap(), Collections.emptyMap()), new SignatureRuleImpl(logger,
 				Maps.of("com.a.b.*", "com.shaded.a.b"), null, null, null, null, null, Collections.emptyMap()));
 		RenameActionImpl action = new RenameActionImpl(context);

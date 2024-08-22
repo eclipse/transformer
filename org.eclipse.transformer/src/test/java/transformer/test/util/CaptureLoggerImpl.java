@@ -47,20 +47,13 @@ public class CaptureLoggerImpl implements Logger {
 
 	public boolean isLoggable(Level level) {
 		Logger useLogger = getBaseLogger();
-		switch (level) {
-			case ERROR :
-				return useLogger.isErrorEnabled();
-			case WARN :
-				return useLogger.isWarnEnabled();
-			case INFO :
-				return useLogger.isInfoEnabled();
-			case DEBUG :
-				return useLogger.isDebugEnabled();
-			case TRACE :
-				return useLogger.isTraceEnabled();
-			default :
-				throw new IllegalArgumentException("Unknown level [ " + level + " ]");
-		}
+		return switch (level) {
+			case ERROR -> useLogger.isErrorEnabled();
+			case WARN -> useLogger.isWarnEnabled();
+			case INFO -> useLogger.isInfoEnabled();
+			case DEBUG -> useLogger.isDebugEnabled();
+			case TRACE -> useLogger.isTraceEnabled();
+		};
 	}
 
 	public Logger getBaseLogger() {

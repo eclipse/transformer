@@ -48,9 +48,6 @@ public interface ByteData {
 	 * data. The settings of the copy buffer (length, limit, and remaining)
 	 * start the same as the settings of the buffer of this data, but are
 	 * updated independently.
-	 * <p>
-	 * For a buffer which has its position set to zero, use instead
-	 * {@link #buffer()}.
 	 *
 	 * @return The buffer associated with the data.
 	 */
