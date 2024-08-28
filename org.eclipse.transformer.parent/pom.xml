@@ -180,6 +180,27 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-dependency-plugin</artifactId>
 					<version>3.8.0</version>
+					<executions>
+						<execution>
+							<id>maven-target-version</id>
+							<phase>pre-integration-test</phase>
+							<goals>
+								<goal>unpack</goal>
+							</goals>
+							<configuration>
+								<artifactItems>
+									<artifactItem>
+										<groupId>org.apache.maven</groupId>
+										<artifactId>apache-maven</artifactId>
+										<version>${maven.target.version}</version>
+										<classifier>bin</classifier>
+										<type>zip</type>
+										<outputDirectory>${project.build.directory}/it</outputDirectory>
+									</artifactItem>
+								</artifactItems>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -213,9 +234,10 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 					<configuration>
 						<projectsDirectory>${basedir}/src/it</projectsDirectory>
 						<settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-						<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
-						<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+						<localRepositoryPath>${project.build.directory}/it/${mojo.executionId}/repo</localRepositoryPath>
+						<cloneProjectsTo>${project.build.directory}/it/${mojo.executionId}/projects</cloneProjectsTo>
 						<cloneClean>true</cloneClean>
+						<reportsDirectory>${project.build.directory}/invoker-reports/${mojo.executionId}</reportsDirectory>
 						<properties>
 							<project.build.sourceEncoding>${project.build.sourceEncoding}</project.build.sourceEncoding>
 							<project.reporting.outputEncoding>${project.reporting.outputEncoding}</project.reporting.outputEncoding>
@@ -240,6 +262,16 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 								<goal>install</goal>
 								<goal>run</goal>
 							</goals>
+						</execution>
+						<execution>
+							<id>integration-test-maven-target-version</id>
+							<goals>
+								<goal>install</goal>
+								<goal>run</goal>
+							</goals>
+							<configuration>
+								<mavenHome>${project.build.directory}/it/apache-maven-${maven.target.version}</mavenHome>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
