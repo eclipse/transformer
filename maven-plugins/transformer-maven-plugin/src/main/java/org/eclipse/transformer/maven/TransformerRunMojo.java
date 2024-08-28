@@ -24,7 +24,6 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -38,6 +37,8 @@ import org.eclipse.transformer.Transformer.ResultCode;
 import org.eclipse.transformer.jakarta.JakartaTransform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 
 /**
  * Transforms all the project's artifacts.
@@ -89,7 +90,7 @@ public class TransformerRunMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.build.directory}", required = true)
 	private File				outputDirectory;
 
-	@Component
+	@Inject
 	private MavenProjectHelper	projectHelper;
 
 	/**
