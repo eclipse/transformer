@@ -32,7 +32,7 @@
 		<assertj.version>3.26.3</assertj.version>
 		<xmlunit.version>2.10.0</xmlunit.version>
 		<bytebuddy.version>1.15.0</bytebuddy.version>
-		<maven.target.version>3.3.9</maven.target.version>
+		<maven.target.version>3.8.1</maven.target.version>
 		<shrinkwrap.version>1.2.6</shrinkwrap.version>
 		<!-- Reproducible build -->
 		<project.build.outputTimestamp>1980-02-01T00:00:00Z</project.build.outputTimestamp>
@@ -180,6 +180,27 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-dependency-plugin</artifactId>
 					<version>3.8.0</version>
+					<executions>
+						<execution>
+							<id>maven-target-version</id>
+							<phase>pre-integration-test</phase>
+							<goals>
+								<goal>unpack</goal>
+							</goals>
+							<configuration>
+								<artifactItems>
+									<artifactItem>
+										<groupId>org.apache.maven</groupId>
+										<artifactId>apache-maven</artifactId>
+										<version>${maven.target.version}</version>
+										<classifier>bin</classifier>
+										<type>zip</type>
+										<outputDirectory>${project.build.directory}/it</outputDirectory>
+									</artifactItem>
+								</artifactItems>
+							</configuration>
+						</execution>
+					</executions>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -213,9 +234,10 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 					<configuration>
 						<projectsDirectory>${basedir}/src/it</projectsDirectory>
 						<settingsFile>${basedir}/src/it/settings.xml</settingsFile>
-						<localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
-						<cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+						<localRepositoryPath>${project.build.directory}/it/${mojo.executionId}/repo</localRepositoryPath>
+						<cloneProjectsTo>${project.build.directory}/it/${mojo.executionId}/projects</cloneProjectsTo>
 						<cloneClean>true</cloneClean>
+						<reportsDirectory>${project.build.directory}/invoker-reports/${mojo.executionId}</reportsDirectory>
 						<properties>
 							<project.build.sourceEncoding>${project.build.sourceEncoding}</project.build.sourceEncoding>
 							<project.reporting.outputEncoding>${project.reporting.outputEncoding}</project.reporting.outputEncoding>
@@ -240,6 +262,16 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 								<goal>install</goal>
 								<goal>run</goal>
 							</goals>
+						</execution>
+						<execution>
+							<id>integration-test-maven-target-version</id>
+							<goals>
+								<goal>install</goal>
+								<goal>run</goal>
+							</goals>
+							<configuration>
+								<mavenHome>${project.build.directory}/it/apache-maven-${maven.target.version}</mavenHome>
+							</configuration>
 						</execution>
 					</executions>
 				</plugin>
@@ -528,7 +560,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 			<dependency>
 				<groupId>org.apache.maven</groupId>
 				<artifactId>maven-aether-provider</artifactId>
-				<version>${maven.target.version}</version>
+				<version>3.3.9</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
