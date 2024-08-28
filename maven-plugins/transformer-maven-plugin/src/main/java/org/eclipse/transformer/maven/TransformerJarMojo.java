@@ -34,7 +34,6 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -48,6 +47,8 @@ import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolver;
 import org.apache.maven.shared.transfer.artifact.resolve.ArtifactResolverException;
 import org.codehaus.plexus.util.StringUtils;
 import org.eclipse.transformer.maven.configuration.TransformerArtifact;
+
+import javax.inject.Inject;
 
 /**
  * Transforms a specified artifact into a new artifact.
@@ -119,13 +120,13 @@ public class TransformerJarMojo extends AbstractTransformerMojo {
 	@Parameter
 	private TransformerArtifact			artifact	= new TransformerArtifact();
 
-	@Component
+	@Inject
 	private ArtifactResolver			artifactResolver;
 
-	@Component
+	@Inject
 	private MavenProjectHelper			projectHelper;
 
-	@Component
+	@Inject
 	private ArtifactHandlerManager		artifactHandlerManager;
 
 	@Override
