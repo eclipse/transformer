@@ -58,7 +58,7 @@ public enum AppOption {
 		Settings.HAS_ARG_COUNT, 3, !Settings.IS_REQUIRED, Settings.NO_GROUP)),
 
 	// Issue #154: Enable processing of JARs within JARs. See:
-	// https://github.com/eclipse/transformer/issues/154
+	// https://github.com/eclipse-transformer/transformer/issues/154
 	//
 	// By default, archive nesting is restricted to JavaEE active locations.
 	// This may be relaxed to enable JAR and ZIP within JAR, ZIP within ZIP,

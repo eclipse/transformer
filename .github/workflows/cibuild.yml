@@ -53,7 +53,7 @@ jobs:
         include:
         - os: 'ubuntu-latest'
           java: '17'
-          canonical: ${{ (github.repository == 'eclipse/transformer') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
+          canonical: ${{ (github.repository_owner == 'eclipse-transformer') && ((github.ref == 'refs/heads/main') || (github.ref == 'refs/heads/release')) && (github.event_name != 'pull_request') }}
         - os: 'ubuntu-latest'
           java: '17'
           experimental: true

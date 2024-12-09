@@ -10,7 +10,7 @@ We operate under the [Eclipse Code of Conduct](https://eclipse.org/org/documents
 
 ## Build Status
 
-[![CI Build](https://github.com/eclipse/transformer/actions/workflows/cibuild.yml/badge.svg)](https://github.com/eclipse/transformer/actions/workflows/cibuild.yml)
+[![CI Build](https://github.com/eclipse-transformer/transformer/actions/workflows/cibuild.yml/badge.svg)](https://github.com/eclipse-transformer/transformer/actions/workflows/cibuild.yml)
 
 ## Latest release
 

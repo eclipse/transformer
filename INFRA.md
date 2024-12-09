@@ -4,7 +4,7 @@
 
 The Eclipse Transformer is stored in a standard Git repository, hosted under the Eclipse Foundation GIT organization:
 
-  [https://github.com/eclipse/transformer]
+  [https://github.com/eclipse-transformer/transformer]
 
 Build scripts and standard files are located at the root:
 
