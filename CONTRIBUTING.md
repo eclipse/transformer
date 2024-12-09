@@ -6,7 +6,7 @@ feels wrong or incomplete.
 
 ## Reporting Issues
 
-Issues can be reported in [the GitHub issue tracker](https://github.com/eclipse/transformer/issues).
+Issues can be reported in [the GitHub issue tracker](https://github.com/eclipse-transformer/transformer/issues).
 Please include the steps required to reproduce the problem if possible and applicable.
 This information will help us review and fix your issue faster.
 
@@ -18,14 +18,14 @@ You can use your system `mvn` but we require a recent version.
 
 - `./mvnw clean install` - Assembles and tests the project
 
-We use [GitHub Actions](https://github.com/eclipse/transformer/actions?query=workflow%3A%22CI%20Build%22) and the repo includes a
+We use [GitHub Actions](https://github.com/eclipse-transformer/transformer/actions?query=workflow%3A%22CI%20Build%22) and the repo includes a
 `.github/workflows/cibuild.yml` file to build with GitHub Actions.
 
 ## Workflow
 
 We use [git triangular workflow](https://github.blog/2015-07-29-git-2-5-including-multiple-worktrees-and-triangular-workflows/).
-This means that no one, not even the maintainers, push contributions directly into the [main repo](https://github.com/eclipse/transformer). All contribution come in through pull requests.
-So each contributor will need to [fork the main repo](https://github.com/eclipse/transformer/fork)
+This means that no one, not even the maintainers, push contributions directly into the [main repo](https://github.com/eclipse-transformer/transformer). All contribution come in through pull requests.
+So each contributor will need to [fork the main repo](https://github.com/eclipse-transformer/transformer/fork)
 on GitHub. All contributions are made as commits to your fork. Then you submit a
 pull request to have them considered for merging into the main repo.
 
@@ -33,7 +33,7 @@ pull request to have them considered for merging into the main repo.
 
 After forking the main repo on GitHub, you can clone the main repo to your system:
 
-    git clone https://github.com/eclipse/transformer.git
+    git clone https://github.com/eclipse-transformer/transformer.git
 
 This will clone the main repo to a local repo on your disk and set up the `origin` remote in Git.
 Next you will set up the second side of the triangle to your fork repo.
@@ -71,7 +71,7 @@ received feedback on what to improve.
 ### Create issues
 
 Any significant improvement should be documented as [a GitHub
-issue](https://github.com/eclipse/transformer/issues) before anybody
+issue](https://github.com/eclipse-transformer/transformer/issues) before anybody
 starts working on it.
 
 ### ... but check for existing issues first

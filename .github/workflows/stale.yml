@@ -48,7 +48,7 @@ jobs:
           Given the limited bandwidth of the team, it will be automatically closed if no further
           activity occurs.
           If you feel this is something you could contribute, please have a look
-          at our [Contributor Guide](https://github.com/eclipse/transformer/blob/main/CONTRIBUTING.md).
+          at our [Contributor Guide](https://github.com/eclipse-transformer/transformer/blob/main/CONTRIBUTING.md).
           Thank you for your contribution.
         close-issue-message: >
           This issue has been automatically closed due to inactivity. If you can reproduce this or

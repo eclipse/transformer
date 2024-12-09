@@ -26,9 +26,9 @@
 	<name>${project.groupId}:${project.artifactId}</name>
 	<url>https://projects.eclipse.org/projects/technology.transformer</url>
 	<scm>
-		<url>https://github.com/eclipse/transformer</url>
-		<connection>scm:git:https://github.com/eclipse/transformer.git</connection>
-		<developerConnection>scm:git:git@github.com:eclipse/transformer.git</developerConnection>
+		<url>https://github.com/eclipse-transformer/transformer</url>
+		<connection>scm:git:https://github.com/eclipse-transformer/transformer.git</connection>
+		<developerConnection>scm:git:git@github.com:eclipse-transformer/transformer.git</developerConnection>
 		<tag>${revision}</tag>
 	</scm>
 

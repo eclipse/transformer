@@ -52,9 +52,9 @@
 		</license>
 	</licenses>
 	<scm>
-		<url>https://github.com/eclipse/transformer</url>
-		<connection>scm:git:https://github.com/eclipse/transformer.git</connection>
-		<developerConnection>scm:git:git@github.com:eclipse/transformer.git</developerConnection>
+		<url>https://github.com/eclipse-transformer/transformer</url>
+		<connection>scm:git:https://github.com/eclipse-transformer/transformer.git</connection>
+		<developerConnection>scm:git:git@github.com:eclipse-transformer/transformer.git</developerConnection>
 		<tag>${revision}</tag>
 	</scm>
 	<developers>
@@ -73,7 +73,7 @@
 	</developers>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/eclipse/transformer/issues</url>
+		<url>https://github.com/eclipse-transformer/transformer/issues</url>
 	</issueManagement>
 	<mailingLists>
 		<mailingList>
