@@ -27,7 +27,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.release>17</java.release>
 		<maven.compiler.release>${java.release}</maven.compiler.release>
-		<bnd.version>7.0.0</bnd.version>
+		<bnd.version>7.1.0</bnd.version>
 		<junit-jupiter.version>5.11.3</junit-jupiter.version>
 		<assertj.version>3.26.3</assertj.version>
 		<xmlunit.version>2.10.0</xmlunit.version>
@@ -654,7 +654,7 @@ SPDX-License-Identifier: ${project.licenses[0].name}
 		<profile>
 			<id>bnd-snapshot</id>
 			<properties>
-				<bnd.version>7.1.0-SNAPSHOT</bnd.version>
+				<bnd.version>7.2.0-SNAPSHOT</bnd.version>
 			</properties>
 			<repositories>
 				<repository>
